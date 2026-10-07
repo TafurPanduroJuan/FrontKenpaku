@@ -12,6 +12,13 @@ export const apiClient = axios.create({
 
 // Intercept request to attach Admin Bearer Token if present
 apiClient.interceptors.request.use((config) => {
+  if (config.params && typeof config.params === 'object') {
+    config.params = Object.fromEntries(
+      Object.entries(config.params).filter(
+        ([, v]) => v !== '' && v !== null && v !== undefined
+      )
+    );
+  }
   const token = localStorage.getItem('kenpaku_admin_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
