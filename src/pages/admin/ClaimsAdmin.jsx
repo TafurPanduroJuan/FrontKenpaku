@@ -9,10 +9,13 @@ import { formatPEN } from '../../utils/formatPEN';
 export function ClaimsAdmin() {
   const [selectedClaim, setSelectedClaim] = useState(null);
 
-  const { data: claims = [], isLoading } = useQuery({
+  const { data: claimsData, isLoading } = useQuery({
     queryKey: ['admin-claims'],
     queryFn: getAdminClaims
   });
+
+  // El backend responde { items, total, page, page_size }
+  const claims = Array.isArray(claimsData) ? claimsData : claimsData?.items || [];
 
   return (
     <div className="space-y-6 animate-fade-in">

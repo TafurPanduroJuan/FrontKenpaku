@@ -1,14 +1,55 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MessageSquare, ExternalLink, Bot, CheckCircle } from 'lucide-react';
 import { getAdminChatLogs } from '../../api/admin';
 import { Skeleton } from '../../components/ui/Skeleton';
 
 export function ChatLogs() {
-  const { data: chatLogs = [], isLoading } = useQuery({
+  const { data: chatData, isLoading } = useQuery({
     queryKey: ['admin-chat-logs'],
     queryFn: getAdminChatLogs
   });
+
+  // El backend responde { items, total, page, page_size } con UN registro por mensaje
+  // (id_conversacion, timestamp, rol, mensaje_texto, ...). Los agrupamos por conversación.
+  const chatLogs = useMemo(() => {
+    const raw = Array.isArray(chatData) ? chatData : chatData?.items || [];
+    const groups = new Map();
+
+    raw.forEach((m) => {
+      // Compatibilidad con el formato mock (una fila por sesión)
+      if (m.mensajes_count !== undefined) {
+        groups.set(m.id, {
+          id: m.id,
+          fecha: m.fecha,
+          mensajes_count: m.mensajes_count,
+          resumen: m.resumen,
+          handoff: m.handoff,
+        });
+        return;
+      }
+      const key = m.id_conversacion || m.id;
+      if (!groups.has(key)) groups.set(key, { id: key, mensajes: [] });
+      groups.get(key).mensajes.push(m);
+    });
+
+    return Array.from(groups.values())
+      .map((g) => {
+        if (!g.mensajes) return g;
+        const ordered = [...g.mensajes].sort(
+          (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+        );
+        const firstUser = ordered.find((x) => x.rol === 'user') || ordered[0];
+        return {
+          id: g.id,
+          fecha: ordered[0].timestamp,
+          mensajes_count: ordered.length,
+          resumen: firstUser?.mensaje_texto || '',
+          handoff: null, // el backend no persiste este dato
+        };
+      })
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  }, [chatData]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -54,7 +95,9 @@ export function ChatLogs() {
                     <td className="py-3.5 px-4 font-bold text-slate-900">{log.mensajes_count} msgs</td>
                     <td className="py-3.5 px-4 max-w-sm">{log.resumen}</td>
                     <td className="py-3.5 px-4">
-                      {log.handoff ? (
+                      {log.handoff === null || log.handoff === undefined ? (
+                        <span className="text-slate-400">—</span>
+                      ) : log.handoff ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
                           <ExternalLink className="w-3 h-3" />
                           <span>Derivado WhatsApp</span>
