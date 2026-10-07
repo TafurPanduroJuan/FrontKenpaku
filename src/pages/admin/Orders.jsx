@@ -24,9 +24,9 @@ export function Orders() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-      setToastMessage(`Estado del pedido ${variables.id} actualizado a "${variables.estado}".`);
+      setToastMessage(`Estado del pedido ${variables.codigo || variables.id} actualizado a "${variables.estado}".`);
       setShowToast(true);
-      if (selectedOrder && selectedOrder.codigo === variables.id) {
+      if (selectedOrder && (selectedOrder.id === variables.id || selectedOrder.codigo === variables.id)) {
         setSelectedOrder((prev) => ({ ...prev, estado: variables.estado }));
       }
     }
@@ -170,7 +170,7 @@ export function Orders() {
                 {['pendiente', 'confirmado', 'entregado', 'cancelado'].map((st) => (
                   <button
                     key={st}
-                    onClick={() => updateStatusMutation.mutate({ id: selectedOrder.codigo, estado: st })}
+                    onClick={() => updateStatusMutation.mutate({ id: selectedOrder.id || selectedOrder.codigo, codigo: selectedOrder.codigo, estado: st })}
                     disabled={selectedOrder.estado === st}
                     className={`px-3 py-1.5 rounded-xl font-bold uppercase text-[10px] border transition-all ${
                       selectedOrder.estado === st

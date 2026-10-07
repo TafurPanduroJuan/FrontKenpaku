@@ -37,9 +37,7 @@ export const CATEGORIES_LIST = [
 export const FINISH_TYPES = [
   { slug: 'negro', nombre: 'Acero Negro' },
   { slug: 'galvanizado', nombre: 'Galvanizado' },
-  { slug: 'laf', nombre: 'Laminado en Frío (LAF)' },
-  { slug: 'lac', nombre: 'Laminado en Caliente (LAC)' },
-  { slug: 'corrugado', nombre: 'Corrugado' }
+  { slug: 'ninguno', nombre: 'Sin acabado' }
 ];
 
 export const SORT_OPTIONS = [

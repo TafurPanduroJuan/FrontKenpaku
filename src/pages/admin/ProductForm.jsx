@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { getProductById } from '../../api/products';
 import { createAdminProduct, updateAdminProduct } from '../../api/admin';
 import { Input } from '../../components/ui/Input';
@@ -22,13 +22,15 @@ const productSchema = z.object({
   stock_disponible: z.coerce.number().min(0, 'El stock no puede ser negativo'),
   imagen_url: z.string().optional(),
   descripcion_corta: z.string().min(10, 'Ingrese una descripción corta de al menos 10 caracteres'),
-  ficha_tecnica: z.array(
-    z.object({
-      clave: z.string().min(1, 'Clave requerida'),
-      valor: z.string().min(1, 'Valor requerido')
-    })
-  ).optional()
+  ficha_tecnica: z.string().optional()
 });
+
+// El backend guarda la ficha técnica como texto; si llega como lista (mocks) la convertimos
+function fichaToText(ficha) {
+  if (!ficha) return '';
+  if (Array.isArray(ficha)) return ficha.map((f) => `${f.clave}: ${f.valor}`).join('\n');
+  return String(ficha);
+}
 
 export function ProductForm() {
   const { id } = useParams();
@@ -46,7 +48,6 @@ export function ProductForm() {
   const {
     register,
     handleSubmit,
-    control,
     reset,
     formState: { errors, isSubmitting }
   } = useForm({
@@ -61,13 +62,8 @@ export function ProductForm() {
       stock_disponible: 10,
       imagen_url: '',
       descripcion_corta: '',
-      ficha_tecnica: [{ clave: 'Longitud estándar', valor: '6.00 metros' }]
+      ficha_tecnica: ''
     }
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'ficha_tecnica'
   });
 
   useEffect(() => {
@@ -75,14 +71,14 @@ export function ProductForm() {
       reset({
         nombre: existingProduct.nombre,
         categoria: existingProduct.categoria,
-        acabado: existingProduct.acabado,
-        medida: existingProduct.medida,
-        espesor: existingProduct.espesor,
+        acabado: existingProduct.acabado || 'ninguno',
+        medida: existingProduct.medida || '',
+        espesor: existingProduct.espesor || '',
         precio_unitario: existingProduct.precio_unitario,
         stock_disponible: existingProduct.stock_disponible,
-        imagen_url: existingProduct.imagen_url,
-        descripcion_corta: existingProduct.descripcion_corta,
-        ficha_tecnica: existingProduct.ficha_tecnica || []
+        imagen_url: existingProduct.imagen_url || '',
+        descripcion_corta: existingProduct.descripcion_corta || '',
+        ficha_tecnica: fichaToText(existingProduct.ficha_tecnica)
       });
     }
   }, [existingProduct, reset]);
@@ -98,7 +94,11 @@ export function ProductForm() {
   });
 
   const onSubmit = (formData) => {
-    saveMutation.mutate(formData);
+    saveMutation.mutate({
+      ...formData,
+      imagen_url: formData.imagen_url?.trim() || null,
+      ficha_tecnica: formData.ficha_tecnica?.trim() || null
+    });
   };
 
   return (
@@ -135,7 +135,8 @@ export function ProductForm() {
               { value: 'tubos', label: 'Tubos' },
               { value: 'planchas', label: 'Planchas' },
               { value: 'perfiles', label: 'Perfiles' },
-              { value: 'fierros', label: 'Fierros' }
+              { value: 'fierros', label: 'Fierros' },
+              { value: 'accesorios', label: 'Accesorios' }
             ]}
             error={errors.categoria?.message}
             {...register('categoria')}
@@ -146,9 +147,7 @@ export function ProductForm() {
             options={[
               { value: 'negro', label: 'Acero Negro' },
               { value: 'galvanizado', label: 'Galvanizado' },
-              { value: 'laf', label: 'LAF (Frío)' },
-              { value: 'lac', label: 'LAC (Caliente)' },
-              { value: 'corrugado', label: 'Corrugado' }
+              { value: 'ninguno', label: 'Sin acabado' }
             ]}
             error={errors.acabado?.message}
             {...register('acabado')}
@@ -205,47 +204,19 @@ export function ProductForm() {
           {...register('descripcion_corta')}
         />
 
-        {/* Ficha Técnica Arrays */}
-        <div className="space-y-3 pt-4 border-t border-slate-100">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              Especificaciones de Ficha Técnica
-            </h3>
-            <button
-              type="button"
-              onClick={() => append({ clave: '', valor: '' })}
-              className="text-xs font-bold text-kenpaku-blue hover:underline flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" /> Agregar especificación
-            </button>
-          </div>
+        <Textarea
+          label="Ficha Técnica (especificaciones, normas, usos y advertencias)"
+          placeholder="Ej. Fabricado bajo norma ASTM A500. Usos recomendados: ..."
+          rows={8}
+          error={errors.ficha_tecnica?.message}
+          {...register('ficha_tecnica')}
+        />
 
-          <div className="space-y-2">
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Característica (ej. Norma)"
-                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-xs"
-                  {...register(`ficha_tecnica.${index}.clave`)}
-                />
-                <input
-                  type="text"
-                  placeholder="Valor (ej. ASTM A500)"
-                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-xs"
-                  {...register(`ficha_tecnica.${index}.valor`)}
-                />
-                <button
-                  type="button"
-                  onClick={() => remove(index)}
-                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+        {saveMutation.isError && (
+          <p className="text-xs font-semibold text-red-600">
+            No se pudo guardar el producto. Revisa los datos e inténtalo nuevamente.
+          </p>
+        )}
 
         <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
           <Button type="button" variant="ghost" onClick={() => navigate('/admin/productos')}>

@@ -247,7 +247,7 @@ export function ProductDetail() {
         {activeTab === 'tech' && (
           <div className="space-y-4 animate-fade-in">
             <h3 className="text-base font-bold text-kenpaku-navy">Especificaciones de Fabricación</h3>
-            {product.ficha_tecnica && product.ficha_tecnica.length > 0 ? (
+            {Array.isArray(product.ficha_tecnica) && product.ficha_tecnica.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left text-slate-700 border border-slate-200 rounded-xl overflow-hidden">
                   <tbody>
@@ -262,6 +262,10 @@ export function ProductDetail() {
                   </tbody>
                 </table>
               </div>
+            ) : typeof product.ficha_tecnica === 'string' && product.ficha_tecnica.trim() ? (
+              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                {product.ficha_tecnica}
+              </p>
             ) : (
               <p className="text-xs text-slate-500">No se disponen de datos adicionales de ficha técnica.</p>
             )}

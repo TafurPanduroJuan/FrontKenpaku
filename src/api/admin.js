@@ -38,7 +38,10 @@ export async function getAdminOrders(params = {}) {
     }
     return { items, total: items.length, page: 1, page_size: 12 };
   }
-  const { data } = await apiClient.get('/admin/orders', { params });
+  // 'todos' no es un estado válido en el backend: se omite el filtro
+  const query = { ...params };
+  if (query.estado === 'todos') delete query.estado;
+  const { data } = await apiClient.get('/admin/orders', { params: query });
   return data;
 }
 
