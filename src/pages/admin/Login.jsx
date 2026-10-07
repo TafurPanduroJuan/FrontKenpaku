@@ -78,7 +78,7 @@ export function Login() {
             isLoading={isLoading}
             icon={ArrowRight}
           >
-            Iniciar sesión
+            Iniciar sesión  
           </Button>
         </form>
 

@@ -1,11 +1,17 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { Package } from 'lucide-react';
+import { NavLink, Link, useLocation } from 'react-router-dom';
+import { Package, ShieldCheck, Lock } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const currentCategory = searchParams.get('categoria');
+  const { isAuthenticated } = useAuth();
+
+  const adminPath = isAuthenticated ? '/admin' : '/admin/login';
+  const adminText = isAuthenticated ? 'Panel Admin' : 'Acceso Admin';
+  const AdminIcon = isAuthenticated ? ShieldCheck : Lock;
 
   const navLinks = [
     { to: '/catalogo', label: 'Catálogo', icon: Package, isCategory: false },
@@ -33,26 +39,37 @@ export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
     <nav className="bg-white text-slate-800 border-b border-slate-200 shadow-2xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-8 py-3.5">
-          {navLinks.map((link) => {
-            const active = isActiveLink(link);
-            const Icon = link.icon;
+        <div className="hidden md:flex items-center justify-between py-2.5">
+          <div className="flex items-center space-x-6 lg:space-x-8">
+            {navLinks.map((link) => {
+              const active = isActiveLink(link);
+              const Icon = link.icon;
 
-            return (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className={`text-sm sm:text-base font-bold transition-all flex items-center gap-2 py-1 relative ${
-                  active
-                    ? 'text-[#0284C7] border-b-3 border-[#0284C7]'
-                    : 'text-slate-700 hover:text-[#0284C7]'
-                }`}
-              >
-                {Icon && <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#0284C7]" />}
-                <span>{link.label}</span>
-              </NavLink>
-            );
-          })}
+              return (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  className={`text-sm sm:text-base font-bold transition-all flex items-center gap-2 py-1 relative ${
+                    active
+                      ? 'text-[#0284C7] border-b-3 border-[#0284C7]'
+                      : 'text-slate-700 hover:text-[#0284C7]'
+                  }`}
+                >
+                  {Icon && <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#0284C7]" />}
+                  <span>{link.label}</span>
+                </NavLink>
+              );
+            })}
+          </div>
+
+          {/* Admin Access / Panel Button */}
+          <Link
+            to={adminPath}
+            className="inline-flex items-center gap-2 px-3.5 py-2 min-h-[44px] text-xs sm:text-sm font-bold rounded-xl border border-slate-300 bg-slate-100/90 hover:bg-slate-200 text-slate-700 hover:text-slate-900 transition-colors shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-400 shrink-0"
+          >
+            <AdminIcon className="w-4 h-4 text-slate-600" />
+            <span>{adminText}</span>
+          </Link>
         </div>
 
         {/* Mobile Navigation Menu Dropdown */}
@@ -80,6 +97,17 @@ export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
                 </NavLink>
               );
             })}
+
+            <div className="pt-2 mt-2 border-t border-slate-200">
+              <Link
+                to={adminPath}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 px-4 py-3 min-h-[44px] rounded-xl text-base font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+              >
+                <AdminIcon className="w-5 h-5 text-slate-600" />
+                <span>{adminText}</span>
+              </Link>
+            </div>
           </div>
         )}
       </div>
