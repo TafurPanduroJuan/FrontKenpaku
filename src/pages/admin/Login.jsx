@@ -9,8 +9,8 @@ export function Login() {
   const navigate = useNavigate();
   const { isAuthenticated, login, isLoading } = useAuth();
 
-  const [email, setEmail] = useState('admin@kenpaku.pe');
-  const [password, setPassword] = useState('kenpaku123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState(null);
 
   if (isAuthenticated) {
@@ -69,11 +69,6 @@ export function Login() {
             required
           />
 
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-500 space-y-0.5">
-            <span className="font-bold text-slate-700 block">Credenciales de prueba:</span>
-            <p>Usuario: <code>admin@kenpaku.pe</code></p>
-            <p>Clave: <code>kenpaku123</code></p>
-          </div>
 
           <Button
             type="submit"
