@@ -1,16 +1,65 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShoppingBag, Eye, Phone, MapPin, CheckCircle2, Clock, XCircle, Truck } from 'lucide-react';
+import { ShoppingBag, Eye, Phone, MapPin, CheckCircle2, Clock, XCircle, Truck, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { getAdminOrders, updateOrderStatus } from '../../api/admin';
 import { formatPEN } from '../../utils/formatPEN';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { Modal } from '../../components/ui/Modal';
 import { Toast } from '../../components/ui/Toast';
 
+const ALLOWED_TRANSITIONS = {
+  recojo: {
+    pendiente: ['confirmado', 'cancelado'],
+    confirmado: ['listo_para_recojo', 'cancelado'],
+    listo_para_recojo: ['entregado', 'cancelado'],
+    entregado: [],
+    cancelado: []
+  },
+  despacho: {
+    pendiente: ['flete_cotizado', 'confirmado', 'cancelado'],
+    flete_cotizado: ['confirmado', 'cancelado'],
+    confirmado: ['despachado', 'cancelado'],
+    despachado: ['entregado', 'cancelado'],
+    entregado: [],
+    cancelado: []
+  }
+};
+
+const ACTION_LABELS = {
+  flete_cotizado: 'Cotizar Flete',
+  confirmado: 'Confirmar Pedido',
+  despachado: 'Marcar Despachado a Obra',
+  listo_para_recojo: 'Listo para Recojo en Almacén',
+  entregado: 'Marcar como Entregado',
+  cancelado: 'Cancelar Pedido'
+};
+
+function getTransitionImpactMessage(targetState) {
+  switch (targetState) {
+    case 'confirmado':
+      return '📦 Al confirmar este pedido, se reservará y descontará automáticamente el stock disponible de los productos incluidos en el inventario.';
+    case 'cancelado':
+      return '⚠️ Al cancelar el pedido, la acción es irreversible. Se liberará cualquier stock que haya sido reservado para que vuelva a estar disponible en tienda.';
+    case 'entregado':
+      return '🏁 Al marcar como ENTREGADO, el pedido pasará a estado terminal y se dará por concluido. No podrá modificarse posteriormente.';
+    case 'despachado':
+      return '🚚 Se registrará la salida del pedido en camión hacia la obra indicada por el cliente.';
+    case 'listo_para_recojo':
+      return '🏬 Se notificará que los materiales están listos en el almacén de Puente Piedra para el retiro del cliente.';
+    case 'flete_cotizado':
+      return '📋 Se definirá el monto del flete de transporte para que el pedido esté listo para confirmación.';
+    default:
+      return '¿Deseas proceder con este cambio de fase operativa?';
+  }
+}
+
 export function Orders() {
   const queryClient = useQueryClient();
   const [selectedStatus, setSelectedStatus] = useState('todos');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [pendingTransition, setPendingTransition] = useState(null);
+  const [transitionNote, setTransitionNote] = useState('');
+  const [costoFleteInput, setCostoFleteInput] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
@@ -20,17 +69,58 @@ export function Orders() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, estado }) => updateOrderStatus(id, estado),
+    mutationFn: ({ id, estado, nota, costo_flete }) => updateOrderStatus(id, { estado, nota, costo_flete }),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-      setToastMessage(`Estado del pedido ${variables.codigo || variables.id} actualizado a "${variables.estado}".`);
+      setToastMessage(`Estado del pedido ${variables.codigo || variables.id} actualizado a "${variables.estado.replace(/_/g, ' ')}".`);
       setShowToast(true);
+      setPendingTransition(null);
       if (selectedOrder && (selectedOrder.id === variables.id || selectedOrder.codigo === variables.id)) {
-        setSelectedOrder((prev) => ({ ...prev, estado: variables.estado }));
+        setSelectedOrder((prev) => ({
+          ...prev,
+          estado: variables.estado,
+          costo_flete: variables.costo_flete !== undefined ? variables.costo_flete : prev.costo_flete,
+          estado_flete: variables.estado === 'flete_cotizado' ? 'cotizado' : prev.estado_flete,
+          events: data?.events || [
+            ...(prev.events || []),
+            {
+              estado_nuevo: variables.estado,
+              autor: 'admin',
+              nota: variables.nota || 'Cambio manual de estado',
+              created_at: new Date().toISOString()
+            }
+          ]
+        }));
       }
+    },
+    onError: (error) => {
+      const detail = error.response?.data?.detail;
+      let errorMsg = 'No se pudo actualizar el estado del pedido.';
+      if (typeof detail === 'string') {
+        errorMsg = detail;
+      } else if (detail && typeof detail === 'object') {
+        errorMsg = detail.detail || JSON.stringify(detail);
+      }
+      setToastMessage(`Error: ${errorMsg}`);
+      setShowToast(true);
     }
   });
+
+  const handleConfirmTransition = () => {
+    if (!pendingTransition) return;
+    const { order, targetState } = pendingTransition;
+    const payload = {
+      estado: targetState,
+      nota: transitionNote.trim() || undefined,
+      costo_flete: targetState === 'flete_cotizado' && costoFleteInput ? Number(costoFleteInput) : undefined
+    };
+    updateStatusMutation.mutate({
+      id: order.id || order.codigo,
+      codigo: order.codigo,
+      ...payload
+    });
+  };
 
   const orders = ordersData?.items || [];
 
@@ -54,6 +144,10 @@ export function Orders() {
     'entregado',
     'cancelado'
   ];
+
+  const modalidadKey = selectedOrder?.recojo_en_tienda ? 'recojo' : 'despacho';
+  const allowedNext = selectedOrder ? (ALLOWED_TRANSITIONS[modalidadKey]?.[selectedOrder.estado] || []) : [];
+  const isTerminal = selectedOrder ? allowedNext.length === 0 : false;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -135,13 +229,13 @@ export function Orders() {
                             statusBadgeClasses[order.estado] || statusBadgeClasses.pendiente
                           }`}
                         >
-                          {order.estado}
+                          {order.estado?.replace(/_/g, ' ')}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right space-x-1">
                         <button
                           onClick={() => setSelectedOrder(order)}
-                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors"
+                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors cursor-pointer"
                         >
                           Ver Detalle
                         </button>
@@ -160,7 +254,7 @@ export function Orders() {
         <Modal
           isOpen={!!selectedOrder}
           onClose={() => setSelectedOrder(null)}
-          title={`Detalle de Pedido ${selectedOrder.codigo}`}
+          title={`Detalle del Pedido ${selectedOrder.codigo}`}
           maxWidth="max-w-2xl"
         >
           <div className="space-y-6 text-xs text-slate-700">
@@ -185,30 +279,81 @@ export function Orders() {
               </div>
             </div>
 
-            {/* Change Status Controls */}
-            <div className="space-y-2">
-              <label className="font-bold text-slate-900 uppercase tracking-wider text-[10px] block">
-                Actualizar Estado del Pedido:
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {(selectedOrder.recojo_en_tienda
-                  ? ['pendiente', 'confirmado', 'listo_para_recojo', 'entregado', 'cancelado']
-                  : ['pendiente', 'flete_cotizado', 'confirmado', 'despachado', 'entregado', 'cancelado']
-                ).map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => updateStatusMutation.mutate({ id: selectedOrder.id || selectedOrder.codigo, codigo: selectedOrder.codigo, estado: st })}
-                    disabled={selectedOrder.estado === st}
-                    className={`px-3 py-1.5 rounded-xl font-bold uppercase text-[10px] border transition-all ${
-                      selectedOrder.estado === st
-                        ? 'bg-kenpaku-navy text-white border-kenpaku-navy shadow-xs cursor-default'
-                        : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300 active:scale-95'
-                    }`}
-                  >
-                    {st.replace(/_/g, ' ')}
-                  </button>
-                ))}
-              </div>
+            {/* State Management Section */}
+            <div>
+              {isTerminal ? (
+                <div>
+                  {selectedOrder.estado === 'entregado' ? (
+                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-emerald-950 text-xs">Pedido Entregado y Cerrado</h4>
+                        <p className="text-[11px] text-emerald-700 mt-0.5">
+                          Este pedido completó su ciclo de entrega con éxito. Se encuentra en estado terminal definitivo y ya no admite modificaciones.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-red-50 border border-red-200 flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <XCircle className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-red-950 text-xs">Pedido Cancelado</h4>
+                        <p className="text-[11px] text-red-700 mt-0.5">
+                          Este pedido fue cancelado y su inventario fue liberado. Se encuentra en estado terminal definitivo y ya no admite modificaciones.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Fase Operativa Actual</span>
+                      <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-extrabold uppercase border ${statusBadgeClasses[selectedOrder.estado] || statusBadgeClasses.pendiente}`}>
+                        {selectedOrder.estado?.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      Flujo: <strong className="text-slate-700">{selectedOrder.recojo_en_tienda ? 'Recojo en Almacén' : 'Despacho a Obra'}</strong>
+                    </span>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200/80">
+                    <label className="font-bold text-slate-900 uppercase tracking-wider text-[10px] block mb-2">
+                      Avanzar a Siguiente Fase (requiere confirmación):
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {allowedNext.map((st) => {
+                        const isCancel = st === 'cancelado';
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => {
+                              setCostoFleteInput(selectedOrder.costo_flete ? String(selectedOrder.costo_flete) : '');
+                              setTransitionNote('');
+                              setPendingTransition({ order: selectedOrder, targetState: st });
+                            }}
+                            className={`px-3.5 py-2 rounded-xl font-bold uppercase text-[11px] transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 ${
+                              isCancel
+                                ? 'bg-white hover:bg-red-50 text-red-700 border border-red-300'
+                                : 'bg-kenpaku-navy hover:bg-slate-800 text-white'
+                            }`}
+                          >
+                            {isCancel ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                            <span>{ACTION_LABELS[st] || st.replace(/_/g, ' ')}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Timeline Events */}
@@ -219,11 +364,11 @@ export function Orders() {
                   {selectedOrder.events.map((ev, idx) => (
                     <div key={idx} className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-[11px] flex justify-between items-center">
                       <div>
-                        <span className="font-bold text-kenpaku-navy capitalize">{ev.estado_nuevo.replace(/_/g, ' ')}</span>
+                        <span className="font-bold text-kenpaku-navy capitalize">{ev.estado_nuevo?.replace(/_/g, ' ')}</span>
                         <span className="text-slate-500 ml-1.5">({ev.autor}): {ev.nota || 'Sin nota'}</span>
                       </div>
                       <span className="text-[10px] text-slate-400 font-mono">
-                        {new Date(ev.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                        {ev.created_at ? new Date(ev.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : ''}
                       </span>
                     </div>
                   ))}
@@ -255,6 +400,94 @@ export function Orders() {
             <div className="p-4 rounded-2xl bg-slate-900 text-white flex justify-between items-center text-sm">
               <span>Total Pedido (con IGV y Flete):</span>
               <span className="text-xl font-extrabold text-amber-400">{formatPEN(selectedOrder.total)}</span>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Confirmation Modal for State Transition */}
+      {pendingTransition && (
+        <Modal
+          isOpen={!!pendingTransition}
+          onClose={() => {
+            if (!updateStatusMutation.isPending) setPendingTransition(null);
+          }}
+          title="Confirmar Cambio de Fase"
+          maxWidth="max-w-md"
+        >
+          <div className="space-y-4 text-xs text-slate-700">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-amber-950">
+                  ¿Estás seguro de cambiar el estado del pedido {pendingTransition?.order?.codigo}?
+                </p>
+                <p className="text-[11px] text-amber-800 mt-0.5">
+                  De <strong className="uppercase">{pendingTransition?.order?.estado?.replace(/_/g, ' ')}</strong> a{' '}
+                  <strong className="uppercase text-kenpaku-navy">{pendingTransition?.targetState?.replace(/_/g, ' ')}</strong>.
+                </p>
+              </div>
+            </div>
+
+            {/* Detailed operational impact note */}
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 leading-relaxed text-[11px]">
+              {getTransitionImpactMessage(pendingTransition?.targetState)}
+            </div>
+
+            {/* Optional Freight Cost Input when target is flete_cotizado */}
+            {pendingTransition?.targetState === 'flete_cotizado' && (
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 text-[11px] block">
+                  Costo de flete cotizado (S/):
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={costoFleteInput}
+                  onChange={(e) => setCostoFleteInput(e.target.value)}
+                  placeholder="Ej. 35.00"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-kenpaku-blue focus:outline-none"
+                />
+              </div>
+            )}
+
+            {/* Optional Note for order_events history */}
+            <div className="space-y-1">
+              <label className="font-bold text-slate-700 text-[11px] block">
+                Nota u observación para el historial (opcional):
+              </label>
+              <input
+                type="text"
+                value={transitionNote}
+                onChange={(e) => setTransitionNote(e.target.value)}
+                placeholder="Ej. Depósito verificado / Conductor asignado..."
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-kenpaku-blue focus:outline-none"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setPendingTransition(null)}
+                disabled={updateStatusMutation.isPending}
+                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmTransition}
+                disabled={updateStatusMutation.isPending}
+                className={`px-4 py-2 rounded-xl text-white font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
+                  pendingTransition?.targetState === 'cancelado'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-kenpaku-navy hover:bg-slate-800'
+                }`}
+              >
+                {updateStatusMutation.isPending ? 'Guardando...' : 'Sí, Confirmar Cambio'}
+              </button>
             </div>
           </div>
         </Modal>

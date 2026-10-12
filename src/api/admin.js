@@ -57,15 +57,26 @@ export async function getAdminOrderById(id) {
   return data;
 }
 
-export async function updateOrderStatus(id, estado) {
+export async function updateOrderStatus(id, estadoOrData, maybeNota, maybeCostoFlete) {
+  let payload = {};
+  if (typeof estadoOrData === 'object' && estadoOrData !== null) {
+    payload = { ...estadoOrData };
+  } else {
+    payload = {
+      estado: estadoOrData,
+      ...(maybeNota ? { nota: maybeNota } : {}),
+      ...(maybeCostoFlete !== undefined && maybeCostoFlete !== null ? { costo_flete: Number(maybeCostoFlete) } : {})
+    };
+  }
+
   if (USE_MOCKS) {
     checkAuth();
     await new Promise((res) => setTimeout(res, 200));
     const order = MOCK_ORDERS.find(o => o.id === id || o.codigo === id);
-    if (order) order.estado = estado;
-    return { success: true, estado };
+    if (order) order.estado = payload.estado;
+    return { success: true, ...payload };
   }
-  const { data } = await apiClient.patch(`/admin/orders/${id}/estado`, { estado });
+  const { data } = await apiClient.patch(`/admin/orders/${id}/estado`, payload);
   return data;
 }
 

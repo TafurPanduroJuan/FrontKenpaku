@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Orders } from '../admin/Orders';
 import * as adminApi from '../../api/admin';
@@ -18,6 +18,11 @@ const queryClient = new QueryClient({
 });
 
 describe('Admin Orders page unit tests', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    queryClient.clear();
+  });
+
   it('correctly displays customer name, phone, formatted date and order code with real backend response schema', async () => {
     adminApi.getAdminOrders.mockResolvedValueOnce({
       items: [
@@ -56,5 +61,94 @@ describe('Admin Orders page unit tests', () => {
     expect(screen.getByText('Alexis Jair Maza')).toBeInTheDocument();
     expect(screen.getByText('987654321')).toBeInTheDocument();
     expect(screen.getByText('Despacho a obra')).toBeInTheDocument();
+  });
+
+  it('displays terminal state badge and no transition buttons when an order is already entregado', async () => {
+    adminApi.getAdminOrders.mockResolvedValueOnce({
+      items: [
+        {
+          id: 'c2f9f63b-2222-3333-4444-555566667777',
+          codigo: 'KPK-000002',
+          cliente_nombre: 'Esteban Luis',
+          cliente_telefono: '997410117',
+          recojo_en_tienda: true,
+          estado: 'entregado',
+          total: 195.0,
+          created_at: '2026-10-10T10:00:00.000000Z',
+          items: []
+        }
+      ],
+      total: 1,
+      page: 1,
+      page_size: 12
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Orders />
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByText('KPK-000002')).toBeInTheDocument();
+
+    // Click "Ver Detalle"
+    const verDetalleBtn = screen.getByText('Ver Detalle');
+    fireEvent.click(verDetalleBtn);
+
+    // Verify modal opened with terminal banner and NO transition action buttons
+    expect(await screen.findByText('Pedido Entregado y Cerrado')).toBeInTheDocument();
+    expect(screen.queryByText('Avanzar a Siguiente Fase (requiere confirmación):')).not.toBeInTheDocument();
+  });
+
+  it('prompts confirmation modal before executing a state transition on an active order', async () => {
+    adminApi.getAdminOrders.mockResolvedValueOnce({
+      items: [
+        {
+          id: 'd3a0a74c-3333-4444-5555-666677778888',
+          codigo: 'KPK-000003',
+          cliente_nombre: 'Carlos Constructora',
+          cliente_telefono: '912345678',
+          recojo_en_tienda: true,
+          estado: 'pendiente',
+          total: 500.0,
+          created_at: '2026-10-10T12:00:00.000000Z',
+          items: []
+        }
+      ],
+      total: 1,
+      page: 1,
+      page_size: 12
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Orders />
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByText('KPK-000003')).toBeInTheDocument();
+
+    // Click "Ver Detalle"
+    fireEvent.click(screen.getByText('Ver Detalle'));
+
+    // Verify allowed transitions for Recojo from 'pendiente': 'confirmado' and 'cancelado'
+    expect(await screen.findByText('Confirmar Pedido')).toBeInTheDocument();
+    expect(screen.getByText('Cancelar Pedido')).toBeInTheDocument();
+
+    // Click "Confirmar Pedido"
+    fireEvent.click(screen.getByText('Confirmar Pedido'));
+
+    // Confirmation modal should appear with warning about inventory reduction
+    expect(await screen.findByText('Confirmar Cambio de Fase')).toBeInTheDocument();
+    expect(screen.getByText(/descontará automáticamente el stock disponible/i)).toBeInTheDocument();
+    expect(screen.getByText('Sí, Confirmar Cambio')).toBeInTheDocument();
+    expect(screen.getByText('Cancelar')).toBeInTheDocument();
+
+    // API update should NOT have been called yet!
+    expect(adminApi.updateOrderStatus).not.toHaveBeenCalled();
   });
 });
