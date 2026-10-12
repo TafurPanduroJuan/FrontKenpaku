@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShoppingBag, Eye, Phone, MapPin, CheckCircle2, Clock, XCircle, Truck, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, Eye, Phone, MapPin, CheckCircle2, Clock, XCircle, Truck, AlertTriangle, ShieldCheck, MessageCircle } from 'lucide-react';
 import { getAdminOrders, updateOrderStatus } from '../../api/admin';
 import { formatPEN } from '../../utils/formatPEN';
+import { buildStatusWhatsAppUrl } from '../../utils/whatsapp';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { Modal } from '../../components/ui/Modal';
 import { Toast } from '../../components/ui/Toast';
@@ -277,6 +278,33 @@ export function Orders() {
                 )}
                 {selectedOrder.observaciones && <p className="italic text-slate-500">Obs: {selectedOrder.observaciones}</p>}
               </div>
+            </div>
+
+            {/* WhatsApp Notification Action for Admin */}
+            <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-extrabold text-emerald-950 block">
+                    Notificar al Cliente por WhatsApp
+                  </span>
+                  <span className="text-[10px] text-emerald-700">
+                    Mensaje pre-redactado listo para enviar según fase actual ({selectedOrder.estado?.replace(/_/g, ' ')})
+                  </span>
+                </div>
+              </div>
+
+              <a
+                href={buildStatusWhatsAppUrl(selectedOrder)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors self-start sm:self-auto shrink-0"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Avisar al Cliente</span>
+              </a>
             </div>
 
             {/* State Management Section */}

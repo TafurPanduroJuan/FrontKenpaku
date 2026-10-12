@@ -151,4 +151,43 @@ describe('Admin Orders page unit tests', () => {
     // API update should NOT have been called yet!
     expect(adminApi.updateOrderStatus).not.toHaveBeenCalled();
   });
+
+  it('renders WhatsApp notification button with pre-filled message for the customer in the order modal', async () => {
+    adminApi.getAdminOrders.mockResolvedValueOnce({
+      items: [
+        {
+          id: 'e4b1b85d-4444-5555-6666-777788889999',
+          codigo: 'KPK-000004',
+          cliente_nombre: 'Rosa Salazar',
+          cliente_telefono: '987112233',
+          recojo_en_tienda: false,
+          estado: 'despachado',
+          total: 820.0,
+          created_at: '2026-10-10T14:00:00.000000Z',
+          items: []
+        }
+      ],
+      total: 1,
+      page: 1,
+      page_size: 12
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Orders />
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByText('KPK-000004')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Ver Detalle'));
+
+    // Verify WhatsApp button is rendered
+    expect(await screen.findByText('Notificar al Cliente por WhatsApp')).toBeInTheDocument();
+    const whatsappBtn = screen.getByRole('link', { name: /avisar al cliente/i });
+    expect(whatsappBtn).toBeInTheDocument();
+    expect(whatsappBtn.getAttribute('href')).toContain('https://wa.me/51987112233');
+    expect(whatsappBtn.getAttribute('href')).toContain(encodeURIComponent('DESPACHADO A OBRA'));
+  });
 });
