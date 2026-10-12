@@ -36,10 +36,24 @@ export function Orders() {
 
   const statusBadgeClasses = {
     pendiente: 'bg-amber-100 text-amber-800 border-amber-200',
+    flete_cotizado: 'bg-purple-100 text-purple-800 border-purple-200',
     confirmado: 'bg-blue-100 text-blue-800 border-blue-200',
+    despachado: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    listo_para_recojo: 'bg-teal-100 text-teal-800 border-teal-200',
     entregado: 'bg-emerald-100 text-emerald-800 border-emerald-200',
     cancelado: 'bg-red-100 text-red-800 border-red-200'
   };
+
+  const statusOptions = [
+    'todos',
+    'pendiente',
+    'flete_cotizado',
+    'confirmado',
+    'despachado',
+    'listo_para_recojo',
+    'entregado',
+    'cancelado'
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -48,12 +62,12 @@ export function Orders() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
           <h2 className="text-xl font-extrabold text-kenpaku-navy">Gestión de Pedidos</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Filtra y actualiza el estado comercial de los pedidos registrados</p>
+          <p className="text-xs text-slate-500 mt-0.5">Filtra y actualiza el estado comercial y logístico de los pedidos</p>
         </div>
 
         {/* Status Filter Buttons */}
         <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 text-xs font-semibold">
-          {['todos', 'pendiente', 'confirmado', 'entregado', 'cancelado'].map((st) => (
+          {statusOptions.map((st) => (
             <button
               key={st}
               onClick={() => setSelectedStatus(st)}
@@ -63,7 +77,7 @@ export function Orders() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {st}
+              {st.replace(/_/g, ' ')}
             </button>
           ))}
         </div>
@@ -95,39 +109,46 @@ export function Orders() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {orders.map((order) => (
-                  <tr key={order.codigo} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <span className="font-extrabold text-kenpaku-navy block">{order.codigo}</span>
-                      <span className="text-[10px] text-slate-400">
-                        {new Date(order.fecha).toLocaleDateString('es-PE')}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{order.cliente?.nombre}</td>
-                    <td className="py-3.5 px-4">{order.cliente?.telefono}</td>
-                    <td className="py-3.5 px-4">
-                      {order.recojo_en_tienda ? 'Recojo en tienda' : 'Despacho a obra'}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-kenpaku-navy">{formatPEN(order.total)}</td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${
-                          statusBadgeClasses[order.estado] || statusBadgeClasses.pendiente
-                        }`}
-                      >
-                        {order.estado}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-right space-x-1">
-                      <button
-                        onClick={() => setSelectedOrder(order)}
-                        className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors"
-                      >
-                        Ver Detalle
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {orders.map((order) => {
+                  const clienteNombre = order.cliente_nombre || order.cliente?.nombre || 'Sin nombre';
+                  const clienteTelefono = order.cliente_telefono || order.cliente?.telefono || 'Sin teléfono';
+                  const rawDate = order.created_at || order.fecha;
+                  const fechaFormateada = rawDate ? new Date(rawDate).toLocaleDateString('es-PE') : 'Fecha no disp.';
+
+                  return (
+                    <tr key={order.codigo || order.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <span className="font-extrabold text-kenpaku-navy block">{order.codigo}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {fechaFormateada}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">{clienteNombre}</td>
+                      <td className="py-3.5 px-4">{clienteTelefono}</td>
+                      <td className="py-3.5 px-4">
+                        {order.recojo_en_tienda ? 'Recojo en tienda' : 'Despacho a obra'}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-kenpaku-navy">{formatPEN(order.total)}</td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${
+                            statusBadgeClasses[order.estado] || statusBadgeClasses.pendiente
+                          }`}
+                        >
+                          {order.estado}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right space-x-1">
+                        <button
+                          onClick={() => setSelectedOrder(order)}
+                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors"
+                        >
+                          Ver Detalle
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -147,9 +168,9 @@ export function Orders() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-400">Cliente</span>
-                <p className="font-bold text-slate-900">{selectedOrder.cliente?.nombre}</p>
-                <p>Teléfono: {selectedOrder.cliente?.telefono}</p>
-                <p>Correo: {selectedOrder.cliente?.correo}</p>
+                <p className="font-bold text-slate-900">{selectedOrder.cliente_nombre || selectedOrder.cliente?.nombre || 'Sin nombre'}</p>
+                <p>Teléfono: {selectedOrder.cliente_telefono || selectedOrder.cliente?.telefono || 'Sin teléfono'}</p>
+                <p>Correo: {selectedOrder.cliente_correo || selectedOrder.cliente?.correo || 'Sin correo'}</p>
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-400">Modalidad de Entrega</span>
@@ -157,6 +178,9 @@ export function Orders() {
                   {selectedOrder.recojo_en_tienda ? 'Recojo en Almacén Puente Piedra' : 'Despacho a Obra'}
                 </p>
                 {selectedOrder.direccion && <p>Dirección: {selectedOrder.direccion}</p>}
+                {Number(selectedOrder.costo_flete) > 0 && (
+                  <p className="font-bold text-indigo-700">Flete: {formatPEN(selectedOrder.costo_flete)} ({selectedOrder.estado_flete || 'cotizado'})</p>
+                )}
                 {selectedOrder.observaciones && <p className="italic text-slate-500">Obs: {selectedOrder.observaciones}</p>}
               </div>
             </div>
@@ -164,25 +188,48 @@ export function Orders() {
             {/* Change Status Controls */}
             <div className="space-y-2">
               <label className="font-bold text-slate-900 uppercase tracking-wider text-[10px] block">
-                Cambiar Estado del Pedido:
+                Actualizar Estado del Pedido:
               </label>
               <div className="flex flex-wrap gap-2">
-                {['pendiente', 'confirmado', 'entregado', 'cancelado'].map((st) => (
+                {(selectedOrder.recojo_en_tienda
+                  ? ['pendiente', 'confirmado', 'listo_para_recojo', 'entregado', 'cancelado']
+                  : ['pendiente', 'flete_cotizado', 'confirmado', 'despachado', 'entregado', 'cancelado']
+                ).map((st) => (
                   <button
                     key={st}
                     onClick={() => updateStatusMutation.mutate({ id: selectedOrder.id || selectedOrder.codigo, codigo: selectedOrder.codigo, estado: st })}
                     disabled={selectedOrder.estado === st}
                     className={`px-3 py-1.5 rounded-xl font-bold uppercase text-[10px] border transition-all ${
                       selectedOrder.estado === st
-                        ? 'bg-kenpaku-navy text-white border-kenpaku-navy'
-                        : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300'
+                        ? 'bg-kenpaku-navy text-white border-kenpaku-navy shadow-xs cursor-default'
+                        : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300 active:scale-95'
                     }`}
                   >
-                    {st}
+                    {st.replace(/_/g, ' ')}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Timeline Events */}
+            {selectedOrder.events && selectedOrder.events.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2">Línea de Tiempo (Historial)</h4>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                  {selectedOrder.events.map((ev, idx) => (
+                    <div key={idx} className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-[11px] flex justify-between items-center">
+                      <div>
+                        <span className="font-bold text-kenpaku-navy capitalize">{ev.estado_nuevo.replace(/_/g, ' ')}</span>
+                        <span className="text-slate-500 ml-1.5">({ev.autor}): {ev.nota || 'Sin nota'}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {new Date(ev.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Items */}
             <div className="space-y-2">
@@ -206,7 +253,7 @@ export function Orders() {
 
             {/* Totals */}
             <div className="p-4 rounded-2xl bg-slate-900 text-white flex justify-between items-center text-sm">
-              <span>Total Pedido:</span>
+              <span>Total Pedido (con IGV y Flete):</span>
               <span className="text-xl font-extrabold text-amber-400">{formatPEN(selectedOrder.total)}</span>
             </div>
           </div>
