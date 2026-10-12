@@ -70,3 +70,59 @@ export async function createOrder(orderPayload) {
     throw err;
   }
 }
+
+/**
+ * GET /orders/tracking?token=... o GET /orders/tracking?codigo=...&telefono=...
+ */
+export async function getOrderTracking({ token, codigo, telefono } = {}) {
+  if (USE_MOCKS) {
+    await new Promise((res) => setTimeout(res, 300));
+    const cleanToken = token?.trim();
+    const cleanCodigo = codigo?.trim()?.toUpperCase();
+
+    const mockOrder = MOCK_PRODUCTS ? {
+      codigo: cleanCodigo || 'KPK-000001',
+      estado: 'confirmado',
+      recojo_en_tienda: false,
+      subtotal: 195.0,
+      igv: 35.1,
+      costo_flete: 25.0,
+      estado_flete: 'cotizado',
+      total: 255.1,
+      tracking_token: cleanToken || 'kpk_mocktoken_abcdef123456',
+      created_at: new Date().toISOString(),
+      items: [
+        {
+          nombre: 'Plancha LAF 1.5 mm 1.20 × 2.40 m',
+          cantidad: 1,
+          precio_unitario: 195.0
+        }
+      ],
+      events: [
+        {
+          estado_nuevo: 'pendiente',
+          nota: 'Pedido registrado en la web',
+          created_at: new Date(Date.now() - 3600000).toISOString()
+        },
+        {
+          estado_nuevo: 'confirmado',
+          nota: 'Depósito validado y stock reservado',
+          created_at: new Date().toISOString()
+        }
+      ],
+      whatsapp_url: buildWhatsAppUrl(`Hola Comercial Kenpaku, consulto por mi pedido ${cleanCodigo || 'KPK-000001'}`),
+      cliente_resumen: 'Alexis M.'
+    } : null;
+
+    return mockOrder;
+  }
+
+  const params = {};
+  if (token) params.token = token.trim();
+  if (codigo) params.codigo = codigo.trim();
+  if (telefono) params.telefono = telefono.trim();
+
+  const { data } = await apiClient.get('/orders/tracking', { params });
+  return data;
+}
+

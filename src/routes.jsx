@@ -9,6 +9,7 @@ import { Catalog } from './pages/Catalog';
 import { ProductDetail } from './pages/ProductDetail';
 import { Checkout } from './pages/Checkout';
 import { OrderConfirmation } from './pages/OrderConfirmation';
+import { TrackingPage } from './pages/TrackingPage';
 import { Claims } from './pages/Claims';
 import { Privacy } from './pages/Privacy';
 import { Terms } from './pages/Terms';
@@ -34,6 +35,7 @@ const router = createBrowserRouter([
       { path: 'producto/:id', element: <ProductDetail /> },
       { path: 'checkout', element: <Checkout /> },
       { path: 'pedido/:codigo', element: <OrderConfirmation /> },
+      { path: 'seguimiento', element: <TrackingPage /> },
       { path: 'libro-de-reclamaciones', element: <Claims /> },
       { path: 'politica-de-privacidad', element: <Privacy /> },
       { path: 'terminos', element: <Terms /> },

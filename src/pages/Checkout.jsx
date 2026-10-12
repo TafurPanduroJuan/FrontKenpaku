@@ -97,8 +97,25 @@ export function Checkout() {
       const response = await createOrder(payload);
       // Clear local cart
       clearCart();
-      // Navigate to order confirmation page passing order response state
-      navigate(`/pedido/${response.codigo}`, { state: { orderData: response } });
+
+      // Guardar en pedidos recientes del dispositivo para consulta rápida
+      try {
+        const recent = {
+          codigo: response.codigo,
+          tracking_token: response.tracking_token || '',
+          total: response.total,
+          fecha: new Date().toISOString()
+        };
+        const existing = JSON.parse(localStorage.getItem('kenpaku_recent_orders') || '[]');
+        const filtered = existing.filter((o) => o.codigo !== response.codigo);
+        localStorage.setItem('kenpaku_recent_orders', JSON.stringify([recent, ...filtered].slice(0, 5)));
+      } catch {
+        // ignore localStorage errors
+      }
+
+      // Redirigir pasando token secreto en query y orderData en state
+      const tokenQuery = response.tracking_token ? `?token=${encodeURIComponent(response.tracking_token)}` : '';
+      navigate(`/pedido/${response.codigo}${tokenQuery}`, { state: { orderData: response } });
     } catch (err) {
       console.error('Error al registrar pedido:', err);
       const detail = err?.response?.data?.detail || 'Ocurrió un error inesperado al procesar su pedido.';

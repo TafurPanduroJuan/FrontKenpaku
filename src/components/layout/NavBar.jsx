@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { Package, ShieldCheck, Lock } from 'lucide-react';
+import { Package, ShieldCheck, Lock, Truck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
@@ -19,10 +19,14 @@ export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
     { to: '/catalogo?categoria=planchas', label: 'Planchas', categorySlug: 'planchas', isCategory: true },
     { to: '/catalogo?categoria=perfiles', label: 'Perfiles', categorySlug: 'perfiles', isCategory: true },
     { to: '/catalogo?categoria=fierros', label: 'Fierros galvanizados', categorySlug: 'fierros', isCategory: true },
+    { to: '/seguimiento', label: 'Seguir mi pedido', icon: Truck, isCategory: false },
     { to: '/libro-de-reclamaciones', label: 'Libro de reclamaciones', isCategory: false }
   ];
 
   const isActiveLink = (link) => {
+    if (link.to === '/seguimiento') {
+      return location.pathname === '/seguimiento';
+    }
     if (link.to === '/libro-de-reclamaciones') {
       return location.pathname === '/libro-de-reclamaciones';
     }
