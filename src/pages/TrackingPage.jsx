@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { getOrderTracking, submitFleteDecision, uploadOrderVoucher } from '../api/orders';
 import { formatPEN } from '../utils/formatPEN';
+import { getVoucherUrl } from '../utils/voucher';
 import { Button } from '../components/ui/Button';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 
@@ -353,12 +354,16 @@ export function TrackingPage() {
     order &&
     ['confirmado', 'despachado', 'listo_para_recojo', 'entregado'].includes(order.estado);
 
-  // Mostrar bloque de cuentas bancarias y formulario de voucher SOLO MIENTRAS ESTÉ PENDIENTE DE PAGO
+  // Mostrar bloque de cuentas bancarias y formulario de voucher SOLO MIENTRAS ESTÉ PENDIENTE DE PAGO:
+  // - Si es recojo en tienda: se habilita automáticamente desde estado 'pendiente' (flete S/ 0).
+  // - Si es despacho a obra: NO se habilita en 'pendiente'; debe esperar a que el admin cotice el flete ('flete_cotizado' o flete aceptado).
   const isAwaitingPayment =
     order &&
     !isTerminalCancelled &&
     !isPaymentConfirmed &&
-    (order.recojo_en_tienda || order.estado_flete === 'aceptado' || order.estado === 'flete_cotizado' || order.estado === 'pendiente');
+    (order.recojo_en_tienda
+      ? order.estado === 'pendiente'
+      : (order.estado === 'flete_cotizado' || order.estado_flete === 'aceptado'));
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8 animate-fade-in font-sans">
@@ -794,7 +799,7 @@ export function TrackingPage() {
 
                 {order.voucher_referencia && (
                   <a
-                    href={order.voucher_referencia}
+                    href={getVoucherUrl(order.voucher_referencia)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-2.5 rounded-xl bg-white hover:bg-emerald-100/50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2 shadow-2xs transition-colors shrink-0 self-start sm:self-auto"
@@ -803,6 +808,45 @@ export function TrackingPage() {
                     <span>Ver Comprobante Validado</span>
                   </a>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* AVISO INFORMATIVO: DESPACHO A OBRA PENDIENTE DE COTIZACIÓN DE FLETE */}
+          {order && !order.recojo_en_tienda && order.estado === 'pendiente' && !isTerminalCancelled && (
+            <div className="bg-amber-50/80 border border-amber-200 p-6 sm:p-7 rounded-3xl shadow-soft space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/60 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-amber-700 block">
+                      Paso Siguiente: Cotización de Flete a Obra
+                    </span>
+                    <h3 className="text-base sm:text-lg font-extrabold text-amber-950">
+                      Cálculo de Transporte en Proceso
+                    </h3>
+                  </div>
+                </div>
+
+                <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold self-start sm:self-auto">
+                  Esperando Cotización del Administrador
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs sm:text-sm text-amber-900">
+                <p>
+                  Tu pedido tiene modalidad <strong>Despacho a Obra</strong> con entrega en: <em>{order.direccion || 'Dirección indicada'}</em>.
+                </p>
+                <p className="text-amber-800 text-xs">
+                  Para tu seguridad, <strong>las cuentas bancarias y la carga de comprobante de pago se habilitarán una vez que el administrador cotice el costo exacto del flete</strong> según la distancia y el peso de tus materiales.
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-amber-200/60 flex items-center gap-2 text-xs text-amber-800 font-semibold">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Te notificaremos por correo electrónico y podrás consultar esta misma pantalla para revisar el flete y realizar el abono.</span>
               </div>
             </div>
           )}
@@ -916,7 +960,7 @@ export function TrackingPage() {
                     </div>
 
                     <a
-                      href={order.voucher_referencia}
+                      href={getVoucherUrl(order.voucher_referencia)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-100/50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors shrink-0"

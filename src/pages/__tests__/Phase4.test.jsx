@@ -188,4 +188,50 @@ describe('Phase 4: Flete y Pago con Voucher - Frontend Tests', () => {
     expect(screen.queryByText('Cuentas de Abono y Subida de Comprobante')).not.toBeInTheDocument();
     expect(screen.queryByTestId('voucher-input')).not.toBeInTheDocument();
   });
+
+  it('does NOT render bank accounts or voucher upload when order is despacho a obra and still in pendiente (awaiting flete quote)', async () => {
+    ordersApi.getOrderTracking.mockResolvedValueOnce({
+      ...mockOrderFleteCotizado,
+      estado: 'pendiente',
+      recojo_en_tienda: false,
+      estado_flete: 'sin_cotizar',
+      costo_flete: 0,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/seguimiento?token=token_flete_test']}>
+        <TrackingPage />
+      </MemoryRouter>
+    );
+
+    // Debe mostrar la tarjeta informativa de cálculo de transporte en proceso
+    expect(await screen.findByText('Cálculo de Transporte en Proceso')).toBeInTheDocument();
+    expect(screen.getByText('Esperando Cotización del Administrador')).toBeInTheDocument();
+
+    // NO debe mostrar la sección de pago ni el input de voucher
+    expect(screen.queryByText('Cuentas de Abono y Subida de Comprobante')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('voucher-input')).not.toBeInTheDocument();
+  });
+
+  it('renders bank accounts and voucher upload immediately when order is recojo en tienda and in pendiente', async () => {
+    ordersApi.getOrderTracking.mockResolvedValueOnce({
+      ...mockOrderFleteCotizado,
+      estado: 'pendiente',
+      recojo_en_tienda: true,
+      costo_flete: 0,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/seguimiento?token=token_flete_test']}>
+        <TrackingPage />
+      </MemoryRouter>
+    );
+
+    // Debe mostrar directamente la sección de pago y el input de voucher
+    expect(await screen.findByText('Cuentas de Abono y Subida de Comprobante')).toBeInTheDocument();
+    expect(screen.getByTestId('voucher-input')).toBeInTheDocument();
+
+    // NO debe mostrar la tarjeta de espera de cotización de flete
+    expect(screen.queryByText('Cálculo de Transporte en Proceso')).not.toBeInTheDocument();
+  });
 });

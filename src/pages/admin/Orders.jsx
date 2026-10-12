@@ -4,6 +4,7 @@ import { ShoppingBag, Eye, Phone, MapPin, CheckCircle2, Clock, XCircle, Truck, A
 import { getAdminOrders, updateOrderStatus } from '../../api/admin';
 import { formatPEN } from '../../utils/formatPEN';
 import { buildStatusWhatsAppUrl } from '../../utils/whatsapp';
+import { getVoucherUrl } from '../../utils/voucher';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { Modal } from '../../components/ui/Modal';
 import { Toast } from '../../components/ui/Toast';
@@ -464,7 +465,7 @@ export function Orders() {
                     </div>
 
                     <a
-                      href={selectedOrder.voucher_referencia}
+                      href={getVoucherUrl(selectedOrder.voucher_referencia)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors self-start sm:self-auto shrink-0 ${
@@ -477,6 +478,39 @@ export function Orders() {
                       <span>Ver Voucher Completo</span>
                     </a>
                   </div>
+
+                  {/* Vista previa compacta si es imagen */}
+                  {(() => {
+                    const voucherUrl = getVoucherUrl(selectedOrder.voucher_referencia);
+                    const isImage = !voucherUrl.toLowerCase().endsWith('.pdf');
+                    if (!isImage) return null;
+                    return (
+                      <div className="pt-2 border-t border-sky-200/60 flex items-center gap-3">
+                        <a
+                          href={voucherUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block group relative overflow-hidden rounded-xl border border-sky-200 bg-white shadow-2xs shrink-0"
+                          title="Haga clic para abrir en tamaño completo"
+                        >
+                          <img
+                            src={voucherUrl}
+                            alt="Vista previa del comprobante"
+                            className="w-24 h-24 object-cover group-hover:scale-105 transition-transform"
+                          />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold">
+                            Ampliar
+                          </div>
+                        </a>
+                        <div className="text-xs text-gray-600 space-y-0.5">
+                          <p className="font-bold text-gray-900">Vista previa del comprobante</p>
+                          <p className="text-[11px] text-gray-500">
+                            Haz clic en la miniatura o en &quot;Ver Voucher Completo&quot; para abrir la imagen en tamaño original.
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Estado cuando el abono ya fue validado */}
                   {isPaymentAlreadyValidated && (
