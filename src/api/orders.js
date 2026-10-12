@@ -126,3 +126,75 @@ export async function getOrderTracking({ token, codigo, telefono } = {}) {
   return data;
 }
 
+/**
+ * POST /orders/tracking/flete-decision
+ */
+export async function submitFleteDecision({ token, codigo, telefono, decision, nota } = {}) {
+  if (USE_MOCKS) {
+    await new Promise((res) => setTimeout(res, 300));
+    return {
+      ok: true,
+      estado_flete: decision === 'aceptar' ? 'aceptado' : 'rechazado',
+      mensaje: 'Decisión de flete registrada con éxito.'
+    };
+  }
+
+  const params = {};
+  if (token) params.token = token.trim();
+  if (codigo) params.codigo = codigo.trim();
+  if (telefono) params.telefono = telefono.trim();
+
+  const { data } = await apiClient.post(
+    '/orders/tracking/flete-decision',
+    { decision, nota },
+    { params }
+  );
+  return data;
+}
+
+/**
+ * POST /orders/tracking/voucher
+ */
+export async function uploadOrderVoucher({ token, codigo, telefono, file } = {}) {
+  if (USE_MOCKS) {
+    await new Promise((res) => setTimeout(res, 500));
+    return {
+      ok: true,
+      voucher_url: typeof URL.createObjectURL === 'function' ? URL.createObjectURL(file) : 'mock-voucher-url',
+      fecha_pago: new Date().toISOString(),
+      mensaje: 'Comprobante de pago recibido con éxito.'
+    };
+  }
+
+  const params = {};
+  if (token) params.token = token.trim();
+  if (codigo) params.codigo = codigo.trim();
+  if (telefono) params.telefono = telefono.trim();
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const { data } = await apiClient.post('/orders/tracking/voucher', formData, {
+    params,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return data;
+}
+
+/**
+ * PUT /admin/orders/{orderId}/validate-voucher
+ */
+export async function validateOrderVoucher({ orderId, aprobado, nota } = {}) {
+  if (USE_MOCKS) {
+    await new Promise((res) => setTimeout(res, 300));
+    return { ok: true, estado: aprobado ? 'confirmado' : 'pendiente' };
+  }
+
+  const { data } = await apiClient.put(`/admin/orders/${orderId}/validate-voucher`, {
+    aprobado,
+    nota
+  });
+  return data;
+}
+
+

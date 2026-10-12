@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShoppingBag, Eye, Phone, MapPin, CheckCircle2, Clock, XCircle, Truck, AlertTriangle, ShieldCheck, MessageCircle } from 'lucide-react';
+import { ShoppingBag, Eye, Phone, MapPin, CheckCircle2, Clock, XCircle, Truck, AlertTriangle, ShieldCheck, MessageCircle, CreditCard, FileText, ExternalLink } from 'lucide-react';
 import { getAdminOrders, updateOrderStatus } from '../../api/admin';
 import { formatPEN } from '../../utils/formatPEN';
 import { buildStatusWhatsAppUrl } from '../../utils/whatsapp';
@@ -33,6 +33,22 @@ const ACTION_LABELS = {
   listo_para_recojo: 'Listo para Recojo en Almacén',
   entregado: 'Marcar como Entregado',
   cancelado: 'Cancelar Pedido'
+};
+
+const MODAL_FLOW_STEPS = {
+  despacho: [
+    { key: 'pendiente', label: '1. Registrado', sub: 'Pedido en web' },
+    { key: 'flete_cotizado', label: '2. Flete Cotizado', sub: 'Cálculo de flete' },
+    { key: 'confirmado', label: '3. En Preparación', sub: 'Pago validado' },
+    { key: 'despachado', label: '4. Despachado', sub: 'Camión en ruta' },
+    { key: 'entregado', label: '5. Entregado', sub: 'Conforme en obra' },
+  ],
+  recojo: [
+    { key: 'pendiente', label: '1. Registrado', sub: 'Pedido en web' },
+    { key: 'confirmado', label: '2. En Preparación', sub: 'Pago validado' },
+    { key: 'listo_para_recojo', label: '3. Listo en Almacén', sub: 'Puente Piedra' },
+    { key: 'entregado', label: '4. Entregado', sub: 'Retiro cliente' },
+  ],
 };
 
 function getTransitionImpactMessage(targetState) {
@@ -210,8 +226,20 @@ export function Orders() {
                   const rawDate = order.created_at || order.fecha;
                   const fechaFormateada = rawDate ? new Date(rawDate).toLocaleDateString('es-PE') : 'Fecha no disp.';
 
+                  const hasPendingVoucher =
+                    Boolean(order.voucher_referencia) &&
+                    order.estado !== 'confirmado' &&
+                    !['despachado', 'listo_para_recojo', 'entregado', 'cancelado'].includes(order.estado);
+
                   return (
-                    <tr key={order.codigo || order.id} className="hover:bg-slate-50 transition-colors">
+                    <tr
+                      key={order.codigo || order.id}
+                      className={`transition-colors ${
+                        hasPendingVoucher
+                          ? 'bg-emerald-50/80 border-l-4 border-l-emerald-500 hover:bg-emerald-100/60'
+                          : 'hover:bg-slate-50'
+                      }`}
+                    >
                       <td className="py-3.5 px-4">
                         <span className="font-extrabold text-kenpaku-navy block">{order.codigo}</span>
                         <span className="text-[10px] text-slate-400">
@@ -225,20 +253,34 @@ export function Orders() {
                       </td>
                       <td className="py-3.5 px-4 font-bold text-kenpaku-navy">{formatPEN(order.total)}</td>
                       <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${
-                            statusBadgeClasses[order.estado] || statusBadgeClasses.pendiente
-                          }`}
-                        >
-                          {order.estado?.replace(/_/g, ' ')}
-                        </span>
+                        <div className="space-y-1">
+                          <span
+                            className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${
+                              statusBadgeClasses[order.estado] || statusBadgeClasses.pendiente
+                            }`}
+                          >
+                            {order.estado?.replace(/_/g, ' ')}
+                          </span>
+                          {hasPendingVoucher && (
+                            <div>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-600 text-white shadow-2xs animate-pulse">
+                                <CreditCard className="w-3 h-3" />
+                                <span>Verificar Pago</span>
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3.5 px-4 text-right space-x-1">
                         <button
                           onClick={() => setSelectedOrder(order)}
-                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors cursor-pointer"
+                          className={`px-2.5 py-1.5 font-semibold rounded-lg transition-colors cursor-pointer text-xs ${
+                            hasPendingVoucher
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                          }`}
                         >
-                          Ver Detalle
+                          {hasPendingVoucher ? 'Verificar Pago' : 'Ver Detalle'}
                         </button>
                       </td>
                     </tr>
@@ -259,6 +301,83 @@ export function Orders() {
           maxWidth="max-w-2xl"
         >
           <div className="space-y-6 text-xs text-slate-700">
+            {/* Visual Operational Pipeline Roadmap */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-200/80 pb-2">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                  Ruta de Fases Operativas ({selectedOrder.recojo_en_tienda ? 'Recojo en Almacén' : 'Despacho a Obra'})
+                </span>
+                <span className="text-[11px] text-slate-600 font-medium">
+                  Fase actual: <strong className="text-kenpaku-navy uppercase">{selectedOrder.estado?.replace(/_/g, ' ')}</strong>
+                </span>
+              </div>
+
+              <div className={`grid grid-cols-2 ${selectedOrder.recojo_en_tienda ? 'sm:grid-cols-4' : 'sm:grid-cols-5'} gap-2`}>
+                {(selectedOrder.recojo_en_tienda ? MODAL_FLOW_STEPS.recojo : MODAL_FLOW_STEPS.despacho).map((step, idx, arr) => {
+                  const isCancelled = selectedOrder.estado === 'cancelado';
+                  const currentIndex = arr.findIndex((s) => s.key === selectedOrder.estado);
+                  const isPassed = !isCancelled && currentIndex > idx;
+                  const isCurrent = !isCancelled && currentIndex === idx;
+                  const isNext = !isCancelled && currentIndex + 1 === idx;
+
+                  return (
+                    <div
+                      key={step.key}
+                      className={`p-2.5 rounded-xl border text-center transition-all ${
+                        isCancelled
+                          ? 'bg-white border-slate-200 opacity-50'
+                          : isCurrent
+                          ? 'bg-sky-50 border-[#0284C7] ring-2 ring-[#0284C7]/20 shadow-xs'
+                          : isPassed
+                          ? 'bg-emerald-50 border-emerald-300'
+                          : isNext
+                          ? 'bg-amber-50/70 border-amber-300 border-dashed'
+                          : 'bg-white border-slate-200 opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <span
+                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                            isCurrent
+                              ? 'bg-[#0284C7] text-white'
+                              : isPassed
+                              ? 'bg-emerald-600 text-white'
+                              : isNext
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-slate-200 text-slate-600'
+                          }`}
+                        >
+                          {isPassed ? '✓' : idx + 1}
+                        </span>
+                      </div>
+                      <span className={`block text-[11px] font-extrabold ${isCurrent ? 'text-sky-950' : isPassed ? 'text-emerald-950' : isNext ? 'text-amber-950' : 'text-slate-700'}`}>
+                        {step.label}
+                      </span>
+                      <span className="block text-[10px] text-slate-400 mt-0.5">
+                        {isCurrent ? '● Fase Actual' : isNext ? '➡️ Siguiente' : isPassed ? '✓ Listo' : step.sub}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Next Step Operational Guidance Tip */}
+              {!['entregado', 'cancelado'].includes(selectedOrder.estado) && (
+                <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-[11px] text-slate-600 flex items-center gap-2">
+                  <span className="font-bold text-kenpaku-navy shrink-0">💡 Próximo paso:</span>
+                  <span>
+                    {selectedOrder.estado === 'pendiente' && !selectedOrder.recojo_en_tienda && 'Cotizar el costo de flete según el volumen y distancia a obra.'}
+                    {selectedOrder.estado === 'pendiente' && selectedOrder.recojo_en_tienda && 'Validar el pago del cliente y pasar el pedido a preparación.'}
+                    {selectedOrder.estado === 'flete_cotizado' && 'Esperar que el cliente acepte el flete y suba su comprobante de pago para validar.'}
+                    {selectedOrder.estado === 'confirmado' && !selectedOrder.recojo_en_tienda && 'Finalizar la preparación de materiales y marcar el pedido como despachado en camión.'}
+                    {selectedOrder.estado === 'confirmado' && selectedOrder.recojo_en_tienda && 'Preparar los materiales en patio y marcar como listo para recojo en almacén.'}
+                    {selectedOrder.estado === 'listo_para_recojo' && 'Entregar los materiales al cliente y registrar la conformidad de retiro.'}
+                    {selectedOrder.estado === 'despachado' && 'Confirmar la llegada y descarga conforme en obra para marcar como entregado.'}
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Customer & Address */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
               <div>
@@ -306,6 +425,86 @@ export function Orders() {
                 <span>Avisar al Cliente</span>
               </a>
             </div>
+
+            {/* Voucher Verification Section (Fase 4) */}
+            {selectedOrder.voucher_referencia && (() => {
+              const isPaymentAlreadyValidated = ['confirmado', 'despachado', 'listo_para_recojo', 'entregado'].includes(selectedOrder.estado);
+              const isPendingValidation = ['pendiente', 'flete_cotizado'].includes(selectedOrder.estado);
+
+              return (
+                <div className={`p-4 rounded-2xl space-y-3 shadow-2xs transition-all ${
+                  isPaymentAlreadyValidated
+                    ? 'bg-emerald-50/80 border border-emerald-200'
+                    : 'bg-sky-50/80 border border-sky-200'
+                }`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-xl text-white flex items-center justify-center shrink-0 ${
+                        isPaymentAlreadyValidated ? 'bg-emerald-600' : 'bg-sky-600'
+                      }`}>
+                        {isPaymentAlreadyValidated ? <CheckCircle2 className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
+                      </div>
+                      <div>
+                        <span className={`text-[11px] font-extrabold block ${
+                          isPaymentAlreadyValidated ? 'text-emerald-950' : 'text-sky-950'
+                        }`}>
+                          {isPaymentAlreadyValidated
+                            ? 'Comprobante de Pago Verificado y Aprobado'
+                            : 'Comprobante de Pago Subido por el Cliente'}
+                        </span>
+                        <span className={`text-[10px] ${
+                          isPaymentAlreadyValidated ? 'text-emerald-700' : 'text-sky-700'
+                        }`}>
+                          {selectedOrder.fecha_pago
+                            ? `Registrado: ${new Date(selectedOrder.fecha_pago).toLocaleString('es-PE')}`
+                            : 'Fecha no registrada'}
+                          {isPaymentAlreadyValidated && ' • Abono verificado por caja'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <a
+                      href={selectedOrder.voucher_referencia}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors self-start sm:self-auto shrink-0 ${
+                        isPaymentAlreadyValidated
+                          ? 'bg-white hover:bg-emerald-100/50 border-emerald-300 text-emerald-900'
+                          : 'bg-white hover:bg-sky-100/50 border-sky-300 text-sky-900'
+                      }`}
+                    >
+                      <ExternalLink className={`w-3.5 h-3.5 ${isPaymentAlreadyValidated ? 'text-emerald-600' : 'text-sky-600'}`} />
+                      <span>Ver Voucher Completo</span>
+                    </a>
+                  </div>
+
+                  {/* Estado cuando el abono ya fue validado */}
+                  {isPaymentAlreadyValidated && (
+                    <div className="pt-2 border-t border-emerald-200/80 flex items-center gap-2 text-[11px] text-emerald-800 font-semibold">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>Abono validado y stock reservado en almacén. Pedido en preparación o fases posteriores.</span>
+                    </div>
+                  )}
+
+                  {/* Acciones directas SOLO si el abono está pendiente de revisión */}
+                  {isPendingValidation && (
+                    <div className="pt-2 border-t border-sky-200/80 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTransitionNote('Pago validado por caja tras revisión de voucher');
+                          setPendingTransition({ order: selectedOrder, targetState: 'confirmado' });
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Validar Abono y Confirmar Pedido</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* State Management Section */}
             <div>
@@ -387,19 +586,43 @@ export function Orders() {
             {/* Timeline Events */}
             {selectedOrder.events && selectedOrder.events.length > 0 && (
               <div className="space-y-2">
-                <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2">Línea de Tiempo (Historial)</h4>
-                <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                  {selectedOrder.events.map((ev, idx) => (
-                    <div key={idx} className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-[11px] flex justify-between items-center">
-                      <div>
-                        <span className="font-bold text-kenpaku-navy capitalize">{ev.estado_nuevo?.replace(/_/g, ' ')}</span>
-                        <span className="text-slate-500 ml-1.5">({ev.autor}): {ev.nota || 'Sin nota'}</span>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                  <h4 className="font-bold text-slate-900">Línea de Tiempo (Historial)</h4>
+                  <span className="text-[10px] text-slate-400 font-medium">Más reciente primero</span>
+                </div>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  {(selectedOrder.events || []).slice().reverse().map((ev, idx) => {
+                    const isLatest = idx === 0;
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-2 rounded-xl border text-[11px] flex justify-between items-center transition-all ${
+                          isLatest
+                            ? 'bg-sky-50/80 border-[#0284C7]/40 ring-1 ring-[#0284C7]/20 shadow-2xs font-medium'
+                            : 'bg-slate-50 border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-extrabold text-kenpaku-navy capitalize">
+                            {ev.estado_nuevo?.replace(/_/g, ' ')}
+                          </span>
+                          {isLatest && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-[#0284C7] text-white text-[9px] font-extrabold uppercase">
+                              Estado Actual
+                            </span>
+                          )}
+                          <span className="text-slate-500 ml-1">
+                            ({ev.autor}): {ev.nota || 'Sin nota'}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0 ml-2">
+                          {ev.created_at
+                            ? new Date(ev.created_at).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })
+                            : ''}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        {ev.created_at ? new Date(ev.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : ''}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
