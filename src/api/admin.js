@@ -191,3 +191,26 @@ export async function getAdminClaims(params = {}) {
   const { data } = await apiClient.get('/admin/claims', { params });
   return data;
 }
+
+export async function triggerScheduledTasks(params = {}) {
+  if (USE_MOCKS) {
+    checkAuth();
+    await new Promise((res) => setTimeout(res, 300));
+    const simulateHours = params.simulate_hours || 0;
+    return {
+      success: true,
+      ejecutado_en: new Date().toISOString(),
+      simulate_hours: simulateHours,
+      keepalive_db: true,
+      recordatorios_enviados: simulateHours >= 24 && simulateHours < 48 ? 1 : 0,
+      pedidos_cancelados_por_vencimiento: simulateHours >= 48 ? 1 : 0,
+      stock_liberado_items: simulateHours >= 48 ? 4 : 0,
+      pedidos_recordatorio: simulateHours >= 24 && simulateHours < 48 ? ['KPK-000101'] : [],
+      pedidos_cancelados: simulateHours >= 48 ? ['KPK-000099'] : [],
+      detalles: ['Tareas programadas procesadas con éxito (Modo Simulación)'],
+    };
+  }
+  const { data } = await apiClient.post('/cron/process-scheduled-tasks', null, { params });
+  return data;
+}
+

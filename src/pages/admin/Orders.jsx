@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShoppingBag, Eye, Phone, MapPin, CheckCircle2, Clock, XCircle, Truck, AlertTriangle, ShieldCheck, MessageCircle, CreditCard, FileText, ExternalLink } from 'lucide-react';
-import { getAdminOrders, updateOrderStatus } from '../../api/admin';
+import { ShoppingBag, Eye, Phone, MapPin, CheckCircle2, Clock, XCircle, Truck, AlertTriangle, ShieldCheck, MessageCircle, CreditCard, FileText, ExternalLink, Zap } from 'lucide-react';
+import { getAdminOrders, updateOrderStatus, triggerScheduledTasks } from '../../api/admin';
 import { formatPEN } from '../../utils/formatPEN';
 import { buildStatusWhatsAppUrl } from '../../utils/whatsapp';
 import { getVoucherUrl } from '../../utils/voucher';
@@ -80,6 +80,41 @@ export function Orders() {
   const [costoFleteInput, setCostoFleteInput] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isCronRunning, setIsCronRunning] = useState(false);
+
+  const handleRunCron = async (simulateHours = 0) => {
+    setIsCronRunning(true);
+    try {
+      const res = await triggerScheduledTasks({ simulate_hours: simulateHours });
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+
+      const parts = [];
+      if (res.recordatorios_enviados > 0) {
+        parts.push(`${res.recordatorios_enviados} recordatorio(s)`);
+      }
+      if (res.pedidos_cancelados_por_vencimiento > 0) {
+        parts.push(`${res.pedidos_cancelados_por_vencimiento} cancelado(s) por 48h`);
+      }
+      if (res.stock_liberado_items > 0) {
+        parts.push(`${res.stock_liberado_items} und stock liberado`);
+      }
+
+      const summaryText = parts.length > 0
+        ? parts.join(', ')
+        : 'Sin pedidos pendientes por vencer ni recordar.';
+
+      setToastMessage(`⚙️ Cron Ejecutado (+${simulateHours}h): ${summaryText}`);
+      setShowToast(true);
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const errorMsg = typeof detail === 'string' ? detail : err.message;
+      setToastMessage(`Error al ejecutar cron: ${errorMsg}`);
+      setShowToast(true);
+    } finally {
+      setIsCronRunning(false);
+    }
+  };
 
   const { data: ordersData, isLoading } = useQuery({
     queryKey: ['admin-orders', selectedStatus],
@@ -173,7 +208,31 @@ export function Orders() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
-          <h2 className="text-xl font-extrabold text-kenpaku-navy">Gestión de Pedidos</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-xl font-extrabold text-kenpaku-navy">Gestión de Pedidos</h2>
+            <div className="flex items-center gap-1.5">
+              <button
+                id="btn-run-cron"
+                onClick={() => handleRunCron(0)}
+                disabled={isCronRunning}
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold rounded-xl shadow-xs transition-all disabled:opacity-50"
+                title="Ejecutar tareas programadas ahora mismo (recordatorios y vencimientos)"
+              >
+                <Zap className={`w-3 h-3 text-amber-400 ${isCronRunning ? 'animate-spin' : ''}`} />
+                <span>{isCronRunning ? 'Procesando...' : 'Ejecutar Cron'}</span>
+              </button>
+              <button
+                id="btn-simulate-cron-48h"
+                onClick={() => handleRunCron(49)}
+                disabled={isCronRunning}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold rounded-xl transition-all disabled:opacity-50"
+                title="Simular +48h para demostración de cancelación automática de pedidos y liberación de stock"
+              >
+                <Clock className="w-3 h-3 text-amber-600" />
+                <span>Simular +48h</span>
+              </button>
+            </div>
+          </div>
           <p className="text-xs text-slate-500 mt-0.5">Filtra y actualiza el estado comercial y logístico de los pedidos</p>
         </div>
 

@@ -531,6 +531,30 @@ export function TrackingPage() {
               </div>
             </div>
 
+            {/* Stock Reservation 48h Deadline Notice (Fase 5) */}
+            {!isTerminalCancelled && ['pendiente', 'flete_cotizado'].includes(order.estado) && (
+              <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/80 flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-amber-100 text-amber-800 shrink-0 mt-0.5">
+                  <Clock className="w-4 h-4 text-amber-700" />
+                </div>
+                <div className="text-xs text-amber-900 space-y-0.5">
+                  <div className="font-extrabold text-amber-950 flex items-center gap-1.5">
+                    <span>Reserva de Stock Garantizada por 48 Horas</span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-200 text-amber-900 font-bold">Activa</span>
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    Tus perfiles y planchas de acero se encuentran temporalmente apartados en almacén.
+                    {order.fecha_limite_pago ? (
+                      <> Plazo límite para validar abono: <strong className="text-amber-950">{new Date(order.fecha_limite_pago).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</strong>. </>
+                    ) : (
+                      <> Cuentas con 48 horas desde la emisión del pedido para completar la confirmación. </>
+                    )}
+                    Transcurrido este plazo sin comprobante, el sistema liberará los materiales automáticamente.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Visual Stepper */}
             {!isTerminalCancelled ? (
               <div className={`grid grid-cols-2 ${steps.length === 5 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'} gap-2.5 pt-2`}>
