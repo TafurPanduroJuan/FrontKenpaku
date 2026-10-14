@@ -5,6 +5,7 @@ import { getAdminDashboard, getAdminOrders } from '../../api/admin';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { formatPEN } from '../../utils/formatPEN';
 import { Link } from 'react-router-dom';
+import { ActionRequiredPanel } from '../../components/admin/ActionRequiredPanel';
 
 export function Dashboard() {
   const { data: metrics, isLoading: loadingMetrics } = useQuery({
@@ -36,6 +37,9 @@ export function Dashboard() {
           + Crear Nuevo Producto
         </Link>
       </div>
+
+            {/* Acciones de hoy */}
+      <ActionRequiredPanel />
 
       {/* 4 Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
