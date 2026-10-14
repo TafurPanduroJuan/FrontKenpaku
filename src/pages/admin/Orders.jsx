@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ShoppingBag, Eye, Phone, MapPin, CheckCircle2, Clock, XCircle, Truck, AlertTriangle, ShieldCheck, MessageCircle, CreditCard, FileText, ExternalLink, Zap } from 'lucide-react';
+import { Search, ShoppingBag, Eye, Phone, MapPin, CheckCircle2, Clock, XCircle, Truck, AlertTriangle, ShieldCheck, MessageCircle, CreditCard, FileText, ExternalLink, Zap } from 'lucide-react';
 import { getAdminOrders, updateOrderStatus, triggerScheduledTasks } from '../../api/admin';
 import { formatPEN } from '../../utils/formatPEN';
 import { buildStatusWhatsAppUrl } from '../../utils/whatsapp';
@@ -74,6 +75,14 @@ function getTransitionImpactMessage(targetState) {
 export function Orders() {
   const queryClient = useQueryClient();
   const [selectedStatus, setSelectedStatus] = useState('todos');
+  const [searchParams] = useSearchParams();
+  const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchTerm(searchInput.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [pendingTransition, setPendingTransition] = useState(null);
   const [transitionNote, setTransitionNote] = useState('');
@@ -88,6 +97,7 @@ export function Orders() {
       const res = await triggerScheduledTasks({ simulate_hours: simulateHours });
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-action-required'] });
 
       const parts = [];
       if (res.recordatorios_enviados > 0) {
@@ -117,8 +127,12 @@ export function Orders() {
   };
 
   const { data: ordersData, isLoading } = useQuery({
-    queryKey: ['admin-orders', selectedStatus],
-    queryFn: () => getAdminOrders({ estado: selectedStatus })
+    queryKey: ['admin-orders', selectedStatus, searchTerm],
+    queryFn: () =>
+      getAdminOrders({
+        estado: selectedStatus,
+        ...(searchTerm.length >= 2 ? { q: searchTerm } : {})
+      })
   });
 
   const updateStatusMutation = useMutation({
@@ -126,6 +140,7 @@ export function Orders() {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-action-required'] });
       setToastMessage(`Estado del pedido ${variables.codigo || variables.id} actualizado a "${variables.estado.replace(/_/g, ' ')}".`);
       setShowToast(true);
       setPendingTransition(null);
@@ -242,16 +257,29 @@ export function Orders() {
             <button
               key={st}
               onClick={() => setSelectedStatus(st)}
-              className={`px-3 py-1.5 rounded-xl capitalize transition-all ${
-                selectedStatus === st
-                  ? 'bg-kenpaku-navy text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`px-3 py-1.5 rounded-xl capitalize transition-all ${selectedStatus === st
+                ? 'bg-kenpaku-navy text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+                }`}
             >
               {st.replace(/_/g, ' ')}
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Buscador por código o teléfono */}
+      <div className="relative max-w-md">
+        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <input
+          id="input-buscar-pedido"
+          type="search"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Buscar por código o teléfono"
+          maxLength={50}
+          className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-kenpaku-blue/30"
+        />
       </div>
 
       {/* Orders Table */}
@@ -294,11 +322,10 @@ export function Orders() {
                   return (
                     <tr
                       key={order.codigo || order.id}
-                      className={`transition-colors ${
-                        hasPendingVoucher
-                          ? 'bg-emerald-50/80 border-l-4 border-l-emerald-500 hover:bg-emerald-100/60'
-                          : 'hover:bg-slate-50'
-                      }`}
+                      className={`transition-colors ${hasPendingVoucher
+                        ? 'bg-emerald-50/80 border-l-4 border-l-emerald-500 hover:bg-emerald-100/60'
+                        : 'hover:bg-slate-50'
+                        }`}
                     >
                       <td className="py-3.5 px-4">
                         <span className="font-extrabold text-kenpaku-navy block">{order.codigo}</span>
@@ -315,9 +342,8 @@ export function Orders() {
                       <td className="py-3.5 px-4">
                         <div className="space-y-1">
                           <span
-                            className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${
-                              statusBadgeClasses[order.estado] || statusBadgeClasses.pendiente
-                            }`}
+                            className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${statusBadgeClasses[order.estado] || statusBadgeClasses.pendiente
+                              }`}
                           >
                             {order.estado?.replace(/_/g, ' ')}
                           </span>
@@ -334,11 +360,10 @@ export function Orders() {
                       <td className="py-3.5 px-4 text-right space-x-1">
                         <button
                           onClick={() => setSelectedOrder(order)}
-                          className={`px-2.5 py-1.5 font-semibold rounded-lg transition-colors cursor-pointer text-xs ${
-                            hasPendingVoucher
-                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                          }`}
+                          className={`px-2.5 py-1.5 font-semibold rounded-lg transition-colors cursor-pointer text-xs ${hasPendingVoucher
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                            }`}
                         >
                           {hasPendingVoucher ? 'Verificar Pago' : 'Ver Detalle'}
                         </button>
@@ -383,29 +408,27 @@ export function Orders() {
                   return (
                     <div
                       key={step.key}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        isCancelled
-                          ? 'bg-white border-slate-200 opacity-50'
-                          : isCurrent
+                      className={`p-2.5 rounded-xl border text-center transition-all ${isCancelled
+                        ? 'bg-white border-slate-200 opacity-50'
+                        : isCurrent
                           ? 'bg-sky-50 border-[#0284C7] ring-2 ring-[#0284C7]/20 shadow-xs'
                           : isPassed
-                          ? 'bg-emerald-50 border-emerald-300'
-                          : isNext
-                          ? 'bg-amber-50/70 border-amber-300 border-dashed'
-                          : 'bg-white border-slate-200 opacity-60'
-                      }`}
+                            ? 'bg-emerald-50 border-emerald-300'
+                            : isNext
+                              ? 'bg-amber-50/70 border-amber-300 border-dashed'
+                              : 'bg-white border-slate-200 opacity-60'
+                        }`}
                     >
                       <div className="flex items-center justify-center gap-1 mb-1">
                         <span
-                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                            isCurrent
-                              ? 'bg-[#0284C7] text-white'
-                              : isPassed
+                          className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isCurrent
+                            ? 'bg-[#0284C7] text-white'
+                            : isPassed
                               ? 'bg-emerald-600 text-white'
                               : isNext
-                              ? 'bg-amber-500 text-white'
-                              : 'bg-slate-200 text-slate-600'
-                          }`}
+                                ? 'bg-amber-500 text-white'
+                                : 'bg-slate-200 text-slate-600'
+                            }`}
                         >
                           {isPassed ? '✓' : idx + 1}
                         </span>
@@ -492,29 +515,25 @@ export function Orders() {
               const isPendingValidation = ['pendiente', 'flete_cotizado'].includes(selectedOrder.estado);
 
               return (
-                <div className={`p-4 rounded-2xl space-y-3 shadow-2xs transition-all ${
-                  isPaymentAlreadyValidated
-                    ? 'bg-emerald-50/80 border border-emerald-200'
-                    : 'bg-sky-50/80 border border-sky-200'
-                }`}>
+                <div className={`p-4 rounded-2xl space-y-3 shadow-2xs transition-all ${isPaymentAlreadyValidated
+                  ? 'bg-emerald-50/80 border border-emerald-200'
+                  : 'bg-sky-50/80 border border-sky-200'
+                  }`}>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-xl text-white flex items-center justify-center shrink-0 ${
-                        isPaymentAlreadyValidated ? 'bg-emerald-600' : 'bg-sky-600'
-                      }`}>
+                      <div className={`w-8 h-8 rounded-xl text-white flex items-center justify-center shrink-0 ${isPaymentAlreadyValidated ? 'bg-emerald-600' : 'bg-sky-600'
+                        }`}>
                         {isPaymentAlreadyValidated ? <CheckCircle2 className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
                       </div>
                       <div>
-                        <span className={`text-[11px] font-extrabold block ${
-                          isPaymentAlreadyValidated ? 'text-emerald-950' : 'text-sky-950'
-                        }`}>
+                        <span className={`text-[11px] font-extrabold block ${isPaymentAlreadyValidated ? 'text-emerald-950' : 'text-sky-950'
+                          }`}>
                           {isPaymentAlreadyValidated
                             ? 'Comprobante de Pago Verificado y Aprobado'
                             : 'Comprobante de Pago Subido por el Cliente'}
                         </span>
-                        <span className={`text-[10px] ${
-                          isPaymentAlreadyValidated ? 'text-emerald-700' : 'text-sky-700'
-                        }`}>
+                        <span className={`text-[10px] ${isPaymentAlreadyValidated ? 'text-emerald-700' : 'text-sky-700'
+                          }`}>
                           {selectedOrder.fecha_pago
                             ? `Registrado: ${new Date(selectedOrder.fecha_pago).toLocaleString('es-PE')}`
                             : 'Fecha no registrada'}
@@ -527,11 +546,10 @@ export function Orders() {
                       href={getVoucherUrl(selectedOrder.voucher_referencia)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors self-start sm:self-auto shrink-0 ${
-                        isPaymentAlreadyValidated
-                          ? 'bg-white hover:bg-emerald-100/50 border-emerald-300 text-emerald-900'
-                          : 'bg-white hover:bg-sky-100/50 border-sky-300 text-sky-900'
-                      }`}
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors self-start sm:self-auto shrink-0 ${isPaymentAlreadyValidated
+                        ? 'bg-white hover:bg-emerald-100/50 border-emerald-300 text-emerald-900'
+                        : 'bg-white hover:bg-sky-100/50 border-sky-300 text-sky-900'
+                        }`}
                     >
                       <ExternalLink className={`w-3.5 h-3.5 ${isPaymentAlreadyValidated ? 'text-emerald-600' : 'text-sky-600'}`} />
                       <span>Ver Voucher Completo</span>
@@ -659,11 +677,10 @@ export function Orders() {
                               setTransitionNote('');
                               setPendingTransition({ order: selectedOrder, targetState: st });
                             }}
-                            className={`px-3.5 py-2 rounded-xl font-bold uppercase text-[11px] transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 ${
-                              isCancel
-                                ? 'bg-white hover:bg-red-50 text-red-700 border border-red-300'
-                                : 'bg-kenpaku-navy hover:bg-slate-800 text-white'
-                            }`}
+                            className={`px-3.5 py-2 rounded-xl font-bold uppercase text-[11px] transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 ${isCancel
+                              ? 'bg-white hover:bg-red-50 text-red-700 border border-red-300'
+                              : 'bg-kenpaku-navy hover:bg-slate-800 text-white'
+                              }`}
                           >
                             {isCancel ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                             <span>{ACTION_LABELS[st] || st.replace(/_/g, ' ')}</span>
@@ -689,11 +706,10 @@ export function Orders() {
                     return (
                       <div
                         key={idx}
-                        className={`p-2 rounded-xl border text-[11px] flex justify-between items-center transition-all ${
-                          isLatest
-                            ? 'bg-sky-50/80 border-[#0284C7]/40 ring-1 ring-[#0284C7]/20 shadow-2xs font-medium'
-                            : 'bg-slate-50 border-slate-200'
-                        }`}
+                        className={`p-2 rounded-xl border text-[11px] flex justify-between items-center transition-all ${isLatest
+                          ? 'bg-sky-50/80 border-[#0284C7]/40 ring-1 ring-[#0284C7]/20 shadow-2xs font-medium'
+                          : 'bg-slate-50 border-slate-200'
+                          }`}
                       >
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-extrabold text-kenpaku-navy capitalize">
@@ -824,11 +840,10 @@ export function Orders() {
                 type="button"
                 onClick={handleConfirmTransition}
                 disabled={updateStatusMutation.isPending}
-                className={`px-4 py-2 rounded-xl text-white font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
-                  pendingTransition?.targetState === 'cancelado'
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-kenpaku-navy hover:bg-slate-800'
-                }`}
+                className={`px-4 py-2 rounded-xl text-white font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${pendingTransition?.targetState === 'cancelado'
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : 'bg-kenpaku-navy hover:bg-slate-800'
+                  }`}
               >
                 {updateStatusMutation.isPending ? 'Guardando...' : 'Sí, Confirmar Cambio'}
               </button>

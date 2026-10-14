@@ -23,6 +23,25 @@ describe('Admin Orders page unit tests', () => {
     queryClient.clear();
   });
 
+  it('envía el término de búsqueda al backend al escribir en el buscador', async () => {
+    adminApi.getAdminOrders.mockResolvedValue({ items: [], total: 0, page: 1, page_size: 12 });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Orders />
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+
+    const input = await screen.findByPlaceholderText('Buscar por código o teléfono');
+    fireEvent.change(input, { target: { value: 'KPK-0001' } });
+
+    await waitFor(() =>
+      expect(adminApi.getAdminOrders).toHaveBeenCalledWith({ estado: 'todos', q: 'KPK-0001' })
+    );
+  });
+
   it('correctly displays customer name, phone, formatted date and order code with real backend response schema', async () => {
     adminApi.getAdminOrders.mockResolvedValueOnce({
       items: [
