@@ -40,6 +40,10 @@ export async function sendChatMessage({ conversation_id, message, product_id }) 
       }
     }
 
+    if (!whatsapp_url) {
+      whatsapp_url = buildWhatsAppUrl(`Hola Comercial Kenpaku, quisiera atención de un asesor para la consulta: ${message}`);
+    }
+
     return {
       conversation_id: convId,
       reply,

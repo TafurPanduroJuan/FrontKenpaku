@@ -32,6 +32,12 @@ export function ChatWidget() {
 
   const messagesEndRef = useRef(null);
 
+  // Último enlace de WhatsApp enviado por el backend (incluye resumen de la conversación).
+  // Si aún no hay ninguno, el botón usa el mensaje genérico.
+  const latestWhatsappUrl =
+    [...messages].reverse().find((m) => m.sender === 'bot' && m.whatsappUrl)?.whatsappUrl ||
+    buildWhatsAppUrl('Hola Comercial Kenpaku, quisiera hablar con un asesor de ventas.');
+
   const scrollToBottom = () => {
     if (messagesEndRef.current && typeof messagesEndRef.current.scrollIntoView === 'function') {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -199,6 +205,17 @@ export function ChatWidget() {
 
           {/* Fixed Footer with 500 Char Counter & Legal Disclaimer */}
           <div className="p-3.5 bg-white border-t border-slate-200 space-y-2 shrink-0">
+            <a
+              href={latestWhatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="chat-whatsapp-button"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-kenpaku-whatsapp hover:bg-kenpaku-whatsappHover text-white text-xs font-bold rounded-xl shadow-xs transition-colors min-h-[40px]"
+            >
+              <MessageCircle className="w-4 h-4 fill-current" />
+              <span>Hablar con un asesor por WhatsApp</span>
+            </a>
+
             <p className="text-[10px] text-slate-500 text-center leading-tight">
               El asesor orienta tu compra, pero no reemplaza a un ingeniero en usos estructurales.
             </p>

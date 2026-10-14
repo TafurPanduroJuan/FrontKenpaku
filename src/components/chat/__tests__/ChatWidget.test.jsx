@@ -37,4 +37,18 @@ describe('ChatWidget AI virtual advisor component', () => {
 
     expect(input.value.length).toBe(500);
   });
+
+  it('always shows the WhatsApp advisor button with a wa.me link', () => {
+    render(
+      <CartProvider>
+        <ChatWidget />
+      </CartProvider>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Abrir Asesor Virtual de IA/i }));
+
+    const link = screen.getByTestId('chat-whatsapp-button');
+    expect(link).toBeInTheDocument();
+    expect(link.getAttribute('href')).toMatch(/^https:\/\/wa\.me\//);
+  });
 });
