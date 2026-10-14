@@ -7,7 +7,11 @@ import {
   sanitizeDigits,
   sanitizeOrderCode,
   sanitizeDocumentNumber,
-  sanitizeSafeText
+  sanitizeSafeText,
+  sanitizeProductName,
+  sanitizePositiveInteger,
+  sanitizePositiveDecimal,
+  sanitizeTechnicalSpecs
 } from '../sanitizers';
 
 describe('sanitizers utility', () => {
@@ -110,6 +114,37 @@ describe('sanitizers utility', () => {
     it('preserves text, punctuation and measurements but strips tags/injections', () => {
       expect(sanitizeSafeText('Tubo de 2" x 1.5mm, ¿tiene stock?')).toBe('Tubo de 2" x 1.5mm, ¿tiene stock?');
       expect(sanitizeSafeText('<script>alert("hack")</script>')).toBe('scriptalert("hack")/script');
+    });
+  });
+
+  describe('sanitizeProductName', () => {
+    it('allows letters, numbers, spaces, quotes, and measurements while stripping scripts and operators', () => {
+      expect(sanitizeProductName('Tubo Negro 2" x 2.0 mm (6m)')).toBe('Tubo Negro 2" x 2.0 mm (6m)');
+      expect(sanitizeProductName('Plancha <script> $100 = 5*2')).toBe('Plancha script 100  52');
+    });
+  });
+
+  describe('sanitizePositiveInteger', () => {
+    it('keeps only digits for stock', () => {
+      expect(sanitizePositiveInteger('-45')).toBe('45');
+      expect(sanitizePositiveInteger('1e5')).toBe('15');
+      expect(sanitizePositiveInteger('abc 120 xyz')).toBe('120');
+    });
+  });
+
+  describe('sanitizePositiveDecimal', () => {
+    it('keeps positive decimals and only one dot for prices', () => {
+      expect(sanitizePositiveDecimal('128.50')).toBe('128.50');
+      expect(sanitizePositiveDecimal('-99.90')).toBe('99.90');
+      expect(sanitizePositiveDecimal('12.34.56')).toBe('12.3456');
+    });
+  });
+
+  describe('sanitizeTechnicalSpecs', () => {
+    it('allows multiline text, norms and symbols like % ° ± while stripping tags', () => {
+      const text = 'Norma: ASTM A500\nUsos: Estructuras ± 5% a 20°C';
+      expect(sanitizeTechnicalSpecs(text)).toBe(text);
+      expect(sanitizeTechnicalSpecs('<script>bad()</script>')).toBe('scriptbad()/script');
     });
   });
 });

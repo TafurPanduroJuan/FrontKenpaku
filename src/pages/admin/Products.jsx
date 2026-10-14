@@ -9,6 +9,13 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { StockBadge } from '../../components/catalog/StockBadge';
 import { Modal } from '../../components/ui/Modal';
 import { Toast } from '../../components/ui/Toast';
+import {
+  sanitizeSearchQuery,
+  sanitizePositiveInteger,
+  sanitizePositiveDecimal,
+  preventNonIntegerKeys,
+  preventNegativeAndExpKeys
+} from '../../utils/sanitizers';
 
 export function Products() {
   const queryClient = useQueryClient();
@@ -91,7 +98,7 @@ export function Products() {
         <input
           type="text"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => setSearchTerm(sanitizeSearchQuery(e.target.value))}
           placeholder="Buscar producto por nombre, medida o categoría..."
           className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none focus:border-kenpaku-blue"
         />
@@ -190,9 +197,11 @@ export function Products() {
               <label className="block font-bold text-slate-700 mb-1">Precio Unitario (S/ IGV incl.)</label>
               <input
                 type="number"
+                min="0.01"
                 step="0.10"
                 value={quickPrice}
-                onChange={(e) => setQuickPrice(e.target.value)}
+                onKeyDown={preventNegativeAndExpKeys}
+                onChange={(e) => setQuickPrice(sanitizePositiveDecimal(e.target.value))}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold"
                 required
               />
@@ -202,8 +211,11 @@ export function Products() {
               <label className="block font-bold text-slate-700 mb-1">Stock Disponible (Unidades)</label>
               <input
                 type="number"
+                min="0"
+                step="1"
                 value={quickStock}
-                onChange={(e) => setQuickStock(e.target.value)}
+                onKeyDown={preventNonIntegerKeys}
+                onChange={(e) => setQuickStock(sanitizePositiveInteger(e.target.value))}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold"
                 required
               />

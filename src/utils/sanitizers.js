@@ -75,7 +75,7 @@ export function sanitizeDigits(value, maxLength) {
  */
 export function sanitizeOrderCode(value) {
   if (typeof value !== 'string') return '';
-  return value.replace(/[^a-zA-Z0-9-]/g, '').toUpperCase().slice(0, 20);
+  return value.replace(/[^a-zA-Z0-9-]/g, '').toUpperCase().slice(0, 50);
 }
 
 /**
@@ -118,4 +118,80 @@ export function sanitizeDocumentNumber(value, documentType = 'DNI') {
 export function sanitizeSafeText(value) {
   if (typeof value !== 'string') return '';
   return value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s/.\-"',;:_()¿?¡!%]/g, '');
+}
+
+/**
+ * Sanitiza nombres comerciales de productos y medidas.
+ * Permite letras, números, espacios, comillas de pulgada, puntos, barras, paréntesis y guiones.
+ * Bloquea etiquetas HTML, scripts, operadores y caracteres peligrosos.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+export function sanitizeProductName(value) {
+  if (typeof value !== 'string') return '';
+  return value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s/.\-"'()_]/g, '');
+}
+
+/**
+ * Sanitiza valores para stock: solo números enteros positivos (0 o mayores).
+ *
+ * @param {string|number} value
+ * @returns {string}
+ */
+export function sanitizePositiveInteger(value) {
+  if (typeof value !== 'string' && typeof value !== 'number') return '';
+  return String(value).replace(/\D/g, '');
+}
+
+/**
+ * Sanitiza valores decimales positivos (por ejemplo, precios):
+ * Permite dígitos y a lo sumo un punto decimal, sin signos negativos ni exponenciales.
+ *
+ * @param {string|number} value
+ * @returns {string}
+ */
+export function sanitizePositiveDecimal(value) {
+  if (typeof value !== 'string' && typeof value !== 'number') return '';
+  let str = String(value).replace(/[^0-9.]/g, '');
+  const parts = str.split('.');
+  if (parts.length > 2) {
+    str = parts[0] + '.' + parts.slice(1).join('');
+  }
+  return str;
+}
+
+/**
+ * Sanitiza redacción técnica (especificaciones, normas ASTM, usos, advertencias).
+ * Admite multilínea, saltos de línea, dos puntos, viñetas, porcentajes y grados.
+ * Bloquea inyecciones de script y etiquetas < > { } [ ] \ ^ $ = *.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+export function sanitizeTechnicalSpecs(value) {
+  if (typeof value !== 'string') return '';
+  return value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s/.\-"',;:_()¿?¡!%°±\n\r]/g, '');
+}
+
+/**
+ * Previene el tipeo de caracteres no enteros en inputs numéricos de stock (+, -, e, E, ., ,).
+ *
+ * @param {React.KeyboardEvent} e
+ */
+export function preventNonIntegerKeys(e) {
+  if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+    e.preventDefault();
+  }
+}
+
+/**
+ * Previene el tipeo de caracteres negativos o exponenciales en inputs decimales (+, -, e, E, ,).
+ *
+ * @param {React.KeyboardEvent} e
+ */
+export function preventNegativeAndExpKeys(e) {
+  if (['e', 'E', '+', '-', ','].includes(e.key)) {
+    e.preventDefault();
+  }
 }

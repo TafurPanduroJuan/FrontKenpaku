@@ -9,6 +9,7 @@ import { getVoucherUrl } from '../../utils/voucher';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { Modal } from '../../components/ui/Modal';
 import { Toast } from '../../components/ui/Toast';
+import { sanitizeOrderCode } from '../../utils/sanitizers';
 
 const ALLOWED_TRANSITIONS = {
   recojo: {
@@ -275,7 +276,7 @@ export function Orders() {
           id="input-buscar-pedido"
           type="search"
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={(e) => setSearchInput(sanitizeOrderCode(e.target.value))}
           placeholder="Buscar por código o teléfono"
           maxLength={50}
           className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-kenpaku-blue/30"
