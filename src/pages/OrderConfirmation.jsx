@@ -35,15 +35,33 @@ export function OrderConfirmation() {
     }
   }, [orderData, tokenFromUrl]);
 
-  const displayOrder = orderData || {
-    codigo: codigo || 'KPK-000123',
-    estado: 'Pendiente de confirmación',
-    subtotal: 0,
-    igv: 0,
-    total: 0,
-    items: [],
-    whatsapp_url: buildWhatsAppUrl(`Hola Comercial Kenpaku, acabo de registrar el pedido ${codigo || 'KPK-000123'}.`)
-  };
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 text-center space-y-4">
+        <div className="w-10 h-10 border-3 border-[#0284C7] border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-slate-500 text-sm font-medium">Recuperando datos de tu pedido...</p>
+      </div>
+    );
+  }
+
+  const displayOrder = orderData;
+
+  if (!displayOrder) {
+    return (
+      <div className="max-w-2xl mx-auto py-12 px-4 text-center space-y-6 animate-fade-in bg-white rounded-3xl border border-slate-200 p-8 shadow-soft">
+        <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+          <Clock className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-kenpaku-navy">No se pudieron recuperar los datos de tu pedido</h2>
+        <p className="text-slate-500 text-sm max-w-md mx-auto">
+          Si acabas de realizar una compra o recargaste la página, usa tu código de pedido para consultar el estado en vivo.
+        </p>
+        <Link to={codigo ? `/seguimiento?codigo=${encodeURIComponent(codigo)}` : '/seguimiento'}>
+          <Button variant="primary">Buscar mi pedido</Button>
+        </Link>
+      </div>
+    );
+  }
 
   const whatsappLink = displayOrder.whatsapp_url || buildWhatsAppUrl(`Hola, requiero información del pedido ${displayOrder.codigo}`);
   const trackingLink = activeToken

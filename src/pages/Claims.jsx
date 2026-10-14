@@ -264,7 +264,7 @@ export function Claims() {
             <span className="font-extrabold text-white text-sm">{STORE_INFO.name}</span>
           </div>
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold">RUC del Proveedor (REAL)</span>
+            <span className="text-slate-400 block text-[10px] uppercase font-bold">RUC del Proveedor</span>
             <span className="font-extrabold text-amber-400 text-sm tracking-wider bg-slate-800 px-2.5 py-0.5 rounded border border-slate-700 inline-block">
               RUC: {STORE_INFO.ruc}
             </span>
