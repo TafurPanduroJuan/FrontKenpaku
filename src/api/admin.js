@@ -66,6 +66,14 @@ export async function getAdminOrders(params = {}) {
     if (params.estado && params.estado !== 'todos') {
       items = items.filter(o => o.estado === params.estado);
     }
+        if (params.q) {
+      const term = String(params.q).toLowerCase();
+      const digits = term.replace(/\D/g, '');
+      items = items.filter((o) => {
+        const tel = o.cliente_telefono ?? o.cliente?.telefono ?? '';
+        return o.codigo.toLowerCase().includes(term) || (digits && tel.includes(digits));
+      });
+    }
     return { items, total: items.length, page: 1, page_size: 12 };
   }
   // 'todos' no es un estado válido en el backend: se omite el filtro
