@@ -11,6 +11,7 @@ import { SortSelect } from '../components/catalog/SortSelect';
 import { ProductGrid } from '../components/catalog/ProductGrid';
 import { Pagination } from '../components/catalog/Pagination';
 import { useDebounce } from '../hooks/useDebounce';
+import { sanitizeSearchQuery } from '../utils/sanitizers';
 
 export function Catalog() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -27,12 +28,12 @@ export function Catalog() {
   const page = parseInt(searchParams.get('page') || '1', 10);
 
   // Local state for search input to enable debounce
-  const [searchTerm, setSearchTerm] = useState(qParam);
+  const [searchTerm, setSearchTerm] = useState(() => sanitizeSearchQuery(qParam));
   const debouncedSearchTerm = useDebounce(searchTerm, 350);
 
   // Sync debounced search to URL params
   useEffect(() => {
-    setSearchTerm(qParam);
+    setSearchTerm(sanitizeSearchQuery(qParam));
   }, [qParam]);
 
   useEffect(() => {
@@ -116,7 +117,7 @@ export function Catalog() {
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(sanitizeSearchQuery(e.target.value))}
               placeholder="Filtrar por nombre o medida..."
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none focus:border-kenpaku-blue"
             />

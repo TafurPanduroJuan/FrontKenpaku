@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Search, ShoppingCart, MessageCircle, Menu, X } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 import { buildWhatsAppUrl } from '../../utils/whatsapp';
+import { sanitizeSearchQuery } from '../../utils/sanitizers';
 
 export function Header({ isMobileMenuOpen, setIsMobileMenuOpen }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -12,8 +13,9 @@ export function Header({ isMobileMenuOpen, setIsMobileMenuOpen }) {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/catalogo?q=${encodeURIComponent(searchQuery.trim())}`);
+    const cleanQuery = sanitizeSearchQuery(searchQuery).trim();
+    if (cleanQuery) {
+      navigate(`/catalogo?q=${encodeURIComponent(cleanQuery)}`);
       setIsMobileSearchOpen(false);
     }
   };
@@ -56,7 +58,7 @@ export function Header({ isMobileMenuOpen, setIsMobileMenuOpen }) {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(sanitizeSearchQuery(e.target.value))}
               placeholder="¿Qué acero necesitas?"
               className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 bg-white text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#0284C7] focus:ring-2 focus:ring-[#0284C7]/20 transition-all"
             />
@@ -106,7 +108,7 @@ export function Header({ isMobileMenuOpen, setIsMobileMenuOpen }) {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(sanitizeSearchQuery(e.target.value))}
               placeholder="¿Qué acero necesitas?"
               className="w-full pl-10 pr-20 py-2.5 rounded-xl border border-slate-300 text-sm bg-white"
               autoFocus

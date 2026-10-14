@@ -4,6 +4,7 @@ import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { sanitizeEmailInput, isValidEmail } from '../../utils/sanitizers';
 
 export function Login() {
   const navigate = useNavigate();
@@ -11,15 +12,38 @@ export function Login() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
   if (isAuthenticated) {
     return <Navigate to="/admin" replace />;
   }
 
+  const handleEmailChange = (e) => {
+    const cleaned = sanitizeEmailInput(e.target.value);
+    setEmail(cleaned);
+    if (emailError && isValidEmail(cleaned)) {
+      setEmailError(null);
+    }
+  };
+
+  const handleEmailBlur = () => {
+    if (email && !isValidEmail(email)) {
+      setEmailError('Ingresa un correo válido con @ y dominio (ej. admin@kenpaku.pe)');
+    } else {
+      setEmailError(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg(null);
+
+    if (!isValidEmail(email)) {
+      setEmailError('Ingresa un correo válido con @ y dominio (ej. admin@kenpaku.pe)');
+      return;
+    }
+    setEmailError(null);
 
     try {
       await login(email, password);
@@ -48,13 +72,15 @@ export function Login() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <Input
             label="Correo de Administrador"
             type="email"
             icon={Mail}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={handleEmailChange}
+            onBlur={handleEmailBlur}
+            error={emailError}
             placeholder="admin@kenpaku.pe"
             required
           />

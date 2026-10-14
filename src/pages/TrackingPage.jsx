@@ -30,6 +30,7 @@ import { formatPEN } from '../utils/formatPEN';
 import { getVoucherUrl } from '../utils/voucher';
 import { Button } from '../components/ui/Button';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
+import { sanitizeOrderCode, sanitizeDigits } from '../utils/sanitizers';
 
 const STATUS_CONFIG = {
   pendiente: {
@@ -201,11 +202,17 @@ export function TrackingPage() {
 
   const onSubmitForm = (e) => {
     e.preventDefault();
-    if (!codigoInput.trim() || !telefonoInput.trim()) {
+    const cleanCodigo = sanitizeOrderCode(codigoInput).trim();
+    const cleanTelefono = sanitizeDigits(telefonoInput, 9).trim();
+    if (!cleanCodigo || !cleanTelefono) {
       setErrorMsg('Por favor ingrese tanto el código de pedido (ej. KPK-000001) como el teléfono registrado.');
       return;
     }
-    handleSearch({ codigo: codigoInput.trim(), telefono: telefonoInput.trim() });
+    if (cleanTelefono.length !== 9) {
+      setErrorMsg('El número de celular debe tener exactamente 9 dígitos.');
+      return;
+    }
+    handleSearch({ codigo: cleanCodigo, telefono: cleanTelefono });
   };
 
   const handleSelectRecent = (recent) => {
@@ -397,8 +404,9 @@ export function TrackingPage() {
                   id="codigo-input"
                   type="text"
                   value={codigoInput}
-                  onChange={(e) => setCodigoInput(e.target.value)}
+                  onChange={(e) => setCodigoInput(sanitizeOrderCode(e.target.value))}
                   placeholder="Ej. KPK-123456"
+                  maxLength={20}
                   className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-hidden focus:border-[#0284C7] focus:ring-3 focus:ring-[#0284C7]/10 text-xs font-mono uppercase font-bold text-slate-900 transition-all"
                 />
               </div>
@@ -412,8 +420,9 @@ export function TrackingPage() {
                 id="telefono-input"
                 type="tel"
                 value={telefonoInput}
-                onChange={(e) => setTelefonoInput(e.target.value)}
+                onChange={(e) => setTelefonoInput(sanitizeDigits(e.target.value, 9))}
                 placeholder="Ej. 987654321"
+                maxLength={9}
                 className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-hidden focus:border-[#0284C7] focus:ring-3 focus:ring-[#0284C7]/10 text-xs font-semibold text-slate-900 transition-all"
               />
             </div>

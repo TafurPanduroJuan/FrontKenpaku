@@ -10,13 +10,37 @@ import { Textarea } from '../components/ui/Textarea';
 import { Select } from '../components/ui/Select';
 import { Button } from '../components/ui/Button';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
+import {
+  sanitizeOnlyLettersAndSpaces,
+  sanitizeDigits,
+  sanitizeEmailInput,
+  isValidEmail,
+  sanitizeDocumentNumber,
+  sanitizeSearchQuery,
+  sanitizeSafeText
+} from '../utils/sanitizers';
+
+const DOC_CONFIG = {
+  DNI: { maxLength: 8, placeholder: 'Ej. 45891234', label: '8 dígitos' },
+  RUC: { maxLength: 11, placeholder: 'Ej. 20601234567', label: '11 dígitos' },
+  CE: { maxLength: 9, placeholder: 'Ej. 001234567', label: '9 dígitos' },
+  Pasaporte: { maxLength: 12, placeholder: 'Ej. A12345678', label: 'Alfanumérico (máx. 12)' }
+};
 
 const claimSchema = z.object({
-  nombre: z.string().min(3, 'Ingrese su nombre completo (mínimo 3 caracteres)'),
+  nombre: z
+    .string()
+    .min(3, 'Ingrese su nombre completo (mínimo 3 caracteres)')
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/, 'El nombre solo debe contener texto y espacios'),
   tipo_documento: z.string().min(1, 'Seleccione el tipo de documento'),
-  documento: z.string().min(8, 'Ingrese un número de documento válido (mínimo 8 dígitos)'),
-  telefono: z.string().min(9, 'Ingrese un teléfono de contacto válido (mínimo 9 dígitos)'),
-  correo: z.string().email('Ingrese un correo electrónico válido'),
+  documento: z.string().min(1, 'Ingrese su número de documento'),
+  telefono: z
+    .string()
+    .regex(/^\d{9}$/, 'El teléfono debe contener exactamente 9 dígitos numéricos'),
+  correo: z
+    .string()
+    .min(1, 'Ingrese su correo electrónico')
+    .refine(isValidEmail, { message: 'Ingrese un correo electrónico válido con @ y dominio (ej. usuario@dominio.com)' }),
   direccion: z.string().min(5, 'Ingrese su domicilio completo'),
   tipo_bien: z.enum(['producto', 'servicio']),
   monto_reclamado: z.string().optional(),
@@ -27,6 +51,41 @@ const claimSchema = z.object({
   acepto_terminos: z.boolean().refine((val) => val === true, {
     message: 'Debe declarar la conformidad y aceptación de tratamiento de datos personales'
   })
+}).superRefine((data, ctx) => {
+  const { tipo_documento, documento } = data;
+  if (tipo_documento === 'DNI') {
+    if (!/^\d{8}$/.test(documento)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'El DNI debe contener exactamente 8 dígitos numéricos',
+        path: ['documento']
+      });
+    }
+  } else if (tipo_documento === 'RUC') {
+    if (!/^\d{11}$/.test(documento)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'El RUC debe contener exactamente 11 dígitos numéricos',
+        path: ['documento']
+      });
+    }
+  } else if (tipo_documento === 'CE') {
+    if (!/^\d{9}$/.test(documento)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'El Carné de Extranjería debe contener exactamente 9 dígitos numéricos',
+        path: ['documento']
+      });
+    }
+  } else if (tipo_documento === 'Pasaporte') {
+    if (!/^[a-zA-Z0-9]{6,12}$/.test(documento)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'El pasaporte debe ser alfanumérico (entre 6 y 12 caracteres)',
+        path: ['documento']
+      });
+    }
+  }
 });
 
 export function Claims() {
@@ -44,6 +103,7 @@ export function Claims() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors }
   } = useForm({
     resolver: zodResolver(claimSchema),
@@ -65,6 +125,8 @@ export function Claims() {
   });
 
   const aceptoTerminos = watch('acepto_terminos');
+  const selectedDocType = watch('tipo_documento') || 'DNI';
+  const currentDocConfig = DOC_CONFIG[selectedDocType] || DOC_CONFIG.DNI;
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
@@ -234,28 +296,44 @@ export function Claims() {
             label="Nombres y Apellidos completos *"
             placeholder="Ej. Carlos Mendoza Vargas"
             error={errors.nombre?.message}
-            {...register('nombre')}
+            {...register('nombre', {
+              onChange: (e) => {
+                e.target.value = sanitizeOnlyLettersAndSpaces(e.target.value);
+              }
+            })}
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Select
               label="Tipo de Documento *"
               options={[
-                { value: 'DNI', label: 'DNI' },
-                { value: 'RUC', label: 'RUC' },
-                { value: 'CE', label: 'Carné de Extranjería' },
-                { value: 'Pasaporte', label: 'Pasaporte' }
+                { value: 'DNI', label: 'DNI (8 dígitos)' },
+                { value: 'RUC', label: 'RUC (11 dígitos)' },
+                { value: 'CE', label: 'Carné de Extranjería (9 dígitos)' },
+                { value: 'Pasaporte', label: 'Pasaporte (Alfanumérico)' }
               ]}
               error={errors.tipo_documento?.message}
-              {...register('tipo_documento')}
+              {...register('tipo_documento', {
+                onChange: (e) => {
+                  const newType = e.target.value;
+                  const currentDoc = watch('documento');
+                  setValue('documento', sanitizeDocumentNumber(currentDoc, newType), { shouldValidate: true });
+                }
+              })}
             />
 
             <div className="sm:col-span-2">
               <Input
                 label="Número de Documento *"
-                placeholder="Ej. 45891234"
+                placeholder={currentDocConfig.placeholder}
+                maxLength={currentDocConfig.maxLength}
+                helperText={`Formato permitido: ${currentDocConfig.label}`}
                 error={errors.documento?.message}
-                {...register('documento')}
+                {...register('documento', {
+                  onChange: (e) => {
+                    e.target.value = sanitizeDocumentNumber(e.target.value, selectedDocType);
+                  }
+                })}
               />
             </div>
           </div>
@@ -263,17 +341,29 @@ export function Claims() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Teléfono de Contacto *"
+              type="tel"
+              maxLength={9}
               placeholder="Ej. 912345678"
+              helperText="Máximo 9 dígitos numéricos"
               error={errors.telefono?.message}
-              {...register('telefono')}
+              {...register('telefono', {
+                onChange: (e) => {
+                  e.target.value = sanitizeDigits(e.target.value, 9);
+                }
+              })}
             />
 
             <Input
               label="Correo Electrónico *"
               type="email"
               placeholder="carlos.mendoza@ejemplo.com"
+              helperText="Debe contener @ y dominio (ej. usuario@dominio.com)"
               error={errors.correo?.message}
-              {...register('correo')}
+              {...register('correo', {
+                onChange: (e) => {
+                  e.target.value = sanitizeEmailInput(e.target.value);
+                }
+              })}
             />
           </div>
 
@@ -317,7 +407,11 @@ export function Claims() {
             label="Descripción del Producto o Servicio *"
             placeholder="Ej. Tubo Negro Estructural de 2 pulgadas x 2.0mm x 6m"
             error={errors.descripcion_bien?.message}
-            {...register('descripcion_bien')}
+            {...register('descripcion_bien', {
+              onChange: (e) => {
+                e.target.value = sanitizeSearchQuery(e.target.value);
+              }
+            })}
           />
         </div>
 
@@ -364,7 +458,11 @@ export function Claims() {
             placeholder="Describa de forma clara y cronológica los hechos ocurridos..."
             rows={4}
             error={errors.detalle?.message}
-            {...register('detalle')}
+            {...register('detalle', {
+              onChange: (e) => {
+                e.target.value = sanitizeSafeText(e.target.value);
+              }
+            })}
           />
 
           <Textarea
@@ -372,7 +470,11 @@ export function Claims() {
             placeholder="Indique la solución o cambio que solicita a Comercial Kenpaku S.A.C..."
             rows={3}
             error={errors.pedido_consumidor?.message}
-            {...register('pedido_consumidor')}
+            {...register('pedido_consumidor', {
+              onChange: (e) => {
+                e.target.value = sanitizeSafeText(e.target.value);
+              }
+            })}
           />
         </div>
 
