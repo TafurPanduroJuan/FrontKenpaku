@@ -14,7 +14,7 @@ export function Dashboard() {
 
   const { data: ordersData, isLoading: loadingOrders } = useQuery({
     queryKey: ['admin-recent-orders'],
-    queryFn: () => getAdminOrders({ limit: 5 })
+    queryFn: () => getAdminOrders({ page: 1, page_size: 5 })
   });
 
   const recentOrders = ordersData?.items || [];
@@ -87,7 +87,7 @@ export function Dashboard() {
             <Skeleton className="w-16 h-8" />
           ) : (
             <span className="text-3xl font-extrabold text-kenpaku-navy block">
-              {metrics?.consultas_chat || 0}
+              {metrics?.consultas_chat_hoy || 0}
             </span>
           )}
           <span className="text-[11px] text-slate-400">Atendidas por Asesor Virtual</span>
@@ -145,8 +145,8 @@ export function Dashboard() {
                 {recentOrders.map((o) => (
                   <tr key={o.codigo} className="hover:bg-slate-50">
                     <td className="py-3 px-4 font-bold text-kenpaku-navy">{o.codigo}</td>
-                    <td className="py-3 px-4 font-semibold">{o.cliente?.nombre}</td>
-                    <td className="py-3 px-4">{o.cliente?.telefono}</td>
+                    <td className="py-3 px-4 font-semibold">{o.cliente_nombre ?? o.cliente?.nombre}</td>
+                    <td className="py-3 px-4">{o.cliente_telefono ?? o.cliente?.telefono}</td>
                     <td className="py-3 px-4">{o.recojo_en_tienda ? 'Recojo en Tienda' : 'Despacho a Obra'}</td>
                     <td className="py-3 px-4 font-bold text-slate-900">{formatPEN(o.total)}</td>
                     <td className="py-3 px-4">
