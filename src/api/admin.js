@@ -28,6 +28,36 @@ export async function getAdminDashboard() {
   return data;
 }
 
+export async function getAdminActionRequired() {
+  if (USE_MOCKS) {
+    checkAuth();
+    await new Promise((res) => setTimeout(res, 200));
+    const toItem = (o, motivo) => ({
+      id: o.id,
+      codigo: o.codigo,
+      cliente_nombre: o.cliente_nombre ?? o.cliente?.nombre ?? '',
+      estado: o.estado,
+      total: o.total,
+      motivo,
+      created_at: o.created_at ?? new Date().toISOString(),
+      fecha_limite_pago: null,
+    });
+    const flete = MOCK_ORDERS.filter(
+      (o) => o.estado === 'pendiente' && !o.recojo_en_tienda
+    ).map((o) => toItem(o, 'Falta cotizar el flete'));
+    const reclamos = MOCK_CLAIMS.filter((c) => c.estado === 'pendiente').length;
+    return {
+      flete_por_cotizar: flete,
+      voucher_por_validar: [],
+      pedidos_por_vencer: [],
+      reclamos_pendientes: reclamos,
+      total_acciones: flete.length + reclamos,
+    };
+  }
+  const { data } = await apiClient.get('/admin/action-required');
+  return data;
+}
+
 export async function getAdminOrders(params = {}) {
   if (USE_MOCKS) {
     checkAuth();
