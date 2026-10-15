@@ -89,7 +89,6 @@ El proyecto incluye la configuración [vercel.json](./vercel.json) para soportar
    - `VITE_WHATSAPP_NUMBER`: `51987654321`.
 4. Deploy: Haz clic en **Deploy**.
 
-
 ---
 
 ## 🔐 Seguridad
