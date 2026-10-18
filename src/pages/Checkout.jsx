@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ShieldCheck, Truck, Store, AlertTriangle, ArrowRight, ShoppingBag } from 'lucide-react';
+import { ShieldCheck, Truck, Store, AlertTriangle, ArrowRight, ShoppingBag, MapPin } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { createOrder } from '../api/orders';
 import { Input } from '../components/ui/Input';
@@ -11,25 +11,161 @@ import { Textarea } from '../components/ui/Textarea';
 import { Button } from '../components/ui/Button';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { formatPEN } from '../utils/formatPEN';
+import { STORE_INFO } from '../utils/constants';
+import {
+  sanitizeOnlyLettersAndSpaces,
+  sanitizeDigits,
+  sanitizeEmailInput,
+  isValidEmail,
+  sanitizeAddress,
+  sanitizeSafeText
+} from '../utils/sanitizers';
+
+const NAME_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
+const ADDRESS_REGEX = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s/.\-º°#,()]+$/;
 
 const checkoutSchema = z.object({
-  nombre: z.string().min(3, 'Ingrese su nombre completo (mínimo 3 caracteres)'),
-  telefono: z.string().min(9, 'Ingrese un teléfono o WhatsApp válido (mínimo 9 dígitos)'),
-  correo: z.string().email('Ingrese un correo electrónico válido'),
+  nombre: z
+    .string()
+    .min(1, 'Ingrese sus nombres y apellidos completos')
+    .superRefine((val, ctx) => {
+      const trimmed = val.trim();
+      if (!trimmed) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Ingrese sus nombres y apellidos completos'
+        });
+        return;
+      }
+      if (trimmed.length < 3) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El nombre es muy corto: debe tener al menos 3 caracteres'
+        });
+        return;
+      }
+      if (trimmed.length > 150) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El nombre no puede exceder los 150 caracteres'
+        });
+        return;
+      }
+      if (!NAME_REGEX.test(val)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Nombres y apellidos solo deben contener letras y espacios (sin números ni caracteres especiales)'
+        });
+      }
+    }),
+
+  telefono: z
+    .string()
+    .min(1, 'Ingrese su número de teléfono o WhatsApp')
+    .superRefine((val, ctx) => {
+      const trimmed = val.trim();
+      if (!trimmed) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Ingrese su número de teléfono o WhatsApp'
+        });
+        return;
+      }
+      if (!/^\d+$/.test(trimmed)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El teléfono solo debe contener números (sin letras, espacios ni caracteres especiales)'
+        });
+        return;
+      }
+      if (trimmed.length !== 9) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `El teléfono debe tener exactamente 9 dígitos (ingresó ${trimmed.length})`
+        });
+        return;
+      }
+      if (!trimmed.startsWith('9')) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El número de teléfono o WhatsApp debe empezar con 9 (ej. 987654321)'
+        });
+        return;
+      }
+    }),
+
+  correo: z
+    .string()
+    .min(1, 'Ingrese su correo electrónico')
+    .superRefine((val, ctx) => {
+      const trimmed = val.trim();
+      if (!trimmed) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Ingrese su correo electrónico'
+        });
+        return;
+      }
+      if (!trimmed.includes('@')) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "El correo debe incluir el símbolo '@' (ejemplo: usuario@correo.com)"
+        });
+        return;
+      }
+      if (!isValidEmail(trimmed)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El correo debe tener un formato válido con dominio (ejemplo: usuario@correo.com)'
+        });
+        return;
+      }
+    }),
+
   delivery_type: z.enum(['despacho', 'recojo']),
   direccion: z.string().optional(),
-  observaciones: z.string().optional(),
+  observaciones: z
+    .string()
+    .max(500, 'Las observaciones no pueden exceder los 500 caracteres')
+    .optional(),
   acepto_privacidad: z.boolean().refine((val) => val === true, {
     message: 'Debe aceptar la política de privacidad para proceder'
   })
-}).refine((data) => {
+}).superRefine((data, ctx) => {
   if (data.delivery_type === 'despacho') {
-    return !!data.direccion && data.direccion.trim().length >= 5;
+    const dir = data.direccion ? data.direccion.trim() : '';
+    if (!dir) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'La dirección de entrega es obligatoria para despacho a obra',
+        path: ['direccion']
+      });
+    } else if (dir.length < 5) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'La dirección es muy corta: ingrese una dirección más completa (mínimo 5 caracteres)',
+        path: ['direccion']
+      });
+    } else if (dir.length > 200) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'La dirección no puede exceder los 200 caracteres',
+        path: ['direccion']
+      });
+    } else if (!ADDRESS_REGEX.test(dir)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'La dirección contiene caracteres especiales no válidos (solo letras, números, #, °, -, /)',
+        path: ['direccion']
+      });
+    } else if (!/[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]/.test(dir)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'La dirección debe incluir el nombre de la vía, calle o manzana',
+        path: ['direccion']
+      });
+    }
   }
-  return true;
-}, {
-  message: 'Ingrese una dirección de entrega completa para despacho a obra',
-  path: ['direccion']
 });
 
 export function Checkout() {
@@ -43,9 +179,11 @@ export function Checkout() {
     register,
     handleSubmit,
     watch,
+    clearErrors,
     formState: { errors }
   } = useForm({
     resolver: zodResolver(checkoutSchema),
+    mode: 'onTouched',
     defaultValues: {
       nombre: '',
       telefono: '',
@@ -59,6 +197,12 @@ export function Checkout() {
 
   const deliveryType = watch('delivery_type');
   const aceptoPrivacidad = watch('acepto_privacidad');
+
+  useEffect(() => {
+    if (deliveryType === 'recojo') {
+      clearErrors('direccion');
+    }
+  }, [deliveryType, clearErrors]);
 
   if (items.length === 0) {
     return (
@@ -79,13 +223,13 @@ export function Checkout() {
 
     const payload = {
       cliente: {
-        nombre: data.nombre,
-        telefono: data.telefono,
-        correo: data.correo
+        nombre: data.nombre.trim(),
+        telefono: data.telefono.trim(),
+        correo: data.correo.trim().toLowerCase()
       },
       recojo_en_tienda: data.delivery_type === 'recojo',
-      direccion: data.delivery_type === 'despacho' ? data.direccion : null,
-      observaciones: data.observaciones || null,
+      direccion: data.delivery_type === 'despacho' ? (data.direccion?.trim() || null) : null,
+      observaciones: data.observaciones?.trim() || null,
       acepto_privacidad: data.acepto_privacidad,
       items: items.map((i) => ({
         product_id: i.product.id,
@@ -162,7 +306,7 @@ export function Checkout() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Client Details */}
         <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-soft space-y-6">
           <h2 className="text-lg font-bold text-kenpaku-navy border-b border-slate-100 pb-3">
@@ -171,26 +315,42 @@ export function Checkout() {
 
           <div className="space-y-4">
             <Input
-              label="Nombre y Apellidos *"
+              label="Nombres y Apellidos *"
               placeholder="Ej. Juan Pérez Tafur"
+              maxLength={150}
               error={errors.nombre?.message}
-              {...register('nombre')}
+              {...register('nombre', {
+                onChange: (e) => {
+                  e.target.value = sanitizeOnlyLettersAndSpaces(e.target.value);
+                }
+              })}
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
-                label="Teléfono / WhatsApp *"
+                label="Teléfono o WhatsApp *"
+                type="tel"
+                maxLength={9}
                 placeholder="Ej. 987654321"
                 error={errors.telefono?.message}
-                {...register('telefono')}
+                {...register('telefono', {
+                  onChange: (e) => {
+                    e.target.value = sanitizeDigits(e.target.value, 9);
+                  }
+                })}
               />
 
               <Input
                 label="Correo Electrónico *"
                 type="email"
+                maxLength={100}
                 placeholder="ejemplo@correo.com"
                 error={errors.correo?.message}
-                {...register('correo')}
+                {...register('correo', {
+                  onChange: (e) => {
+                    e.target.value = sanitizeEmailInput(e.target.value);
+                  }
+                })}
               />
             </div>
           </div>
@@ -243,18 +403,44 @@ export function Checkout() {
 
           {deliveryType === 'despacho' && (
             <Input
-              label="Dirección de entrega completa *"
-              placeholder="Ej. Av. Néstor Gambetta 1420, Puente Piedra, Lima"
+              label="Dirección de entrega en obra *"
+              placeholder="Ej. Av. Néstor Gambetta 1420 Mz. B Lt. 12, Puente Piedra"
+              maxLength={200}
               error={errors.direccion?.message}
-              {...register('direccion')}
+              {...register('direccion', {
+                onChange: (e) => {
+                  e.target.value = sanitizeAddress(e.target.value);
+                }
+              })}
             />
           )}
 
+          {deliveryType === 'recojo' && (
+            <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 text-kenpaku-navy space-y-1.5 text-xs animate-fade-in">
+              <div className="flex items-center gap-2 font-bold text-kenpaku-blue">
+                <Store className="w-4 h-4 shrink-0" />
+                <span>Punto de Retiro: Almacén Central Puente Piedra</span>
+              </div>
+              <p className="text-slate-600 pl-6 leading-relaxed">
+                {STORE_INFO.address}
+              </p>
+              <p className="text-slate-500 pl-6 text-[11px]">
+                Horario: {STORE_INFO.schedule}. En recojo en tienda no es necesario ingresar dirección de entrega.
+              </p>
+            </div>
+          )}
+
           <Textarea
-            label="Observaciones o referencias adicionales"
-            placeholder="Instrucciones para el chofer o detalles de corte preliminar..."
+            label="Observaciones o referencias adicionales (Opcional)"
+            placeholder="Instrucciones para el chofer, punto de referencia (ej. frente a la posta) o corte preliminar..."
             rows={3}
-            {...register('observaciones')}
+            maxLength={500}
+            error={errors.observaciones?.message}
+            {...register('observaciones', {
+              onChange: (e) => {
+                e.target.value = sanitizeSafeText(e.target.value);
+              }
+            })}
           />
 
           {/* Mandatory Checkbox */}

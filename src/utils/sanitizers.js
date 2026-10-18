@@ -117,7 +117,21 @@ export function sanitizeDocumentNumber(value, documentType = 'DNI') {
  */
 export function sanitizeSafeText(value) {
   if (typeof value !== 'string') return '';
-  return value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s/.\-"',;:_()¿?¡!%]/g, '');
+  return value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s/.\-"',;:_()¿?¡!%#º°]/g, '');
+}
+
+/**
+ * Sanitiza texto para direcciones de entrega o domicilios:
+ * Permite letras, números, espacios y signos comunes en direcciones peruanas
+ * (puntos, comas, guiones, numeral '#', barra '/', símbolos de grado '°', 'º', paréntesis).
+ * Bloquea inyecciones, etiquetas y caracteres peligrosos (< > { } [ ] \ ^ $ * = + ~).
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+export function sanitizeAddress(value) {
+  if (typeof value !== 'string') return '';
+  return value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s/.\-º°#,()]/g, '');
 }
 
 /**

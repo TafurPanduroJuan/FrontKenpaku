@@ -61,8 +61,11 @@ export function Login() {
           <div className="w-14 h-14 rounded-2xl bg-kenpaku-navy text-white font-extrabold text-2xl flex items-center justify-center mx-auto shadow-md">
             K
           </div>
-          <h1 className="text-2xl font-extrabold text-kenpaku-navy">Acceso Panel Admin</h1>
-          <p className="text-xs text-slate-500">Comercial Kenpaku S.A.C. - Puente Piedra</p>
+          <h1 className="text-2xl font-extrabold text-kenpaku-navy tracking-tight">Portal de Colaboradores</h1>
+          <p className="text-sm text-slate-600 font-medium leading-relaxed">
+            Ingresa tus credenciales si eres administrador o personal de ventas.
+          </p>
+          <p className="text-[11px] text-slate-400 font-medium">Comercial Kenpaku S.A.C. - Puente Piedra</p>
         </div>
 
         {errorMsg && (
@@ -74,7 +77,7 @@ export function Login() {
 
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <Input
-            label="Correo de Administrador"
+            label="Correo de Administrador o Ventas"
             type="email"
             icon={Mail}
             value={email}

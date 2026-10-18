@@ -6,7 +6,7 @@ import { NavBar } from '../NavBar';
 import { AuthContext } from '../../../context/AuthContext';
 
 describe('NavBar component - Admin Access Button', () => {
-  it('renders "Acceso Admin" pointing to /admin/login when user is not authenticated', () => {
+  it('does NOT render "Acceso Admin" or any admin link when user is not authenticated', () => {
     const authValue = {
       isAuthenticated: false,
       isLoading: false,
@@ -23,9 +23,8 @@ describe('NavBar component - Admin Access Button', () => {
       </BrowserRouter>
     );
 
-    const adminLinks = screen.getAllByRole('link', { name: /Acceso Admin/i });
-    expect(adminLinks.length).toBeGreaterThan(0);
-    expect(adminLinks[0]).toHaveAttribute('href', '/admin/login');
+    expect(screen.queryByText(/Acceso Admin/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Panel Admin/i)).not.toBeInTheDocument();
   });
 
   it('renders "Panel Admin" pointing to /admin when user is authenticated', () => {

@@ -23,6 +23,7 @@ import { ProductForm } from './pages/admin/ProductForm';
 import { Knowledge } from './pages/admin/Knowledge';
 import { ChatLogs } from './pages/admin/ChatLogs';
 import { ClaimsAdmin } from './pages/admin/ClaimsAdmin';
+import { ADMIN_ENTRY_PATH } from './utils/constants';
 
 const router = createBrowserRouter([
   {
@@ -43,7 +44,7 @@ const router = createBrowserRouter([
     ]
   },
   {
-    path: '/admin/login',
+    path: ADMIN_ENTRY_PATH,
     element: <Login />
   },
   {
@@ -58,8 +59,13 @@ const router = createBrowserRouter([
       { path: 'productos/:id', element: <ProductForm /> },
       { path: 'conocimiento', element: <Knowledge /> },
       { path: 'chat', element: <ChatLogs /> },
-      { path: 'reclamos', element: <ClaimsAdmin /> }
+      { path: 'reclamos', element: <ClaimsAdmin /> },
+      { path: '*', element: <NotFound /> }
     ]
+  },
+  {
+    path: '*',
+    element: <NotFound />
   }
 ]);
 

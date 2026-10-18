@@ -122,10 +122,6 @@ export function Footer() {
           <p>© {new Date().getFullYear()} Comercial Kenpaku S.A.C. Todos los derechos reservados. Puente Piedra, Lima - Perú.</p>
           <div className="flex items-center gap-4">
             <span className="text-slate-500">Precios con IGV incluido</span>
-            <span className="text-slate-600">•</span>
-            <Link to="/admin/login" className="hover:text-slate-200 transition-colors">
-              Acceso Admin
-            </Link>
           </div>
         </div>
       </div>

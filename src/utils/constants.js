@@ -9,6 +9,8 @@ export const STORE_INFO = {
   experienceYears: 14,
 };
 
+export const ADMIN_ENTRY_PATH = import.meta.env.VITE_ADMIN_ENTRY_PATH || '/colaboradoreskupanke';
+
 export const STOCK_STATUS = {
   DISPONIBLE: {
     label: 'Disponible',

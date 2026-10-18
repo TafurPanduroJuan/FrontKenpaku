@@ -11,7 +11,8 @@ import {
   sanitizeProductName,
   sanitizePositiveInteger,
   sanitizePositiveDecimal,
-  sanitizeTechnicalSpecs
+  sanitizeTechnicalSpecs,
+  sanitizeAddress
 } from '../sanitizers';
 
 describe('sanitizers utility', () => {
@@ -145,6 +146,27 @@ describe('sanitizers utility', () => {
       const text = 'Norma: ASTM A500\nUsos: Estructuras ± 5% a 20°C';
       expect(sanitizeTechnicalSpecs(text)).toBe(text);
       expect(sanitizeTechnicalSpecs('<script>bad()</script>')).toBe('scriptbad()/script');
+    });
+  });
+
+  describe('sanitizeAddress', () => {
+    it('allows letters, numbers, spaces and address symbols like #, °, -, /, ., ()', () => {
+      expect(sanitizeAddress('Av. Néstor Gambetta #1420, Mz. B Lt. 12 (2° piso)'))
+        .toBe('Av. Néstor Gambetta #1420, Mz. B Lt. 12 (2° piso)');
+      expect(sanitizeAddress('Carretera Panamericana Km. 26.5 - Almacén #4'))
+        .toBe('Carretera Panamericana Km. 26.5 - Almacén #4');
+    });
+
+    it('strips dangerous HTML tags and script injections', () => {
+      expect(sanitizeAddress('Av. Perú <script>alert(1)</script> #100'))
+        .toBe('Av. Perú scriptalert(1)/script #100');
+      expect(sanitizeAddress('Calle $100 & % { } [ ] ~ * + ='))
+        .toBe('Calle 100          ');
+    });
+
+    it('handles non-string values gracefully', () => {
+      expect(sanitizeAddress(null)).toBe('');
+      expect(sanitizeAddress(undefined)).toBe('');
     });
   });
 });
