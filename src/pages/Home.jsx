@@ -363,7 +363,7 @@ export function Home() {
                 <Clock className="w-5 h-5 shrink-0" />
                 <span className="text-white font-extrabold text-base sm:text-lg">Lun – Sáb</span>
               </div>
-              <p className="text-xs text-slate-300 font-medium">8:00 a. m. – 6:00 p. m.</p>
+              <p className="text-xs text-slate-300 font-medium">8:00 am – 6:00 pm</p>
             </div>
           </div>
         </div>

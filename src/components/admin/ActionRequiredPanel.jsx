@@ -64,24 +64,21 @@ export function ActionRequiredPanel() {
                 <ul className="space-y-2">
                   {items.slice(0, MAX_ITEMS).map((o) => (
                     <li key={o.id}>
-                      <Link
-                        to={`/admin/pedidos?q=${encodeURIComponent(o.codigo)}`}
-                        className="block rounded-xl p-2 hover:bg-slate-50"
-                      >
+                      <div className="block rounded-xl p-2 bg-slate-50/70 border border-slate-100">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-bold text-kenpaku-navy">{o.codigo}</span>
                           <span className="font-bold text-slate-900">{formatPEN(o.total)}</span>
                         </div>
-                        <span className="block text-[11px] text-slate-500">{o.cliente_nombre}</span>
-                        <span className="block text-[11px] text-slate-400">{o.motivo}</span>
-                      </Link>
+                        <span className="block text-[11px] text-slate-600 font-medium">{o.cliente_nombre}</span>
+                        <span className="block text-[10px] text-slate-400">{o.motivo}</span>
+                      </div>
                     </li>
                   ))}
                 </ul>
                 {items.length > MAX_ITEMS && (
-                  <Link to="/admin/pedidos" className="text-[11px] font-bold text-kenpaku-blue hover:underline">
-                    {`Ver ${items.length - MAX_ITEMS} más →`}
-                  </Link>
+                  <span className="text-[11px] font-semibold text-slate-400 block pt-1">
+                    {`+${items.length - MAX_ITEMS} pedidos más`}
+                  </span>
                 )}
               </div>
             );

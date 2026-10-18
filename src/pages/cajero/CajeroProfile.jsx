@@ -4,30 +4,17 @@ import {
   ShieldCheck,
   Store,
   Clock,
-  KeyRound,
-  LogOut,
-  Keyboard,
-  CheckCircle2,
   Phone,
-  Mail,
   MapPin
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { STORE_INFO } from '../../utils/constants';
-import { Button } from '../../components/ui/Button';
 
 export function CajeroProfile() {
-  const { email, role, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+  const { email, role } = useAuth();
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       {/* Tarjeta Principal de Perfil */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xs border border-slate-200">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 pb-6 border-b border-slate-200 text-center sm:text-left">
@@ -58,67 +45,67 @@ export function CajeroProfile() {
               </div>
             </div>
           </div>
-
-          <button
-            onClick={handleLogout}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Cerrar Sesión</span>
-          </button>
         </div>
 
-        {/* Detalles de la Tienda y Turno */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-          {/* Información del Establecimiento */}
-          <div className="space-y-3 p-5 rounded-2xl bg-slate-50 border border-slate-200/80">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-kenpaku-blue" />
-              <span>Datos del Establecimiento</span>
-            </h3>
-            <ul className="space-y-2 text-xs text-slate-600">
-              <li>
-                <strong className="text-slate-800">Razón Social:</strong> {STORE_INFO.name}
-              </li>
-              <li>
-                <strong className="text-slate-800">RUC:</strong> {STORE_INFO.ruc}
-              </li>
-              <li>
-                <strong className="text-slate-800">Dirección:</strong> {STORE_INFO.address}
-              </li>
-              <li>
-                <strong className="text-slate-800">Teléfono:</strong> {STORE_INFO.phone}
-              </li>
-              <li>
-                <strong className="text-slate-800">Horario de Caja:</strong> {STORE_INFO.schedule}
-              </li>
-            </ul>
-          </div>
+        {/* Información del Establecimiento a lo largo */}
+        <div className="pt-6">
+          <div className="space-y-4 p-6 rounded-2xl bg-slate-50/80 border border-slate-200/90 shadow-2xs">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200/80">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-kenpaku-blue" />
+                <span>Datos del Establecimiento</span>
+              </h3>
+              <span className="text-[11px] font-semibold text-slate-400 hidden sm:inline">
+                Sede Principal de Ventas
+              </span>
+            </div>
 
-          {/* Atajos Rápidos de Teclado en POS */}
-          <div className="space-y-3 p-5 rounded-2xl bg-sky-50/60 border border-sky-200/80">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-kenpaku-navy flex items-center gap-2">
-              <Keyboard className="w-4 h-4 text-kenpaku-blue" />
-              <span>Atajos de Teclado en Caja</span>
-            </h3>
-            <ul className="space-y-2 text-xs text-slate-700">
-              <li className="flex items-center justify-between">
-                <span>Enfocar buscador de productos:</span>
-                <kbd className="px-2 py-0.5 rounded bg-white border border-sky-300 font-mono font-bold text-sky-800 shadow-2xs">
-                  F2
-                </kbd>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Atajo confidencial de acceso:</span>
-                <kbd className="px-2 py-0.5 rounded bg-white border border-sky-300 font-mono font-bold text-sky-800 shadow-2xs">
-                  Ctrl + Shift + K
-                </kbd>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Ruta confidencial interna:</span>
-                <code className="text-[11px] font-bold text-kenpaku-navy">/colaboradoreskupanke</code>
-              </li>
-            </ul>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200/70 shadow-2xs space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  Razón Social
+                </span>
+                <p className="text-xs sm:text-sm font-extrabold text-slate-800">
+                  {STORE_INFO.name}
+                </p>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200/70 shadow-2xs space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  RUC
+                </span>
+                <p className="text-xs sm:text-sm font-extrabold text-slate-800 font-mono">
+                  {STORE_INFO.ruc}
+                </p>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200/70 shadow-2xs space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  Teléfono de Atención
+                </span>
+                <p className="text-xs sm:text-sm font-extrabold text-slate-800 font-mono">
+                  {STORE_INFO.phone}
+                </p>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200/70 shadow-2xs space-y-1 sm:col-span-2">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  Dirección
+                </span>
+                <p className="text-xs sm:text-sm font-extrabold text-slate-800">
+                  {STORE_INFO.address}
+                </p>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200/70 shadow-2xs space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">
+                  Horario de Caja
+                </span>
+                <p className="text-xs sm:text-sm font-extrabold text-slate-800 whitespace-nowrap">
+                  {STORE_INFO.schedule}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

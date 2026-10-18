@@ -4,7 +4,7 @@ export const STORE_INFO = {
   address: import.meta.env.VITE_STORE_ADDRESS || 'Av. Panamericana Norte Km 25.5, Puente Piedra, Lima - Perú',
   phone: import.meta.env.VITE_STORE_PHONE || '(01) 555-1234',
   whatsappNumber: import.meta.env.VITE_WHATSAPP_NUMBER || '51987654321',
-  schedule: 'Lun – Sáb: 8:00 a. m. – 6:00 p. m.',
+  schedule: 'Lun – Sáb: 8:00 am – 6:00 pm',
   locationBadge: 'Atención en Puente Piedra, Lima',
   experienceYears: 14,
 };

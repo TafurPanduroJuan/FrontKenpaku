@@ -29,7 +29,7 @@ export function CajeroLayout() {
   const navTabs = [
     { to: '/caja', label: 'Punto de Venta', icon: ShoppingBag, end: true },
     { to: '/caja/mis-ventas', label: 'Mis Ventas', icon: Receipt },
-    { to: '/caja/ventas-virtuales', label: 'Ventas Virtuales', icon: Globe },
+    { to: '/caja/pedidos', label: 'Pedidos', icon: Globe },
     { to: '/caja/perfil', label: 'Mi Perfil', icon: User }
   ];
 

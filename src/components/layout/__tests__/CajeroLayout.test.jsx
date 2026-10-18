@@ -33,7 +33,7 @@ describe('CajeroLayout Component', () => {
 
     expect(screen.getByRole('link', { name: /Punto de Venta/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Mis Ventas/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Ventas Virtuales/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Pedidos/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Mi Perfil/i })).toBeInTheDocument();
   });
 

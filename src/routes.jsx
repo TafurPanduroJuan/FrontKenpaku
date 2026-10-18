@@ -17,7 +17,6 @@ import { NotFound } from './pages/NotFound';
 
 import { Login } from './pages/admin/Login';
 import { Dashboard } from './pages/admin/Dashboard';
-import { Orders } from './pages/admin/Orders';
 import { Products } from './pages/admin/Products';
 import { ProductForm } from './pages/admin/ProductForm';
 import { Knowledge } from './pages/admin/Knowledge';
@@ -26,7 +25,7 @@ import { ClaimsAdmin } from './pages/admin/ClaimsAdmin';
 import { CajeroLayout } from './components/layout/CajeroLayout';
 import { PosView } from './pages/cajero/PosView';
 import { CajeroMisVentas } from './pages/cajero/CajeroMisVentas';
-import { CajeroVentasVirtuales } from './pages/cajero/CajeroVentasVirtuales';
+import { CajeroOrders } from './pages/cajero/CajeroOrders';
 import { CajeroProfile } from './pages/cajero/CajeroProfile';
 import { ADMIN_ENTRY_PATH } from './utils/constants';
 
@@ -57,8 +56,6 @@ const router = createBrowserRouter([
     element: <AdminLayout />,
     children: [
       { index: true, element: <Dashboard /> },
-      { path: 'pedidos', element: <Orders /> },
-      { path: 'pedidos/:id', element: <Orders /> },
       { path: 'productos', element: <Products /> },
       { path: 'productos/nuevo', element: <ProductForm /> },
       { path: 'productos/:id', element: <ProductForm /> },
@@ -74,8 +71,9 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <PosView /> },
       { path: 'mis-ventas', element: <CajeroMisVentas /> },
-      { path: 'ventas-virtuales', element: <CajeroVentasVirtuales /> },
-      { path: 'pedidos', element: <CajeroMisVentas /> },
+      { path: 'pedidos', element: <CajeroOrders /> },
+      { path: 'pedidos/:id', element: <CajeroOrders /> },
+      { path: 'ventas-virtuales', element: <CajeroOrders /> },
       { path: 'perfil', element: <CajeroProfile /> },
       { path: '*', element: <NotFound /> }
     ]

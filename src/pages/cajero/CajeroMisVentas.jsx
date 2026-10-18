@@ -161,9 +161,10 @@ export function CajeroMisVentas() {
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por ID o DNI..."
-              className="pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-kenpaku-blue w-60"
+              maxLength={50}
+              onChange={(e) => setSearchTerm(e.target.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]/g, '').slice(0, 50))}
+              placeholder="Buscar por ID (KPK-...), DNI o RUC..."
+              className="pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-kenpaku-blue w-64"
             />
           </div>
 

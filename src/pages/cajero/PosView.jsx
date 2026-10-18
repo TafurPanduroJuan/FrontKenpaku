@@ -30,6 +30,7 @@ import {
   sanitizeDigits,
   sanitizeOnlyLettersAndSpaces,
   sanitizeEmailInput,
+  sanitizeSearchQuery,
   isValidEmail,
   isValidPhonePE
 } from '../../utils/sanitizers';
@@ -387,9 +388,6 @@ export function PosView() {
                   Catálogo de Productos de Tienda
                 </h2>
               </div>
-              <span className="text-xs text-slate-400 font-mono hidden sm:inline">
-                Atajo: Presiona <kbd className="px-1.5 py-0.5 bg-slate-100 border rounded text-slate-700 font-bold">F2</kbd>
-              </span>
             </div>
 
             {/* Input de Búsqueda */}
@@ -399,7 +397,8 @@ export function PosView() {
                 ref={searchInputRef}
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                maxLength={50}
+                onChange={(e) => setSearchTerm(sanitizeSearchQuery(e.target.value))}
                 placeholder="Buscar por nombre, medida (ej. 2 pulgadas, 6 m, 2 mm)..."
                 className="w-full pl-11 pr-10 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-kenpaku-blue focus:border-transparent transition-all shadow-inner"
               />

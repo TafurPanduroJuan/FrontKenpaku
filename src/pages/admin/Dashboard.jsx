@@ -120,9 +120,9 @@ export function Dashboard() {
       <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-soft space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 className="text-base font-bold text-kenpaku-navy">Últimos Pedidos Registrados</h3>
-          <Link to="/admin/pedidos" className="text-xs font-bold text-kenpaku-blue hover:underline">
-            Ver todos los pedidos &rarr;
-          </Link>
+          <span className="text-xs font-semibold text-slate-400">
+            Gestión y Despacho en Caja
+          </span>
         </div>
 
         {loadingOrders ? (

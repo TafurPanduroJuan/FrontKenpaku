@@ -18,7 +18,6 @@ export function AdminLayout() {
 
   const navItems = [
     { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-    { to: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag },
     { to: '/admin/productos', label: 'Productos (Catálogo)', icon: Package },
     { to: '/admin/conocimiento', label: 'Base de Conocimiento IA', icon: BrainCircuit },
     { to: '/admin/chat', label: 'Historial del Chat', icon: MessageSquare },
