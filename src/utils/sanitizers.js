@@ -42,6 +42,17 @@ export function isValidEmail(email) {
 }
 
 /**
+ * Valida si un teléfono celular cumple el formato peruano estándar (9 dígitos numéricos iniciando con 9).
+ *
+ * @param {string} phone
+ * @returns {boolean}
+ */
+export function isValidPhonePE(phone) {
+  if (!phone || typeof phone !== 'string') return false;
+  return /^9\d{8}$/.test(phone.trim());
+}
+
+/**
  * Permite únicamente letras y espacios (para nombres de personas).
  * Bloquea números y cualquier carácter especial.
  *

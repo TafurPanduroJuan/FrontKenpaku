@@ -53,3 +53,29 @@
 .animate-slide-up {
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Reglas de impresión para comprobantes térmicos y facturación */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  header, footer, nav {
+    display: none !important;
+  }
+  .receipt-print-area {
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .receipt-ticket {
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+  }
+}

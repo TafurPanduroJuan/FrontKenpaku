@@ -12,7 +12,7 @@ import { ADMIN_ENTRY_PATH } from '../../utils/constants';
 export function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, role } = useAuth();
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -20,7 +20,7 @@ export function Layout() {
       if ((e.ctrlKey || e.metaKey) && (e.shiftKey || e.altKey) && (e.key === 'k' || e.key === 'K')) {
         e.preventDefault();
         if (isAuthenticated) {
-          navigate('/admin');
+          navigate(role === 'cajero' ? '/caja' : '/admin');
         } else {
           navigate(ADMIN_ENTRY_PATH);
         }

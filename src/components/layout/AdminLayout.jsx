@@ -1,15 +1,19 @@
 import React from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, Navigate } from 'react-router-dom';
 import { LayoutDashboard, ShoppingBag, Package, BrainCircuit, MessageSquare, AlertOctagon, LogOut, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { NotFound } from '../../pages/NotFound';
 
 export function AdminLayout() {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, role, logout } = useAuth();
   const navigate = useNavigate();
 
   if (!isAuthenticated) {
     return <NotFound />;
+  }
+
+  if (role === 'cajero') {
+    return <Navigate to="/caja" replace />;
   }
 
   const navItems = [

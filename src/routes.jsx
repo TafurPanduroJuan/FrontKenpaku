@@ -23,6 +23,10 @@ import { ProductForm } from './pages/admin/ProductForm';
 import { Knowledge } from './pages/admin/Knowledge';
 import { ChatLogs } from './pages/admin/ChatLogs';
 import { ClaimsAdmin } from './pages/admin/ClaimsAdmin';
+import { CajeroLayout } from './components/layout/CajeroLayout';
+import { PosView } from './pages/cajero/PosView';
+import { CajeroOrders } from './pages/cajero/CajeroOrders';
+import { CajeroProfile } from './pages/cajero/CajeroProfile';
 import { ADMIN_ENTRY_PATH } from './utils/constants';
 
 const router = createBrowserRouter([
@@ -60,6 +64,16 @@ const router = createBrowserRouter([
       { path: 'conocimiento', element: <Knowledge /> },
       { path: 'chat', element: <ChatLogs /> },
       { path: 'reclamos', element: <ClaimsAdmin /> },
+      { path: '*', element: <NotFound /> }
+    ]
+  },
+  {
+    path: '/caja',
+    element: <CajeroLayout />,
+    children: [
+      { index: true, element: <PosView /> },
+      { path: 'pedidos', element: <CajeroOrders /> },
+      { path: 'perfil', element: <CajeroProfile /> },
       { path: '*', element: <NotFound /> }
     ]
   },

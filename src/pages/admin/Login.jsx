@@ -8,7 +8,7 @@ import { sanitizeEmailInput, isValidEmail } from '../../utils/sanitizers';
 
 export function Login() {
   const navigate = useNavigate();
-  const { isAuthenticated, login, isLoading } = useAuth();
+  const { isAuthenticated, role, login, isLoading } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,6 +16,9 @@ export function Login() {
   const [errorMsg, setErrorMsg] = useState(null);
 
   if (isAuthenticated) {
+    if (role === 'cajero') {
+      return <Navigate to="/caja" replace />;
+    }
     return <Navigate to="/admin" replace />;
   }
 
@@ -46,8 +49,12 @@ export function Login() {
     setEmailError(null);
 
     try {
-      await login(email, password);
-      navigate('/admin');
+      const result = await login(email, password);
+      if (result?.rol === 'cajero') {
+        navigate('/caja');
+      } else {
+        navigate('/admin');
+      }
     } catch (err) {
       setErrorMsg(err.message || 'Credenciales inválidas. Compruebe el correo y contraseña.');
     }
