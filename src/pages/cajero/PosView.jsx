@@ -18,6 +18,7 @@ import {
   User,
   Building2,
   RefreshCw,
+  CheckCircle2,
   X
 } from 'lucide-react';
 import { getProducts } from '../../api/products';
@@ -63,6 +64,7 @@ export function PosView() {
   // Estado de procesamiento y comprobante emitido
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [saleNotification, setSaleNotification] = useState(null);
   const [issuedSale, setIssuedSale] = useState(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
@@ -310,6 +312,37 @@ export function PosView() {
 
       setIssuedSale(saleDetails);
       setIsReceiptModalOpen(true);
+      setSaleNotification('Venta Registrada');
+      setTimeout(() => setSaleNotification(null), 4000);
+
+      // Poner automáticamente en limpio el tablero de compra para la siguiente venta
+      handleClearTicket();
+
+      // Guardar de inmediato en el registro local de ventas de mostrador
+      try {
+        const existing = JSON.parse(localStorage.getItem('kenpaku_pos_sales') || '[]');
+        const newRecord = {
+          id: result.id || `pos-${Date.now()}`,
+          codigo: result.codigo || 'KPK-000001',
+          comprobanteTipo,
+          docNumero,
+          clienteNombre: nombreCompleto,
+          clienteTelefono: clienteTelefono.trim(),
+          clienteCorreo: clienteCorreo.trim(),
+          metodoPago,
+          montoRecibido: numRecibido,
+          vuelto,
+          items: ticketItems,
+          subtotal,
+          igv,
+          total,
+          created_at: new Date().toISOString()
+        };
+        const updated = [newRecord, ...existing.filter((s) => s.codigo !== result.codigo)];
+        localStorage.setItem('kenpaku_pos_sales', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error guardando en localStorage de caja:', e);
+      }
 
       // Recargar catálogo para refrescar inventario actualizado
       fetchProducts();
@@ -330,7 +363,15 @@ export function PosView() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
+      {/* Notificación de Venta Registrada */}
+      {saleNotification && (
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2.5 px-5 py-3.5 bg-emerald-600 text-white rounded-2xl shadow-xl animate-fade-in border border-emerald-400">
+          <CheckCircle2 className="w-5 h-5 text-emerald-200 shrink-0" />
+          <span className="font-extrabold text-sm tracking-wide">{saleNotification}</span>
+        </div>
+      )}
+
       {/* Contenedor Principal: Pantalla Dividida (Split Screen) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* ======================================================== */}
@@ -901,7 +942,7 @@ export function PosView() {
               </div>
             )}
 
-            {/* Botón Principal de Emisión */}
+            {/* Botón Principal de Generación de Venta */}
             <Button
               type="submit"
               variant="primary"
@@ -911,7 +952,7 @@ export function PosView() {
               disabled={ticketItems.length === 0}
               icon={Receipt}
             >
-              Emitir Comprobante (F4)
+              Generar Venta
             </Button>
           </form>
         </div>

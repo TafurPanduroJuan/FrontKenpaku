@@ -66,16 +66,37 @@
   header, footer, nav {
     display: none !important;
   }
+  /* Desactivar fondo oscuro, marcos y sombras de modales al imprimir */
+  .fixed.inset-0 {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+  .relative.bg-white {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+  }
+  .shadow-2xl, .shadow-xl, .shadow-lg, .shadow-md, .shadow-xs, .shadow-2xs {
+    box-shadow: none !important;
+  }
+  .rounded-3xl, .rounded-2xl, .rounded-xl {
+    border-radius: 0 !important;
+  }
+  .border-slate-200, .border-slate-300 {
+    border-color: #e2e8f0 !important;
+  }
   .receipt-print-area {
     padding: 0 !important;
     max-height: none !important;
     overflow: visible !important;
   }
   .receipt-ticket {
-    max-width: 100% !important;
+    max-width: 80mm !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 0 !important;
+    padding: 4px !important;
     margin: 0 auto !important;
   }
 }

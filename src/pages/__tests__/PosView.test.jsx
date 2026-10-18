@@ -166,14 +166,14 @@ describe('PosView Component - Cajero Punto de Venta', () => {
     const yapeBtn = screen.getByRole('button', { name: /Yape/i });
     fireEvent.click(yapeBtn);
 
-    // Click Emitir Comprobante
-    const submitBtn = screen.getByRole('button', { name: /Emitir Comprobante/i });
+    // Click Generar Venta
+    const submitBtn = screen.getByRole('button', { name: /Generar Venta/i });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
       expect(ordersApi.createOrder).toHaveBeenCalled();
       expect(screen.getByText(/Venta Emitida con Éxito/i)).toBeInTheDocument();
-      expect(screen.getByText(/Imprimir Ticket/i)).toBeInTheDocument();
+      expect(screen.getByText(/Imprimir Boleta/i)).toBeInTheDocument();
     });
   });
 });

@@ -25,7 +25,8 @@ import { ChatLogs } from './pages/admin/ChatLogs';
 import { ClaimsAdmin } from './pages/admin/ClaimsAdmin';
 import { CajeroLayout } from './components/layout/CajeroLayout';
 import { PosView } from './pages/cajero/PosView';
-import { CajeroOrders } from './pages/cajero/CajeroOrders';
+import { CajeroMisVentas } from './pages/cajero/CajeroMisVentas';
+import { CajeroVentasVirtuales } from './pages/cajero/CajeroVentasVirtuales';
 import { CajeroProfile } from './pages/cajero/CajeroProfile';
 import { ADMIN_ENTRY_PATH } from './utils/constants';
 
@@ -72,7 +73,9 @@ const router = createBrowserRouter([
     element: <CajeroLayout />,
     children: [
       { index: true, element: <PosView /> },
-      { path: 'pedidos', element: <CajeroOrders /> },
+      { path: 'mis-ventas', element: <CajeroMisVentas /> },
+      { path: 'ventas-virtuales', element: <CajeroVentasVirtuales /> },
+      { path: 'pedidos', element: <CajeroMisVentas /> },
       { path: 'perfil', element: <CajeroProfile /> },
       { path: '*', element: <NotFound /> }
     ]
