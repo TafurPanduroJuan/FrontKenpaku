@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 
 import { Layout } from './components/layout/Layout';
 import { AdminLayout } from './components/layout/AdminLayout';
@@ -62,6 +62,7 @@ const router = createBrowserRouter([
       { path: 'conocimiento', element: <Knowledge /> },
       { path: 'chat', element: <ChatLogs /> },
       { path: 'reclamos', element: <ClaimsAdmin /> },
+      { path: 'pedidos', element: <Navigate to="/caja/pedidos" replace /> },
       { path: '*', element: <NotFound /> }
     ]
   },
