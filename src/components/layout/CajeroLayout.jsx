@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   ShoppingBag,
@@ -12,21 +12,36 @@ import {
   Truck,
   X,
   ArrowRight,
-  Check
+  Check,
+  CheckCheck,
+  CreditCard,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { NotFound } from '../../pages/NotFound';
 import { getAdminOrders } from '../../api/admin';
 import { formatPEN } from '../../utils/formatPEN';
 import { Button } from '../ui/Button';
+import { CajeroNotificationsModal } from '../cajero/CajeroNotificationsModal';
+import {
+  loadStoredNotifications,
+  saveStoredNotifications,
+  extractNotificationsFromOrders,
+  formatTimeAgo
+} from '../../utils/cajeroNotifications';
 
 export function CajeroLayout() {
   const { isAuthenticated, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  // Estados para notificaciones de pedidos web pendientes de flete
+  // Estados para notificaciones de pedidos web
   const [pendingFleteOrders, setPendingFleteOrders] = useState([]);
+  const [notifications, setNotifications] = useState(() => loadStoredNotifications());
   const [isBellOpen, setIsBellOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const bellDropdownRef = useRef(null);
+
   const [dismissedOrderIds, setDismissedOrderIds] = useState(() => {
     try {
       return JSON.parse(sessionStorage.getItem('kenpaku_dismissed_flete_orders') || '[]');
@@ -34,6 +49,24 @@ export function CajeroLayout() {
       return [];
     }
   });
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        bellDropdownRef.current &&
+        !bellDropdownRef.current.contains(event.target)
+      ) {
+        setIsBellOpen(false);
+      }
+    };
+    if (isBellOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isBellOpen]);
 
   // Protección de acceso: si no está autenticado, muestra 404
   if (!isAuthenticated) {
@@ -52,11 +85,13 @@ export function CajeroLayout() {
     { to: '/caja/perfil', label: 'Mi Perfil', icon: User }
   ];
 
-  // Sondeo en segundo plano para capturar nuevos pedidos web que requieran flete
-  const fetchPendingFleteOrders = async () => {
+  // Sondeo en segundo plano para capturar pedidos y actualizar notificaciones
+  const fetchOrdersAndNotifications = async () => {
     try {
       const data = await getAdminOrders({ estado: 'todos' });
       const items = data?.items || [];
+
+      // Pedidos pendientes de flete para popup emergente
       const pending = items.filter(
         (o) =>
           !o.observaciones?.includes('[VENTA MOSTRADOR]') &&
@@ -66,21 +101,69 @@ export function CajeroLayout() {
           (!o.costo_flete || Number(o.costo_flete) === 0)
       );
       setPendingFleteOrders(pending);
+
+      // Sincronizar centro de notificaciones preservando el estado de leídos
+      setNotifications((prev) => {
+        const updated = extractNotificationsFromOrders(items, prev);
+        saveStoredNotifications(updated);
+        return updated;
+      });
     } catch {
       // Ignorar fallas silenciosas de sondeo en segundo plano
     }
   };
 
   useEffect(() => {
-    fetchPendingFleteOrders();
-    const interval = setInterval(fetchPendingFleteOrders, 5000);
+    fetchOrdersAndNotifications();
+    const interval = setInterval(fetchOrdersAndNotifications, 5000);
     return () => clearInterval(interval);
   }, []);
 
   // Manejo de acciones en notificaciones
-  const handleCotizar = (codigo) => {
+  const handleSelectOrder = (codigo, notifId = null) => {
+    if (notifId) {
+      setNotifications((prev) => {
+        const updated = prev.map((n) =>
+          n.id === notifId ? { ...n, leido: true } : n
+        );
+        saveStoredNotifications(updated);
+        return updated;
+      });
+    }
     setIsBellOpen(false);
+    setIsModalOpen(false);
     navigate(`/caja/pedidos?codigo=${encodeURIComponent(codigo)}`);
+  };
+
+  const handleCotizar = (codigo) => {
+    const notif = notifications.find((n) => n.order_codigo === codigo);
+    handleSelectOrder(codigo, notif?.id);
+  };
+
+  const handleToggleRead = (id) => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) =>
+        n.id === id ? { ...n, leido: !n.leido } : n
+      );
+      saveStoredNotifications(updated);
+      return updated;
+    });
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications((prev) => {
+      const updated = prev.map((n) => ({ ...n, leido: true }));
+      saveStoredNotifications(updated);
+      return updated;
+    });
+  };
+
+  const handleClearRead = () => {
+    setNotifications((prev) => {
+      const updated = prev.filter((n) => !n.leido);
+      saveStoredNotifications(updated);
+      return updated;
+    });
   };
 
   const handleDismiss = (codigo) => {
@@ -95,10 +178,29 @@ export function CajeroLayout() {
     });
   };
 
+  const unreadCount = notifications.filter((n) => !n.leido).length;
+
   // Pedido activo para la notificación flotante (el primer pedido no descartado)
   const activePopupOrder = pendingFleteOrders.find(
     (o) => !dismissedOrderIds.includes(o.codigo)
   );
+
+  const getDropdownIcon = (tipo) => {
+    switch (tipo) {
+      case 'flete_pendiente':
+        return <Truck className="w-4 h-4 text-amber-500" />;
+      case 'flete_aceptado':
+        return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
+      case 'flete_rechazado':
+        return <XCircle className="w-4 h-4 text-rose-500" />;
+      case 'voucher_subido':
+        return <CreditCard className="w-4 h-4 text-indigo-500" />;
+      case 'recojo_tienda':
+        return <Store className="w-4 h-4 text-sky-500" />;
+      default:
+        return <Bell className="w-4 h-4 text-slate-500" />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
@@ -156,70 +258,119 @@ export function CajeroLayout() {
             {/* Columna Derecha: Notificaciones + Admin + Botón Cerrar Sesión */}
             <div className="flex items-center justify-end gap-2 sm:gap-3 shrink-0 min-w-[200px]">
               {/* Campana de Notificaciones de Pedidos Web */}
-              <div className="relative">
+              <div className="relative" ref={bellDropdownRef}>
                 <button
                   type="button"
                   id="btn-cajero-notifications"
                   onClick={() => setIsBellOpen((prev) => !prev)}
-                  className="relative p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 transition-colors border border-slate-700 focus:outline-none focus:ring-2 focus:ring-kenpaku-blue"
-                  title="Notificaciones de pedidos web pendientes de flete"
+                  className="relative p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 transition-colors border border-slate-700 focus:outline-none focus:ring-2 focus:ring-kenpaku-blue cursor-pointer"
+                  title="Centro de notificaciones de caja"
                 >
                   <Bell className="w-4 h-4" />
-                  {pendingFleteOrders.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white font-extrabold text-[10px] flex items-center justify-center animate-pulse border-2 border-slate-900">
-                      {pendingFleteOrders.length}
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white font-extrabold text-[10px] flex items-center justify-center animate-pulse border-2 border-slate-900">
+                      {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   )}
                 </button>
 
-                {/* Dropdown de Notificaciones */}
+                {/* Dropdown de Notificaciones Recientes */}
                 {isBellOpen && (
                   <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white text-slate-800 rounded-3xl border border-slate-200 shadow-2xl p-4 z-50 animate-fade-in space-y-3">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                       <div className="flex items-center gap-2">
-                        <Truck className="w-4 h-4 text-indigo-600" />
+                        <Bell className="w-4 h-4 text-kenpaku-blue" />
                         <h4 className="font-extrabold text-xs sm:text-sm text-kenpaku-navy">
-                          Notificaciones de Pedidos Web
+                          Notificaciones de Caja
                         </h4>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-extrabold">
-                        {pendingFleteOrders.length} pendiente(s)
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {unreadCount > 0 ? (
+                          <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-extrabold">
+                            {unreadCount} sin leer
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                            Al día
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    {pendingFleteOrders.length === 0 ? (
+                    {unreadCount > 0 && (
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={handleMarkAllAsRead}
+                          className="text-[11px] font-bold text-kenpaku-blue hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                        >
+                          <CheckCheck className="w-3 h-3" />
+                          <span>Marcar todas como leídas</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {notifications.length === 0 ? (
                       <div className="py-6 text-center text-xs text-slate-400 space-y-1">
                         <Check className="w-8 h-8 text-emerald-500 mx-auto" />
-                        <p className="font-bold text-slate-600">Al día sin pedidos pendientes</p>
-                        <p className="text-[11px]">No hay pedidos web esperando cotización de flete.</p>
+                        <p className="font-bold text-slate-600">Al día sin notificaciones</p>
+                        <p className="text-[11px]">No hay eventos ni pedidos pendientes en este momento.</p>
                       </div>
                     ) : (
-                      <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 space-y-1">
-                        {pendingFleteOrders.map((o) => (
-                          <div key={o.codigo} className="py-2.5 space-y-1 text-xs">
-                            <div className="flex items-center justify-between">
-                              <span className="font-extrabold text-kenpaku-navy">{o.codigo}</span>
-                              <span className="text-[10px] text-kenpaku-orange font-bold">{formatPEN(o.total)}</span>
-                            </div>
-                            <p className="text-[11px] text-slate-600 truncate">
-                              Cliente: <strong>{o.cliente?.nombre || o.cliente_nombre || o.cliente_resumen || 'Cliente Web'}</strong>
-                            </p>
-                            <p className="text-[11px] text-slate-500 truncate" title={o.direccion}>
-                              Destino: {o.direccion || 'Puente Piedra / Lima'}
-                            </p>
-                            <div className="pt-1 flex justify-end">
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleCotizar(o.codigo)}
-                              >
-                                Cotizar Flete
-                              </Button>
+                      <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 space-y-1 pr-1">
+                        {notifications.slice(0, 5).map((n) => (
+                          <div
+                            key={n.id}
+                            className={`py-2.5 px-2 rounded-xl transition-all cursor-pointer ${
+                              !n.leido
+                                ? 'bg-blue-50/50 hover:bg-blue-50'
+                                : 'hover:bg-slate-50'
+                            }`}
+                            onClick={() => handleSelectOrder(n.order_codigo, n.id)}
+                          >
+                            <div className="flex items-start gap-2">
+                              <div className="mt-0.5 p-1 rounded-lg bg-white border border-slate-200 shrink-0">
+                                {getDropdownIcon(n.tipo)}
+                              </div>
+                              <div className="flex-1 min-w-0 text-xs">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="font-extrabold text-kenpaku-navy truncate">
+                                    {n.titulo}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 shrink-0">
+                                    {formatTimeAgo(n.fecha)}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-600 line-clamp-1">
+                                  {n.descripcion}
+                                </p>
+                              </div>
+                              {!n.leido && (
+                                <span className="w-2 h-2 rounded-full bg-blue-600 ring-2 ring-blue-200 mt-1 shrink-0" />
+                              )}
                             </div>
                           </div>
                         ))}
                       </div>
                     )}
+
+                    {/* Botón Ver todas las notificaciones */}
+                    <div className="pt-2 border-t border-slate-100">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        fullWidth
+                        id="btn-ver-todas-notificaciones"
+                        onClick={() => {
+                          setIsBellOpen(false);
+                          setIsModalOpen(true);
+                        }}
+                        className="flex items-center justify-center gap-2 font-bold text-xs"
+                      >
+                        <span>Ver todas las notificaciones</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -319,6 +470,17 @@ export function CajeroLayout() {
           </div>
         </div>
       )}
+
+      {/* Modal Completo del Centro de Notificaciones */}
+      <CajeroNotificationsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        notifications={notifications}
+        onMarkAllAsRead={handleMarkAllAsRead}
+        onToggleRead={handleToggleRead}
+        onClearRead={handleClearRead}
+        onSelectOrder={handleSelectOrder}
+      />
     </div>
   );
 }

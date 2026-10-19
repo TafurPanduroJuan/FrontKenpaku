@@ -55,4 +55,20 @@ describe('CajeroLayout Component', () => {
     fireEvent.click(logoutBtn);
     expect(mockLogout).toHaveBeenCalledTimes(1);
   });
+
+  it('renders notifications bell button and opens dropdown with "Ver todas las notificaciones"', () => {
+    renderLayout();
+
+    const bellBtn = screen.getByRole('button', { name: /Centro de notificaciones de caja/i });
+    expect(bellBtn).toBeInTheDocument();
+
+    fireEvent.click(bellBtn);
+    expect(screen.getByText(/Notificaciones de Caja/i)).toBeInTheDocument();
+
+    const verTodasBtn = screen.getByRole('button', { name: /Ver todas las notificaciones/i });
+    expect(verTodasBtn).toBeInTheDocument();
+
+    fireEvent.click(verTodasBtn);
+    expect(screen.getByText(/Centro de Notificaciones de Caja/i)).toBeInTheDocument();
+  });
 });
