@@ -320,9 +320,17 @@ export function Checkout() {
         // ignore localStorage errors
       }
 
-      // Redirigir pasando token secreto en query y orderData en state
+      // Redirigir pasando token secreto en query y orderData garantizando recojo_en_tienda
       const tokenQuery = response.tracking_token ? `?token=${encodeURIComponent(response.tracking_token)}` : '';
-      navigate(`/pedido/${response.codigo}${tokenQuery}`, { state: { orderData: response } });
+      navigate(`/pedido/${response.codigo}${tokenQuery}`, {
+        state: {
+          orderData: {
+            ...response,
+            recojo_en_tienda: response.recojo_en_tienda ?? payload.recojo_en_tienda,
+            direccion: response.direccion ?? payload.direccion
+          }
+        }
+      });
     } catch (err) {
       console.error('Error al registrar pedido:', err);
       const detail = err?.response?.data?.detail || 'Ocurrió un error inesperado al procesar su pedido.';

@@ -108,6 +108,22 @@ export function OrderConfirmation() {
   const [voucherError, setVoucherError] = useState(null);
   const fileInputRef = useRef(null);
 
+  // Sincronizar estado local y actualizar el historial de sesión del navegador para recargas (F5)
+  const updateOrderData = (data) => {
+    setOrderData(data);
+    try {
+      if (window.history?.replaceState && data) {
+        const cur = window.history.state || {};
+        window.history.replaceState(
+          { ...cur, usr: { ...(cur.usr || {}), orderData: data } },
+          ''
+        );
+      }
+    } catch {
+      // Ignorar restricciones en entornos sin acceso a replaceState
+    }
+  };
+
   // Función para refrescar datos del pedido en vivo
   const fetchLatestOrder = async () => {
     try {
@@ -116,7 +132,7 @@ export function OrderConfirmation() {
         codigo: codigo || orderData?.codigo || undefined
       });
       if (data) {
-        setOrderData(data);
+        updateOrderData(data);
         if (
           data.voucher_referencia ||
           data.voucher_url ||
@@ -131,13 +147,15 @@ export function OrderConfirmation() {
     }
   };
 
-  // Carga inicial si viene con token en URL y sin orderData
+  // Carga inmediata al montar la pantalla para reflejar el estado actual de la BD sin demora
   useEffect(() => {
     if (!orderData && tokenFromUrl) {
       setIsLoading(true);
       fetchLatestOrder().finally(() => setIsLoading(false));
+    } else {
+      fetchLatestOrder();
     }
-  }, [tokenFromUrl]);
+  }, [activeToken, codigo, tokenFromUrl]);
 
   // Sondeo en vivo cada 3.5 segundos para detectar cotización de flete o aprobación de voucher
   useEffect(() => {
@@ -175,11 +193,12 @@ export function OrderConfirmation() {
           ? '¡Flete aceptado con éxito! Ya puedes proceder a realizar el pago.'
           : 'Has rechazado la cotización de flete. Puedes coordinar un cambio por WhatsApp.'
       });
-      // Actualizar estado local inmediatamente
-      setOrderData((prev) => ({
-        ...prev,
+      // Actualizar estado local e historial del navegador inmediatamente
+      const updated = {
+        ...(orderData || {}),
         estado_flete: decision === 'aceptar' ? 'aceptado' : 'rechazado'
-      }));
+      };
+      updateOrderData(updated);
       fetchLatestOrder();
     } catch (err) {
       const msg = err?.response?.data?.detail || 'No se pudo registrar la decisión del flete.';
