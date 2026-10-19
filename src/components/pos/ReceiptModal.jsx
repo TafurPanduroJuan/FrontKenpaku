@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Printer, Download, CheckCircle2, X, FileText, ArrowRight } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { STORE_INFO } from '../../utils/constants';
@@ -6,7 +7,21 @@ import { formatPEN } from '../../utils/formatPEN';
 import { Button } from '../ui/Button';
 
 export function ReceiptModal({ isOpen, onClose, saleData, onNewSale }) {
-  if (!isOpen || !saleData) return null;
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !saleData || typeof document === 'undefined') return null;
 
   const {
     codigo,
@@ -22,10 +37,12 @@ export function ReceiptModal({ isOpen, onClose, saleData, onNewSale }) {
     subtotal = 0,
     igv = 0,
     total = 0,
+    costo_flete = 0,
     fechaEmision = new Date()
   } = saleData;
 
-  const docFinal = saleData.numeroDocumento || saleData.docNumero || '';
+  const costoFlete = Number(costo_flete || saleData.costoFlete || 0);
+  const docFinal = saleData.numeroDocumento || saleData.docNumero || saleData.cliente_dni || saleData.cliente_ruc || '';
 
   const correlativo = `${comprobanteTipo === 'factura' ? 'F001' : 'B001'}-${String(codigo || '1001').replace(/\D/g, '').slice(-6) || '000001'}`;
 
@@ -113,6 +130,7 @@ export function ReceiptModal({ isOpen, onClose, saleData, onNewSale }) {
   </table>
   <div class="divider"></div>
   <div class="row"><span>Op. Gravada:</span><span>${formatPEN(subtotal)}</span></div>
+  ${costoFlete > 0 ? `<div class="row"><span>Flete / Transporte a Obra:</span><span>${formatPEN(costoFlete)}</span></div>` : ''}
   <div class="row"><span>I.G.V. (18%):</span><span>${formatPEN(igv)}</span></div>
   <div class="row font-bold" style="font-size: 13px; margin-top: 3px;"><span>TOTAL:</span><span>${formatPEN(total)}</span></div>
   <div class="divider"></div>
@@ -249,6 +267,12 @@ export function ReceiptModal({ isOpen, onClose, saleData, onNewSale }) {
       doc.text(`S/ ${Number(subtotal).toFixed(2)}`, 74, y, { align: 'right' });
       y += 4;
 
+      if (costoFlete > 0) {
+        doc.text('Flete / Transporte:', 6, y);
+        doc.text(`S/ ${costoFlete.toFixed(2)}`, 74, y, { align: 'right' });
+        y += 4;
+      }
+
       doc.text('I.G.V. (18%):', 6, y);
       doc.text(`S/ ${Number(igv).toFixed(2)}`, 74, y, { align: 'right' });
       y += 4.5;
@@ -301,19 +325,32 @@ export function ReceiptModal({ isOpen, onClose, saleData, onNewSale }) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+  const modalContent = (
+    <div
+      className="fixed inset-0 z-[200] overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       {/* Contenedor Modal */}
-      <div className="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-fade-in">
+      <div
+        className="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-fade-in my-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Cabecera Superior del Modal */}
         <div className="bg-kenpaku-navy text-white px-6 py-4 flex items-center justify-between no-print">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-            <h3 className="font-extrabold text-base text-white">Venta Emitida con Éxito</h3>
+            <h3 className="font-extrabold text-base text-white">
+              {onNewSale ? 'Venta Emitida con Éxito' : (comprobanteTipo === 'factura' ? 'Factura Electrónica' : 'Boleta de Venta Electrónica')}
+            </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            aria-label="Cerrar comprobante"
+            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -413,6 +450,12 @@ export function ReceiptModal({ isOpen, onClose, saleData, onNewSale }) {
                 <span>Op. Gravada:</span>
                 <span>{formatPEN(subtotal)}</span>
               </div>
+              {costoFlete > 0 && (
+                <div className="flex justify-between text-slate-600">
+                  <span>Flete / Transporte a Obra:</span>
+                  <span>{formatPEN(costoFlete)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-slate-600">
                 <span>I.G.V. (18%):</span>
                 <span>{formatPEN(igv)}</span>
@@ -460,18 +503,22 @@ export function ReceiptModal({ isOpen, onClose, saleData, onNewSale }) {
           >
             Cerrar Vista
           </Button>
-          <Button
-            variant="primary"
-            icon={ArrowRight}
-            onClick={() => {
-              onClose();
-              if (onNewSale) onNewSale();
-            }}
-          >
-            Siguiente Venta
-          </Button>
+          {onNewSale && (
+            <Button
+              variant="primary"
+              icon={ArrowRight}
+              onClick={() => {
+                onClose();
+                onNewSale();
+              }}
+            >
+              Siguiente Venta
+            </Button>
+          )}
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

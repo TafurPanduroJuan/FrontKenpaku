@@ -31,6 +31,7 @@ import { getVoucherUrl } from '../utils/voucher';
 import { Button } from '../components/ui/Button';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { sanitizeOrderCode, sanitizeDigits } from '../utils/sanitizers';
+import { ReceiptModal } from '../components/pos/ReceiptModal';
 
 const STATUS_CONFIG = {
   pendiente: {
@@ -140,6 +141,7 @@ export function TrackingPage() {
   const [voucherPreview, setVoucherPreview] = useState(null);
   const [isUploadingVoucher, setIsUploadingVoucher] = useState(false);
   const [voucherMsg, setVoucherMsg] = useState(null);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
   // Cargar pedidos recientes guardados en el navegador
   useEffect(() => {
@@ -315,36 +317,44 @@ export function TrackingPage() {
   const statusInfo = order ? (STATUS_CONFIG[order.estado] || STATUS_CONFIG.pendiente) : null;
   const isTerminalCancelled = order?.estado === 'cancelado';
 
-  // Configuración de los pasos según modalidad
-  const steps = order?.recojo_en_tienda
+  // Configuración de los pasos según modalidad sincronizada
+  const isRecojo = Boolean(order?.recojo_en_tienda);
+  const isPaymentConfirmed =
+    order &&
+    ['confirmado', 'despachado', 'listo_para_recojo', 'entregado'].includes(order.estado);
+  const fleteAceptado = order?.estado_flete === 'aceptado';
+  const isTerminalDelivered = order?.estado === 'entregado';
+
+  let activeStepIndex = 1;
+  if (isRecojo) {
+    if (isTerminalDelivered) activeStepIndex = 4;
+    else if (order?.estado === 'listo_para_recojo') activeStepIndex = 3;
+    else if (isPaymentConfirmed || order?.estado === 'confirmado') activeStepIndex = 2;
+    else activeStepIndex = 1;
+  } else {
+    if (isTerminalDelivered) activeStepIndex = 5;
+    else if (order?.estado === 'despachado') activeStepIndex = 4;
+    else if (isPaymentConfirmed || order?.estado === 'confirmado') activeStepIndex = 3;
+    else if (fleteAceptado) activeStepIndex = 2;
+    else activeStepIndex = 1;
+  }
+
+  const steps = isRecojo
     ? [
-        { label: 'Registrado', desc: 'Recibido en web', match: ['pendiente'] },
-        { label: 'En Preparación', desc: 'Materiales en patio', match: ['confirmado'] },
-        { label: 'Listo para Recojo', desc: 'Almacén Puente Piedra', match: ['listo_para_recojo'] },
-        { label: 'Entregado', desc: 'Retirado por cliente', match: ['entregado'] },
+        { label: 'Registrado', desc: 'Registrado con éxito', fase: 'Fase 1' },
+        { label: 'Pago y Voucher', desc: isPaymentConfirmed ? 'Abono verificado' : 'Pendiente abono', fase: 'Fase 2' },
+        { label: 'En Preparación', desc: 'Materiales en patio', fase: 'Fase 3' },
+        { label: 'Listo para Recojo', desc: 'Almacén Puente Piedra', fase: 'Fase 4' },
+        { label: 'Entregado', desc: 'Retirado por cliente', fase: 'Fase 5' },
       ]
     : [
-        { label: 'Registrado', desc: 'Recibido en web', match: ['pendiente'] },
-        { label: 'Flete Cotizado', desc: 'Costo calculado y abono', match: ['flete_cotizado'] },
-        { label: 'En Preparación', desc: 'Pago validado en patio', match: ['confirmado'] },
-        { label: 'Despachado', desc: 'En camión a obra', match: ['despachado'] },
-        { label: 'Entregado', desc: 'Conforme en obra', match: ['entregado'] },
+        { label: 'Registrado', desc: 'Registrado con éxito', fase: 'Fase 1' },
+        { label: 'Cotización Flete', desc: fleteAceptado ? 'Flete aceptado' : order?.estado === 'flete_cotizado' ? 'Esperando tu decisión' : 'Cotizando por caja', fase: 'Fase 2' },
+        { label: 'Pago y Voucher', desc: isPaymentConfirmed ? 'Abono verificado' : fleteAceptado ? 'Abono habilitado' : 'Espera flete', fase: 'Fase 3' },
+        { label: 'En Preparación', desc: 'Materiales en patio', fase: 'Fase 4' },
+        { label: 'Pedido en Camino', desc: 'En camión a obra', fase: 'Fase 5' },
+        { label: 'Entregado Conforme', desc: 'Conforme en obra', fase: 'Fase 6' },
       ];
-
-  const getStepStatus = (stepIndex, orderState) => {
-    if (orderState === 'cancelado') return 'cancelled';
-    const stateOrderRecojo = ['pendiente', 'confirmado', 'listo_para_recojo', 'entregado'];
-    const stateOrderDespacho = ['pendiente', 'flete_cotizado', 'confirmado', 'despachado', 'entregado'];
-    const flow = order?.recojo_en_tienda ? stateOrderRecojo : stateOrderDespacho;
-
-    const currentOrderIndex = flow.indexOf(orderState);
-    const targetStep = steps[stepIndex];
-    const minStepFlowIndex = Math.min(...targetStep.match.map((st) => flow.indexOf(st)).filter((idx) => idx !== -1));
-
-    if (targetStep.match.includes(orderState)) return 'current';
-    if (currentOrderIndex > minStepFlowIndex) return 'passed';
-    return 'upcoming';
-  };
 
   // Extraer nota de cotización de flete ingresada por el asesor comercial (si existe)
   const fleteQuoteEvent = (order?.events || [])
@@ -356,10 +366,6 @@ export function TrackingPage() {
   // Mostrar bloque de flete si el pedido es despacho y está en flete_cotizado
   const showFleteCard = order && !order.recojo_en_tienda && order.estado === 'flete_cotizado';
 
-  // Si ya fue confirmado, despachado, listo para recojo o entregado: el pago ya fue validado por caja y está en preparación o posterior
-  const isPaymentConfirmed =
-    order &&
-    ['confirmado', 'despachado', 'listo_para_recojo', 'entregado'].includes(order.estado);
 
   // Mostrar bloque de cuentas bancarias y formulario de voucher SOLO MIENTRAS ESTÉ PENDIENTE DE PAGO:
   // - Si es recojo en tienda: se habilita automáticamente desde estado 'pendiente' (flete S/ 0).
@@ -566,31 +572,35 @@ export function TrackingPage() {
 
             {/* Visual Stepper */}
             {!isTerminalCancelled ? (
-              <div className={`grid grid-cols-2 ${steps.length === 5 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'} gap-2.5 pt-2`}>
+              <div className={`grid grid-cols-2 ${isRecojo ? 'sm:grid-cols-5' : 'sm:grid-cols-3 lg:grid-cols-6'} gap-2.5 pt-2`}>
                 {steps.map((st, idx) => {
-                  const stepStatus = getStepStatus(idx, order.estado);
-                  const isCurrent = stepStatus === 'current';
-                  const isPassed = stepStatus === 'passed';
+                  const isPassed = isTerminalDelivered ? true : idx < activeStepIndex;
+                  const isCurrent = !isTerminalDelivered && idx === activeStepIndex;
+                  const isNext = !isTerminalDelivered && idx === activeStepIndex + 1;
                   const stepNumber = idx + 1;
 
                   return (
                     <div
                       key={idx}
-                      className={`p-3.5 rounded-2xl border transition-all ${
-                        isCurrent
-                          ? 'bg-sky-50/80 border-[#0284C7] shadow-xs'
-                          : isPassed
-                          ? 'bg-emerald-50/60 border-emerald-200'
-                          : 'bg-slate-50 border-slate-200 opacity-60'
+                      className={`p-3.5 rounded-2xl border text-left transition-all ${
+                        isPassed
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-2xs'
+                          : isCurrent
+                          ? 'bg-sky-50 border-[#0284C7] ring-2 ring-[#0284C7]/25 text-sky-950 shadow-xs'
+                          : isNext
+                          ? 'bg-amber-50/90 border-amber-300 border-dashed text-amber-950'
+                          : 'bg-slate-50 border-slate-200 text-slate-400 opacity-60'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span
                           className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                            isCurrent
-                              ? 'bg-[#0284C7] text-white'
-                              : isPassed
+                            isPassed
                               ? 'bg-emerald-600 text-white'
+                              : isCurrent
+                              ? 'bg-[#0284C7] text-white'
+                              : isNext
+                              ? 'bg-amber-500 text-white'
                               : 'bg-slate-200 text-slate-600'
                           }`}
                         >
@@ -599,10 +609,38 @@ export function TrackingPage() {
                         {isCurrent && (
                           <span className="w-2 h-2 rounded-full bg-[#0284C7] animate-ping" />
                         )}
+                        {isNext && (
+                          <span className="w-2 h-2 rounded-full bg-amber-400" />
+                        )}
                       </div>
                       <div>
-                        <span className="font-bold text-xs text-slate-900 block">{st.label}</span>
-                        <span className="text-[11px] text-slate-500">{st.desc}</span>
+                        <span
+                          className={`text-[10px] font-extrabold uppercase block tracking-wider ${
+                            isPassed
+                              ? 'text-emerald-700'
+                              : isCurrent
+                              ? 'text-sky-700'
+                              : isNext
+                              ? 'text-amber-700'
+                              : 'text-slate-400'
+                          }`}
+                        >
+                          {st.fase}
+                        </span>
+                        <span className="font-bold text-xs text-slate-900 block truncate mt-0.5">{st.label}</span>
+                        <span
+                          className={`text-[11px] block truncate mt-0.5 ${
+                            isPassed
+                              ? 'text-emerald-700'
+                              : isCurrent
+                              ? 'text-sky-800 font-semibold'
+                              : isNext
+                              ? 'text-amber-800'
+                              : 'text-slate-500'
+                          }`}
+                        >
+                          {st.desc}
+                        </span>
                       </div>
                     </div>
                   );
@@ -1073,9 +1111,21 @@ export function TrackingPage() {
 
           {/* Products & Totals Card */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-soft space-y-4">
-            <h3 className="text-base font-bold text-kenpaku-navy border-b border-slate-100 pb-3">
-              Materiales Incluidos en este Pedido
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-kenpaku-navy">
+                Materiales Incluidos en este Pedido
+              </h3>
+              {isPaymentConfirmed && (
+                <button
+                  type="button"
+                  onClick={() => setIsReceiptModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-kenpaku-navy hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
+                >
+                  <FileText className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Descargar o Imprimir Boleta</span>
+                </button>
+              )}
+            </div>
 
             <div className="divide-y divide-slate-100">
               {order.items?.map((item, idx) => (
@@ -1133,6 +1183,29 @@ export function TrackingPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de Boleta de Venta */}
+      <ReceiptModal
+        isOpen={isReceiptModalOpen}
+        onClose={() => setIsReceiptModalOpen(false)}
+        saleData={order ? {
+          codigo: order.codigo,
+          comprobanteTipo: 'boleta',
+          docNumero: order.cliente_dni || order.cliente_ruc || order.docNumero || '',
+          clienteNombre: order.cliente_nombre || order.cliente_resumen || order.clienteNombre || 'Cliente General',
+          clienteTelefono: order.cliente_telefono || telefonoInput || '',
+          clienteCorreo: order.cliente_correo || '',
+          metodoPago: order.metodo_pago || 'transferencia',
+          montoRecibido: Number(order.total || 0),
+          vuelto: 0,
+          items: order.items || [],
+          subtotal: Number(order.subtotal || 0),
+          costo_flete: Number(order.costo_flete || 0),
+          igv: Number(order.igv || 0),
+          total: Number(order.total || 0),
+          fechaEmision: order.created_at || new Date()
+        } : null}
+      />
     </div>
   );
 }

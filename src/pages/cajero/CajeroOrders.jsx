@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -30,6 +30,7 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { Modal } from '../../components/ui/Modal';
 import { Toast } from '../../components/ui/Toast';
 import { sanitizeOrderCode } from '../../utils/sanitizers';
+import { ReceiptModal } from '../../components/pos/ReceiptModal';
 
 const ALLOWED_TRANSITIONS = {
   recojo: {
@@ -40,7 +41,7 @@ const ALLOWED_TRANSITIONS = {
     cancelado: []
   },
   despacho: {
-    pendiente: ['flete_cotizado', 'confirmado', 'cancelado'],
+    pendiente: ['flete_cotizado', 'cancelado'],
     flete_cotizado: ['confirmado', 'cancelado'],
     confirmado: ['despachado', 'cancelado'],
     despachado: ['entregado', 'cancelado'],
@@ -50,27 +51,27 @@ const ALLOWED_TRANSITIONS = {
 };
 
 const ACTION_LABELS = {
-  flete_cotizado: 'Cotizar Flete',
-  confirmado: 'Confirmar Pedido',
-  despachado: 'Marcar Despachado a Obra',
-  listo_para_recojo: 'Listo para Recojo en Almacén',
-  entregado: 'Marcar como Entregado',
+  flete_cotizado: 'Cotizar Flete de Transporte',
+  confirmado: 'Confirmar Pedido y Preparar',
+  despachado: 'Despachar Pedido en Camino',
+  listo_para_recojo: 'Listo para Entrega en Tienda',
+  entregado: 'Confirmar Pedido Entregado Conforme',
   cancelado: 'Cancelar Pedido'
 };
 
 const MODAL_FLOW_STEPS = {
   despacho: [
-    { key: 'pendiente', label: '1. Registrado', sub: 'Pedido en web' },
-    { key: 'flete_cotizado', label: '2. Flete Cotizado', sub: 'Cálculo de flete' },
-    { key: 'confirmado', label: '3. En Preparación', sub: 'Pago validado' },
-    { key: 'despachado', label: '4. Despachado', sub: 'Camión en ruta' },
-    { key: 'entregado', label: '5. Entregado', sub: 'Conforme en obra' },
+    { key: 'pendiente', label: '1. Nuevo Pedido', sub: 'Pendiente cotizar flete' },
+    { key: 'flete_cotizado', label: '2. Flete Cotizado', sub: 'Esperando pago/voucher' },
+    { key: 'confirmado', label: '3. En Preparación', sub: 'Venta y abono confirmado' },
+    { key: 'despachado', label: '4. Pedido en Camino', sub: 'Camión en ruta a obra' },
+    { key: 'entregado', label: '5. Entregado Conforme', sub: 'Recibido en obra' },
   ],
   recojo: [
-    { key: 'pendiente', label: '1. Registrado', sub: 'Pedido en web' },
-    { key: 'confirmado', label: '2. En Preparación', sub: 'Pago validado' },
-    { key: 'listo_para_recojo', label: '3. Listo en Almacén', sub: 'Puente Piedra' },
-    { key: 'entregado', label: '4. Entregado', sub: 'Retiro cliente' },
+    { key: 'pendiente', label: '1. Nuevo Pedido', sub: 'Pendiente pago y voucher' },
+    { key: 'confirmado', label: '2. En Preparación', sub: 'Venta y abono confirmado' },
+    { key: 'listo_para_recojo', label: '3. Listo para Entrega', sub: 'Almacén Puente Piedra' },
+    { key: 'entregado', label: '4. Entregado Conforme', sub: 'Retiro en tienda' },
   ],
 };
 
@@ -96,9 +97,19 @@ function getTransitionImpactMessage(targetState) {
 export function CajeroOrders() {
   const queryClient = useQueryClient();
   const [selectedStatus, setSelectedStatus] = useState('todos');
-  const [searchParams] = useSearchParams();
-  const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const codigoParam = searchParams.get('codigo');
+  const [searchInput, setSearchInput] = useState(codigoParam || searchParams.get('q') || '');
+  const [searchTerm, setSearchTerm] = useState(codigoParam || searchParams.get('q') || '');
+  const hasAutoOpenedRef = useRef(null);
+
+  useEffect(() => {
+    const term = searchParams.get('codigo') || searchParams.get('q') || '';
+    if (term) {
+      setSearchInput(term);
+      setSearchTerm(term);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearchTerm(searchInput.trim()), 400);
@@ -106,12 +117,29 @@ export function CajeroOrders() {
   }, [searchInput]);
 
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const handleCloseModal = () => {
+    setSelectedOrder(null);
+    hasAutoOpenedRef.current = 'CLOSED';
+    if (searchParams.get('codigo')) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('codigo');
+      setSearchParams(nextParams, { replace: true });
+    }
+  };
   const [pendingTransition, setPendingTransition] = useState(null);
   const [transitionNote, setTransitionNote] = useState('');
   const [costoFleteInput, setCostoFleteInput] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isCronRunning, setIsCronRunning] = useState(false);
+  const [receiptOrder, setReceiptOrder] = useState(null);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+
+  const handleOpenReceipt = (order) => {
+    setReceiptOrder(order);
+    setIsReceiptModalOpen(true);
+  };
 
   const handleRunCron = async (simulateHours = 0) => {
     setIsCronRunning(true);
@@ -217,6 +245,16 @@ export function CajeroOrders() {
   const orders = allOrders.filter(
     (o) => !o.observaciones?.includes('[VENTA MOSTRADOR]') && !o.observaciones?.includes('MOSTRADOR')
   );
+
+  useEffect(() => {
+    if (codigoParam && orders.length > 0 && !selectedOrder && hasAutoOpenedRef.current !== 'CLOSED' && hasAutoOpenedRef.current !== codigoParam) {
+      const match = orders.find((o) => o.codigo === codigoParam || o.id === codigoParam);
+      if (match) {
+        setSelectedOrder(match);
+        hasAutoOpenedRef.current = codigoParam;
+      }
+    }
+  }, [codigoParam, orders, selectedOrder]);
 
   const statusBadgeClasses = {
     pendiente: 'bg-amber-100 text-amber-800 border-amber-200',
@@ -413,15 +451,33 @@ export function CajeroOrders() {
                         </div>
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => setSelectedOrder(order)}
-                          className={`px-3 py-1.5 font-bold rounded-xl transition-all cursor-pointer text-xs ${hasPendingVoucher
-                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-                            : 'bg-kenpaku-blue hover:bg-sky-700 text-white shadow-2xs'
-                            }`}
-                        >
-                          {hasPendingVoucher ? 'Verificar Pago' : 'Ver Detalle'}
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              hasAutoOpenedRef.current = order.codigo;
+                              setSelectedOrder(order);
+                            }}
+                            className={`px-3 py-1.5 font-bold rounded-xl transition-all cursor-pointer text-xs ${hasPendingVoucher
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                              : 'bg-kenpaku-blue hover:bg-sky-700 text-white shadow-2xs'
+                              }`}
+                          >
+                            {hasPendingVoucher ? 'Verificar Pago' : 'Ver Detalle'}
+                          </button>
+
+                          {['confirmado', 'despachado', 'listo_para_recojo', 'entregado'].includes(order.estado) && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenReceipt(order)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all shadow-xs cursor-pointer text-xs"
+                              title="Ver, descargar o imprimir boleta de venta"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>Ver Boleta</span>
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -436,7 +492,7 @@ export function CajeroOrders() {
       {selectedOrder && (
         <Modal
           isOpen={!!selectedOrder}
-          onClose={() => setSelectedOrder(null)}
+          onClose={handleCloseModal}
           title={`Gestión de Pedido ${selectedOrder.codigo}`}
           maxWidth="max-w-3xl"
         >
@@ -673,13 +729,13 @@ export function CajeroOrders() {
                       <button
                         type="button"
                         onClick={() => {
-                          setTransitionNote('Pago validado por caja tras revisión de voucher');
+                          setTransitionNote('Pago validado por caja tras revisión de voucher. Pedido aceptado y pasa a preparación.');
                           setPendingTransition({ order: selectedOrder, targetState: 'confirmado' });
                         }}
                         className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                       >
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>Validar Abono y Confirmar Pedido</span>
+                        <span>Validar Abono, Aceptar Pedido y Pasar a Preparación</span>
                       </button>
                     </div>
                   )}
@@ -730,6 +786,112 @@ export function CajeroOrders() {
                       Flujo: <strong className="text-slate-700">{selectedOrder.recojo_en_tienda ? 'Recojo en Almacén' : 'Despacho a Obra'}</strong>
                     </span>
                   </div>
+
+                  {/* Roadmap Visual de Fases: Fase anterior = Verde, Fase actual = Azul, Fase siguiente = Amarillo */}
+                  {(() => {
+                    const isRecojo = Boolean(selectedOrder.recojo_en_tienda);
+                    let cajeroActiveStep = 1;
+                    if (isRecojo) {
+                      if (selectedOrder.estado === 'entregado') cajeroActiveStep = 4;
+                      else if (selectedOrder.estado === 'listo_para_recojo') cajeroActiveStep = 3;
+                      else if (['confirmado', 'despachado'].includes(selectedOrder.estado)) cajeroActiveStep = 2;
+                      else cajeroActiveStep = 1;
+                    } else {
+                      if (selectedOrder.estado === 'entregado') cajeroActiveStep = 5;
+                      else if (selectedOrder.estado === 'despachado') cajeroActiveStep = 4;
+                      else if (selectedOrder.estado === 'confirmado') cajeroActiveStep = 3;
+                      else if (selectedOrder.estado === 'flete_cotizado') cajeroActiveStep = 2;
+                      else cajeroActiveStep = 1;
+                    }
+
+                    const cajeroSteps = isRecojo
+                      ? [
+                          { fase: 'Fase 1', label: 'Registrado', sub: 'Pedido registrado' },
+                          { fase: 'Fase 2', label: 'Pago y Voucher', sub: 'Pendiente abono' },
+                          { fase: 'Fase 3', label: 'En Preparación', sub: 'Alistando patio' },
+                          { fase: 'Fase 4', label: 'Listo Entrega', sub: 'Almacén Puente Piedra' },
+                          { fase: 'Fase 5', label: 'Entregado', sub: 'Retiro conforme' },
+                        ]
+                      : [
+                          { fase: 'Fase 1', label: 'Registrado', sub: 'Pedido registrado' },
+                          { fase: 'Fase 2', label: 'Cotizar Flete', sub: 'Pendiente por caja' },
+                          { fase: 'Fase 3', label: 'Flete Cotizado', sub: 'Espera pago/voucher' },
+                          { fase: 'Fase 4', label: 'En Preparación', sub: 'Alistando patio' },
+                          { fase: 'Fase 5', label: 'Pedido en Camino', sub: 'Camión en ruta' },
+                          { fase: 'Fase 6', label: 'Entregado', sub: 'Conforme en obra' },
+                        ];
+
+                    const isDelivered = selectedOrder.estado === 'entregado';
+
+                    return (
+                      <div className="pt-2 border-t border-slate-200/80">
+                        <span className="text-[10px] uppercase font-bold text-slate-500 block mb-2">
+                          Progreso del Flujo de Fases:
+                        </span>
+                        <div className={`grid grid-cols-2 ${isRecojo ? 'sm:grid-cols-5' : 'sm:grid-cols-3 lg:grid-cols-6'} gap-2`}>
+                          {cajeroSteps.map((step, idx) => {
+                            const isPassed = isDelivered ? true : idx < cajeroActiveStep;
+                            const isCurrent = !isDelivered && idx === cajeroActiveStep;
+                            const isNext = !isDelivered && idx === cajeroActiveStep + 1;
+
+                            return (
+                              <div
+                                key={step.label}
+                                className={`p-2.5 rounded-xl border text-left transition-all ${
+                                  isPassed
+                                    ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-2xs'
+                                    : isCurrent
+                                    ? 'bg-sky-50 border-sky-400 ring-2 ring-sky-500/25 text-sky-950 shadow-xs'
+                                    : isNext
+                                    ? 'bg-amber-50/90 border-amber-300 border-dashed text-amber-950'
+                                    : 'bg-white border-slate-200 text-slate-400 opacity-60'
+                                }`}
+                              >
+                                <span
+                                  className={`text-[9px] font-extrabold uppercase block tracking-wider ${
+                                    isPassed
+                                      ? 'text-emerald-700'
+                                      : isCurrent
+                                      ? 'text-sky-700'
+                                      : isNext
+                                      ? 'text-amber-700'
+                                      : 'text-slate-400'
+                                  }`}
+                                >
+                                  {step.fase}
+                                </span>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  {isPassed ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                  ) : isCurrent ? (
+                                    <Clock className="w-3.5 h-3.5 text-sky-600 animate-pulse shrink-0" />
+                                  ) : isNext ? (
+                                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
+                                  ) : (
+                                    <div className="w-2 h-2 rounded-full bg-slate-300 shrink-0" />
+                                  )}
+                                  <span className="text-[11px] font-bold truncate">{step.label}</span>
+                                </div>
+                                <span
+                                  className={`text-[9px] block truncate mt-0.5 ${
+                                    isPassed
+                                      ? 'text-emerald-700'
+                                      : isCurrent
+                                      ? 'text-sky-800 font-bold'
+                                      : isNext
+                                      ? 'text-amber-800'
+                                      : 'text-slate-400'
+                                  }`}
+                                >
+                                  {step.sub}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="pt-2 border-t border-slate-200/80">
                     <label className="font-bold text-slate-900 uppercase tracking-wider text-[10px] block mb-2">
@@ -831,6 +993,33 @@ export function CajeroOrders() {
               <span>Total Pedido (con IGV y Flete):</span>
               <span className="text-xl font-extrabold text-amber-400">{formatPEN(selectedOrder.total)}</span>
             </div>
+
+            {/* Modal Bottom Actions */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200">
+              <span className="text-[11px] text-slate-500">
+                💡 Presiona Escape o usa el botón para cerrar la ventana del pedido.
+              </span>
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                {['confirmado', 'despachado', 'listo_para_recojo', 'entregado'].includes(selectedOrder.estado) && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenReceipt(selectedOrder)}
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-kenpaku-navy hover:bg-slate-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-amber-300" />
+                    <span>Ver / Imprimir Boleta</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  data-testid="modal-bottom-close-button"
+                  onClick={handleCloseModal}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs transition-colors cursor-pointer"
+                >
+                  Cerrar Ventana
+                </button>
+              </div>
+            </div>
           </div>
         </Modal>
       )}
@@ -921,6 +1110,32 @@ export function CajeroOrders() {
           </div>
         </Modal>
       )}
+
+      {/* Modal de Boleta de Venta */}
+      <ReceiptModal
+        isOpen={isReceiptModalOpen}
+        onClose={() => {
+          setIsReceiptModalOpen(false);
+          setReceiptOrder(null);
+        }}
+        saleData={receiptOrder ? {
+          codigo: receiptOrder.codigo,
+          comprobanteTipo: 'boleta',
+          docNumero: receiptOrder.cliente_dni || receiptOrder.cliente_ruc || receiptOrder.docNumero || '',
+          clienteNombre: receiptOrder.cliente_nombre || receiptOrder.clienteNombre || 'Cliente General',
+          clienteTelefono: receiptOrder.cliente_telefono || receiptOrder.clienteTelefono || '',
+          clienteCorreo: receiptOrder.cliente_correo || receiptOrder.clienteCorreo || '',
+          metodoPago: receiptOrder.metodo_pago || 'transferencia',
+          montoRecibido: Number(receiptOrder.total || 0),
+          vuelto: 0,
+          items: receiptOrder.items || [],
+          subtotal: Number(receiptOrder.subtotal || 0),
+          costo_flete: Number(receiptOrder.costo_flete || 0),
+          igv: Number(receiptOrder.igv || 0),
+          total: Number(receiptOrder.total || 0),
+          fechaEmision: receiptOrder.created_at || new Date()
+        } : null}
+      />
     </div>
   );
 }

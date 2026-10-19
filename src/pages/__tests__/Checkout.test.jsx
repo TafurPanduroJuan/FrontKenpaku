@@ -67,14 +67,24 @@ describe('Checkout page unit tests', () => {
     expect(submitBtn).not.toBeDisabled();
   });
 
-  it('blocks numbers and special characters in name while typing', () => {
+  it('blocks numbers and special characters in nombres and apellidos while typing', () => {
     renderCheckout();
 
-    const nameInput = screen.getByLabelText(/Nombres y Apellidos/i);
-    fireEvent.change(nameInput, { target: { value: 'Juan123 #$! Pérez' } });
+    const nombresInput = screen.getByLabelText(/^Nombres \*/i);
+    fireEvent.change(nombresInput, { target: { value: 'Juan123 #$! Carlos' } });
+    expect(nombresInput.value).toBe('Juan  Carlos');
 
-    // Bloqueado en tiempo real: números y símbolos quedan descartados
-    expect(nameInput.value).toBe('Juan  Pérez');
+    const apellidosInput = screen.getByLabelText(/^Apellidos \*/i);
+    fireEvent.change(apellidosInput, { target: { value: 'Pérez456 %& Tafur' } });
+    expect(apellidosInput.value).toBe('Pérez  Tafur');
+  });
+
+  it('blocks non-digits in DNI and limits to 8 digits', () => {
+    renderCheckout();
+
+    const dniInput = screen.getByLabelText(/^DNI \*/i);
+    fireEvent.change(dniInput, { target: { value: 'abc-12345678-extra99' } });
+    expect(dniInput.value).toBe('12345678');
   });
 
   it('blocks letters and symbols in phone while typing up to 9 digits', () => {
@@ -90,8 +100,9 @@ describe('Checkout page unit tests', () => {
   it('shows error when phone does not start with 9 when submitting or saving', async () => {
     renderCheckout();
 
-    const nameInput = screen.getByLabelText(/Nombres y Apellidos/i);
-    fireEvent.change(nameInput, { target: { value: 'Juan Perez' } });
+    fireEvent.change(screen.getByLabelText(/^Nombres \*/i), { target: { value: 'Juan' } });
+    fireEvent.change(screen.getByLabelText(/^Apellidos \*/i), { target: { value: 'Perez' } });
+    fireEvent.change(screen.getByLabelText(/^DNI \*/i), { target: { value: '12345678' } });
 
     // Número de 9 dígitos pero que NO empieza con 9
     const phoneInput = screen.getByLabelText(/Teléfono o WhatsApp/i);
@@ -116,8 +127,9 @@ describe('Checkout page unit tests', () => {
   it('shows error when phone has fewer than 9 digits on save', async () => {
     renderCheckout();
 
-    const nameInput = screen.getByLabelText(/Nombres y Apellidos/i);
-    fireEvent.change(nameInput, { target: { value: 'Juan Perez' } });
+    fireEvent.change(screen.getByLabelText(/^Nombres \*/i), { target: { value: 'Juan' } });
+    fireEvent.change(screen.getByLabelText(/^Apellidos \*/i), { target: { value: 'Perez' } });
+    fireEvent.change(screen.getByLabelText(/^DNI \*/i), { target: { value: '12345678' } });
 
     const phoneInput = screen.getByLabelText(/Teléfono o WhatsApp/i);
     fireEvent.change(phoneInput, { target: { value: '98765' } });
@@ -141,8 +153,9 @@ describe('Checkout page unit tests', () => {
   it('shows dynamic validation error when email is missing @ or has invalid domain', async () => {
     renderCheckout();
 
-    const nameInput = screen.getByLabelText(/Nombres y Apellidos/i);
-    fireEvent.change(nameInput, { target: { value: 'Juan Perez' } });
+    fireEvent.change(screen.getByLabelText(/^Nombres \*/i), { target: { value: 'Juan' } });
+    fireEvent.change(screen.getByLabelText(/^Apellidos \*/i), { target: { value: 'Perez' } });
+    fireEvent.change(screen.getByLabelText(/^DNI \*/i), { target: { value: '12345678' } });
 
     const phoneInput = screen.getByLabelText(/Teléfono o WhatsApp/i);
     fireEvent.change(phoneInput, { target: { value: '987654321' } });
@@ -166,8 +179,9 @@ describe('Checkout page unit tests', () => {
   it('validates mandatory address for despacho a obra when submitting empty address', async () => {
     renderCheckout();
 
-    const nameInput = screen.getByLabelText(/Nombres y Apellidos/i);
-    fireEvent.change(nameInput, { target: { value: 'Juan Perez Tafur' } });
+    fireEvent.change(screen.getByLabelText(/^Nombres \*/i), { target: { value: 'Juan Carlos' } });
+    fireEvent.change(screen.getByLabelText(/^Apellidos \*/i), { target: { value: 'Perez Tafur' } });
+    fireEvent.change(screen.getByLabelText(/^DNI \*/i), { target: { value: '12345678' } });
 
     const phoneInput = screen.getByLabelText(/Teléfono o WhatsApp/i);
     fireEvent.change(phoneInput, { target: { value: '987654321' } });
@@ -196,8 +210,9 @@ describe('Checkout page unit tests', () => {
 
     renderCheckout();
 
-    const nameInput = screen.getByLabelText(/Nombres y Apellidos/i);
-    fireEvent.change(nameInput, { target: { value: 'María López Prado' } });
+    fireEvent.change(screen.getByLabelText(/^Nombres \*/i), { target: { value: 'María' } });
+    fireEvent.change(screen.getByLabelText(/^Apellidos \*/i), { target: { value: 'López Prado' } });
+    fireEvent.change(screen.getByLabelText(/^DNI \*/i), { target: { value: '87654321' } });
 
     const phoneInput = screen.getByLabelText(/Teléfono o WhatsApp/i);
     fireEvent.change(phoneInput, { target: { value: '912345678' } });
@@ -229,7 +244,7 @@ describe('Checkout page unit tests', () => {
           },
           recojo_en_tienda: true,
           direccion: null,
-          observaciones: null,
+          observaciones: '[DNI: 87654321]',
           acepto_privacidad: true
         })
       );

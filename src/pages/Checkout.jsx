@@ -25,36 +25,97 @@ const NAME_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
 const ADDRESS_REGEX = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s/.\-º°#,()]+$/;
 
 const checkoutSchema = z.object({
-  nombre: z
+  nombres: z
     .string()
-    .min(1, 'Ingrese sus nombres y apellidos completos')
+    .min(1, 'Ingrese sus nombres')
     .superRefine((val, ctx) => {
       const trimmed = val.trim();
       if (!trimmed) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Ingrese sus nombres y apellidos completos'
+          message: 'Ingrese sus nombres'
         });
         return;
       }
-      if (trimmed.length < 3) {
+      if (trimmed.length < 2) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'El nombre es muy corto: debe tener al menos 3 caracteres'
+          message: 'El nombre debe tener al menos 2 caracteres'
         });
         return;
       }
-      if (trimmed.length > 150) {
+      if (trimmed.length > 80) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'El nombre no puede exceder los 150 caracteres'
+          message: 'El nombre no puede exceder los 80 caracteres'
         });
         return;
       }
       if (!NAME_REGEX.test(val)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Nombres y apellidos solo deben contener letras y espacios (sin números ni caracteres especiales)'
+          message: 'Los nombres solo deben contener letras y espacios'
+        });
+      }
+    }),
+
+  apellidos: z
+    .string()
+    .min(1, 'Ingrese sus apellidos')
+    .superRefine((val, ctx) => {
+      const trimmed = val.trim();
+      if (!trimmed) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Ingrese sus apellidos'
+        });
+        return;
+      }
+      if (trimmed.length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Los apellidos deben tener al menos 2 caracteres'
+        });
+        return;
+      }
+      if (trimmed.length > 80) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Los apellidos no pueden exceder los 80 caracteres'
+        });
+        return;
+      }
+      if (!NAME_REGEX.test(val)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Los apellidos solo deben contener letras y espacios'
+        });
+      }
+    }),
+
+  dni: z
+    .string()
+    .min(1, 'Ingrese su número de DNI')
+    .superRefine((val, ctx) => {
+      const trimmed = val.trim();
+      if (!trimmed) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Ingrese su número de DNI'
+        });
+        return;
+      }
+      if (!/^\d+$/.test(trimmed)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El DNI solo debe contener números'
+        });
+        return;
+      }
+      if (trimmed.length !== 8) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `El DNI debe tener exactamente 8 dígitos (ingresó ${trimmed.length})`
         });
       }
     }),
@@ -185,7 +246,9 @@ export function Checkout() {
     resolver: zodResolver(checkoutSchema),
     mode: 'onTouched',
     defaultValues: {
-      nombre: '',
+      nombres: '',
+      apellidos: '',
+      dni: '',
       telefono: '',
       correo: '',
       delivery_type: 'despacho',
@@ -223,13 +286,13 @@ export function Checkout() {
 
     const payload = {
       cliente: {
-        nombre: data.nombre.trim(),
+        nombre: `${data.nombres.trim()} ${data.apellidos.trim()}`,
         telefono: data.telefono.trim(),
         correo: data.correo.trim().toLowerCase()
       },
       recojo_en_tienda: data.delivery_type === 'recojo',
       direccion: data.delivery_type === 'despacho' ? (data.direccion?.trim() || null) : null,
-      observaciones: data.observaciones?.trim() || null,
+      observaciones: `[DNI: ${data.dni.trim()}]${data.observaciones?.trim() ? ` | ${data.observaciones.trim()}` : ''}`,
       acepto_privacidad: data.acepto_privacidad,
       items: items.map((i) => ({
         product_id: i.product.id,
@@ -314,19 +377,46 @@ export function Checkout() {
           </h2>
 
           <div className="space-y-4">
-            <Input
-              label="Nombres y Apellidos *"
-              placeholder="Ej. Juan Pérez Tafur"
-              maxLength={150}
-              error={errors.nombre?.message}
-              {...register('nombre', {
-                onChange: (e) => {
-                  e.target.value = sanitizeOnlyLettersAndSpaces(e.target.value);
-                }
-              })}
-            />
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Nombres *"
+                placeholder="Ej. Juan Carlos"
+                maxLength={80}
+                error={errors.nombres?.message}
+                {...register('nombres', {
+                  onChange: (e) => {
+                    e.target.value = sanitizeOnlyLettersAndSpaces(e.target.value);
+                  }
+                })}
+              />
+
+              <Input
+                label="Apellidos *"
+                placeholder="Ej. Pérez Tafur"
+                maxLength={80}
+                error={errors.apellidos?.message}
+                {...register('apellidos', {
+                  onChange: (e) => {
+                    e.target.value = sanitizeOnlyLettersAndSpaces(e.target.value);
+                  }
+                })}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Input
+                label="DNI *"
+                type="text"
+                maxLength={8}
+                placeholder="Ej. 12345678"
+                error={errors.dni?.message}
+                {...register('dni', {
+                  onChange: (e) => {
+                    e.target.value = sanitizeDigits(e.target.value, 8);
+                  }
+                })}
+              />
+
               <Input
                 label="Teléfono o WhatsApp *"
                 type="tel"

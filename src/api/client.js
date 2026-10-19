@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ADMIN_ENTRY_PATH } from '../utils/constants';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
@@ -32,8 +33,11 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('kenpaku_admin_token');
-      if (window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin/login') {
-        window.location.href = '/admin/login';
+      localStorage.removeItem('kenpaku_user_role');
+      localStorage.removeItem('kenpaku_user_email');
+      const isStaffRoute = window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/caja');
+      if (isStaffRoute && window.location.pathname !== ADMIN_ENTRY_PATH) {
+        window.location.href = ADMIN_ENTRY_PATH;
       }
     }
     return Promise.reject(error);

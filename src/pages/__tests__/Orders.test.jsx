@@ -155,11 +155,11 @@ describe('Admin Orders page unit tests', () => {
     fireEvent.click(screen.getByText('Ver Detalle'));
 
     // Verify allowed transitions for Recojo from 'pendiente': 'confirmado' and 'cancelado'
-    expect(await screen.findByText('Confirmar Pedido')).toBeInTheDocument();
+    expect(await screen.findByText(/Confirmar Pedido/i)).toBeInTheDocument();
     expect(screen.getByText('Cancelar Pedido')).toBeInTheDocument();
 
     // Click "Confirmar Pedido"
-    fireEvent.click(screen.getByText('Confirmar Pedido'));
+    fireEvent.click(screen.getByText(/Confirmar Pedido/i));
 
     // Confirmation modal should appear with warning about inventory reduction
     expect(await screen.findByText('Confirmar Cambio de Fase')).toBeInTheDocument();

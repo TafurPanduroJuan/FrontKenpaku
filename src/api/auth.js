@@ -46,7 +46,29 @@ export function logoutAdmin() {
 }
 
 export function isAdminAuthenticated() {
-  return !!localStorage.getItem('kenpaku_admin_token');
+  const token = localStorage.getItem('kenpaku_admin_token');
+  if (!token) return false;
+
+  // Check if token is an expired JWT
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const base64Url = parts[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(window.atob(base64));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        logoutAdmin();
+        return false;
+      }
+    }
+  } catch {
+    if (!token.startsWith('mock-jwt-token-')) {
+      logoutAdmin();
+      return false;
+    }
+  }
+
+  return true;
 }
 
 export function getUserRole() {

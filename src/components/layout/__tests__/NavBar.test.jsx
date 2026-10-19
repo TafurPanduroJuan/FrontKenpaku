@@ -5,8 +5,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { NavBar } from '../NavBar';
 import { AuthContext } from '../../../context/AuthContext';
 
-describe('NavBar component - Admin Access Button', () => {
-  it('does NOT render "Acceso Admin" or any admin link when user is not authenticated', () => {
+describe('NavBar component - Clean Public Navigation', () => {
+  it('does NOT render "Acceso Admin" or "Panel Admin" when user is not authenticated', () => {
     const authValue = {
       isAuthenticated: false,
       isLoading: false,
@@ -27,9 +27,10 @@ describe('NavBar component - Admin Access Button', () => {
     expect(screen.queryByText(/Panel Admin/i)).not.toBeInTheDocument();
   });
 
-  it('renders "Panel Admin" pointing to /admin when user is authenticated', () => {
+  it('does NOT render administrative or staff links on the public navbar even when authenticated', () => {
     const authValue = {
       isAuthenticated: true,
+      role: 'admin',
       isLoading: false,
       error: null,
       login: vi.fn(),
@@ -44,8 +45,8 @@ describe('NavBar component - Admin Access Button', () => {
       </BrowserRouter>
     );
 
-    const adminLinks = screen.getAllByRole('link', { name: /Panel Admin/i });
-    expect(adminLinks.length).toBeGreaterThan(0);
-    expect(adminLinks[0]).toHaveAttribute('href', '/admin');
+    expect(screen.queryByText(/Panel Admin/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Punto de Venta/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Acceso Admin/i)).not.toBeInTheDocument();
   });
 });
