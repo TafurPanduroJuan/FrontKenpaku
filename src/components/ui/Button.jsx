@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 
 export const Button = React.forwardRef(({
   children,
-  variant = 'primary', // primary (orange), navy, whatsapp, outline, ghost, danger
+  variant = 'primary', // primary (orange), navy, whatsapp, blue, secondary, outline, ghost, danger
   size = 'md', // sm, md, lg
   isLoading = false,
   disabled = false,
@@ -11,6 +11,7 @@ export const Button = React.forwardRef(({
   className = '',
   type = 'button',
   icon: Icon,
+  iconRight: IconRight,
   ...props
 }, ref) => {
 
@@ -21,6 +22,7 @@ export const Button = React.forwardRef(({
     navy: 'bg-kenpaku-navy hover:bg-kenpaku-navyLight text-white focus-visible:outline-kenpaku-navy shadow-sm',
     whatsapp: 'bg-kenpaku-whatsapp hover:bg-kenpaku-whatsappHover text-white focus-visible:outline-kenpaku-whatsapp shadow-sm',
     blue: 'bg-kenpaku-blue hover:bg-kenpaku-blueHover text-white focus-visible:outline-kenpaku-blue shadow-sm',
+    secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 shadow-2xs',
     outline: 'border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 focus-visible:outline-kenpaku-blue',
     ghost: 'bg-transparent hover:bg-slate-100 text-slate-700 focus-visible:outline-kenpaku-blue',
     danger: 'bg-red-600 hover:bg-red-700 text-white focus-visible:outline-red-600 shadow-sm'
@@ -47,7 +49,10 @@ export const Button = React.forwardRef(({
       ) : Icon ? (
         <Icon className="w-4 h-4 shrink-0" />
       ) : null}
-      <span>{children}</span>
+      <span className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap">{children}</span>
+      {IconRight && !isLoading && (
+        <IconRight className="w-4 h-4 shrink-0" />
+      )}
     </button>
   );
 });

@@ -1,8 +1,83 @@
 import { formatPEN } from './formatPEN';
 
-export const CAJERO_NOTIFICATIONS_STORAGE_KEY = 'kenpaku_cajero_notifications_history_v1';
+export const CAJERO_NOTIFICATIONS_STORAGE_KEY = 'kenpaku_cajero_notifications_v2';
+export const CAJERO_NOTIFICATIONS_READ_KEY = 'kenpaku_cajero_notifications_read_v2';
+export const CAJERO_NOTIFICATIONS_CLEARED_KEY = 'kenpaku_cajero_notifications_cleared_v2';
+export const CAJERO_NOTIFICATIONS_BASELINE_KEY = 'kenpaku_cajero_notifications_baseline_v2';
+
+export function purgeLegacyNotifications() {
+  try {
+    localStorage.removeItem('kenpaku_cajero_notifications_history_v1');
+  } catch {
+    // Ignorar errores de localStorage
+  }
+}
+
+export function getNotificationBaseline() {
+  try {
+    let baseline = localStorage.getItem(CAJERO_NOTIFICATIONS_BASELINE_KEY);
+    if (!baseline) {
+      baseline = new Date().toISOString();
+      localStorage.setItem(CAJERO_NOTIFICATIONS_BASELINE_KEY, baseline);
+    }
+    return baseline;
+  } catch {
+    return new Date().toISOString();
+  }
+}
+
+export function resetNotificationBaseline() {
+  try {
+    const now = new Date().toISOString();
+    localStorage.setItem(CAJERO_NOTIFICATIONS_BASELINE_KEY, now);
+    localStorage.removeItem(CAJERO_NOTIFICATIONS_STORAGE_KEY);
+    localStorage.removeItem(CAJERO_NOTIFICATIONS_READ_KEY);
+    localStorage.removeItem(CAJERO_NOTIFICATIONS_CLEARED_KEY);
+    purgeLegacyNotifications();
+    return now;
+  } catch {
+    return new Date().toISOString();
+  }
+}
+
+export function loadReadIds() {
+  try {
+    const raw = localStorage.getItem(CAJERO_NOTIFICATIONS_READ_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function saveReadIds(readIds) {
+  try {
+    const list = Array.from(readIds).slice(-300);
+    localStorage.setItem(CAJERO_NOTIFICATIONS_READ_KEY, JSON.stringify(list));
+  } catch {
+    // Ignorar errores de localStorage
+  }
+}
+
+export function loadClearedIds() {
+  try {
+    const raw = localStorage.getItem(CAJERO_NOTIFICATIONS_CLEARED_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function saveClearedIds(clearedIds) {
+  try {
+    const list = Array.from(clearedIds).slice(-300);
+    localStorage.setItem(CAJERO_NOTIFICATIONS_CLEARED_KEY, JSON.stringify(list));
+  } catch {
+    // Ignorar errores de localStorage
+  }
+}
 
 export function loadStoredNotifications() {
+  purgeLegacyNotifications();
   try {
     const raw = localStorage.getItem(CAJERO_NOTIFICATIONS_STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
@@ -23,6 +98,12 @@ export function saveStoredNotifications(notifications) {
 }
 
 export function extractNotificationsFromOrders(orders = [], existingNotifications = []) {
+  purgeLegacyNotifications();
+  const readIds = loadReadIds();
+  const clearedIds = loadClearedIds();
+  const baselineIso = getNotificationBaseline();
+  const baselineTime = new Date(baselineIso).getTime();
+
   const existingMap = new Map();
   for (const n of existingNotifications) {
     if (n && n.id) {
@@ -34,6 +115,11 @@ export function extractNotificationsFromOrders(orders = [], existingNotification
 
   for (const o of orders) {
     if (!o || !o.codigo) continue;
+
+    const orderTime = new Date(o.created_at || Date.now()).getTime();
+    // Solo órdenes creadas desde el baseline (o que ya estaban activas en memoria) generan notificaciones
+    const isNewSinceBaseline = orderTime >= baselineTime - 1000;
+
     const isMostrador =
       o.observaciones?.includes('[VENTA MOSTRADOR]') ||
       o.observaciones?.includes('MOSTRADOR');
@@ -43,6 +129,26 @@ export function extractNotificationsFromOrders(orders = [], existingNotification
     const totalFormatted = formatPEN(o.total || 0);
     const createdAt = o.created_at || new Date().toISOString();
 
+    const checkAndPush = (id, notifData) => {
+      // 1. Si el usuario ya la limpió/eliminó, no resucitarla
+      if (clearedIds.has(id)) return;
+
+      // 2. Si la orden es anterior a la fecha de inicio limpia y no estaba en memoria, ignorar
+      const prev = existingMap.get(id);
+      if (!isNewSinceBaseline && !prev) return;
+
+      // 3. Determinar estado de lectura de forma inmutable
+      const isLeido = readIds.has(id) || Boolean(prev?.leido);
+
+      generated.push({
+        id,
+        order_codigo: o.codigo,
+        ...notifData,
+        fecha: prev?.fecha || createdAt,
+        leido: isLeido
+      });
+    };
+
     // 1. Flete Pendiente de Cotización (Despacho a obra sin cotizar)
     if (
       !o.recojo_en_tienda &&
@@ -50,19 +156,13 @@ export function extractNotificationsFromOrders(orders = [], existingNotification
       (o.estado === 'pendiente' || o.estado === 'registrado') &&
       (!o.costo_flete || Number(o.costo_flete) === 0)
     ) {
-      const id = `notif-${o.codigo}-flete-pendiente`;
-      const prev = existingMap.get(id);
-      generated.push({
-        id,
-        order_codigo: o.codigo,
+      checkAndPush(`notif-${o.codigo}-flete-pendiente`, {
         tipo: 'flete_pendiente',
         badge: 'Flete Pendiente',
         titulo: `Pedido ${o.codigo} • Requiere Flete`,
         descripcion: `${clienteName} • Destino: ${o.direccion || 'Dirección de obra'} • Total: ${totalFormatted}`,
         cliente_nombre: clienteName,
         total: Number(o.total || 0),
-        fecha: prev?.fecha || createdAt,
-        leido: prev ? Boolean(prev.leido) : false,
         urgente: true
       });
     }
@@ -75,57 +175,39 @@ export function extractNotificationsFromOrders(orders = [], existingNotification
       o.estado
     );
     if (hasVoucher && isUnconfirmed) {
-      const id = `notif-${o.codigo}-voucher-subido`;
-      const prev = existingMap.get(id);
-      generated.push({
-        id,
-        order_codigo: o.codigo,
+      checkAndPush(`notif-${o.codigo}-voucher-subido`, {
         tipo: 'voucher_subido',
         badge: 'Voucher por Validar',
         titulo: `Voucher Subido • Pedido ${o.codigo}`,
         descripcion: `${clienteName} cargó su comprobante de pago • Total: ${totalFormatted}`,
         cliente_nombre: clienteName,
         total: Number(o.total || 0),
-        fecha: prev?.fecha || o.fecha_pago || createdAt,
-        leido: prev ? Boolean(prev.leido) : false,
         urgente: true
       });
     }
 
     // 3. Flete Aceptado por el Cliente
     if (!o.recojo_en_tienda && o.estado_flete === 'aceptado') {
-      const id = `notif-${o.codigo}-flete-aceptado`;
-      const prev = existingMap.get(id);
-      generated.push({
-        id,
-        order_codigo: o.codigo,
+      checkAndPush(`notif-${o.codigo}-flete-aceptado`, {
         tipo: 'flete_aceptado',
         badge: 'Flete Aceptado',
         titulo: `Flete Aceptado • Pedido ${o.codigo}`,
         descripcion: `${clienteName} aceptó el costo de flete (S/ ${Number(o.costo_flete || 0).toFixed(2)}) • Total: ${totalFormatted}`,
         cliente_nombre: clienteName,
         total: Number(o.total || 0),
-        fecha: prev?.fecha || createdAt,
-        leido: prev ? Boolean(prev.leido) : false,
         urgente: false
       });
     }
 
     // 4. Flete Rechazado por el Cliente
     if (!o.recojo_en_tienda && o.estado_flete === 'rechazado') {
-      const id = `notif-${o.codigo}-flete-rechazado`;
-      const prev = existingMap.get(id);
-      generated.push({
-        id,
-        order_codigo: o.codigo,
+      checkAndPush(`notif-${o.codigo}-flete-rechazado`, {
         tipo: 'flete_rechazado',
         badge: 'Flete Rechazado',
         titulo: `Flete Rechazado • Pedido ${o.codigo}`,
         descripcion: `${clienteName} rechazó la cotización de flete • Coordinar vía WhatsApp`,
         cliente_nombre: clienteName,
         total: Number(o.total || 0),
-        fecha: prev?.fecha || createdAt,
-        leido: prev ? Boolean(prev.leido) : false,
         urgente: true
       });
     }
@@ -136,29 +218,24 @@ export function extractNotificationsFromOrders(orders = [], existingNotification
       !isMostrador &&
       (o.estado === 'pendiente' || o.estado === 'registrado')
     ) {
-      const id = `notif-${o.codigo}-recojo-tienda`;
-      const prev = existingMap.get(id);
-      generated.push({
-        id,
-        order_codigo: o.codigo,
+      checkAndPush(`notif-${o.codigo}-recojo-tienda`, {
         tipo: 'recojo_tienda',
         badge: 'Recojo en Almacén',
         titulo: `Venta Web Recojo • Pedido ${o.codigo}`,
         descripcion: `${clienteName} • Retiro en almacén Puente Piedra • Total: ${totalFormatted}`,
         cliente_nombre: clienteName,
         total: Number(o.total || 0),
-        fecha: prev?.fecha || createdAt,
-        leido: prev ? Boolean(prev.leido) : false,
         urgente: false
       });
     }
   }
 
-  // Mantener notificaciones históricas que ya no figuren activas en el listado
+  // Mantener notificaciones en memoria que no hayan sido limpiadas
   const generatedIds = new Set(generated.map((g) => g.id));
-  const historical = existingNotifications.filter((n) => !generatedIds.has(n.id));
+  const historical = existingNotifications.filter(
+    (n) => !generatedIds.has(n.id) && !clearedIds.has(n.id)
+  );
 
-  // Combinar y ordenar por fecha descendente
   const combined = [...generated, ...historical].sort((a, b) => {
     const timeA = new Date(a.fecha || 0).getTime();
     const timeB = new Date(b.fecha || 0).getTime();

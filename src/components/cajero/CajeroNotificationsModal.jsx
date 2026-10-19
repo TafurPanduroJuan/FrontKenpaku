@@ -11,7 +11,8 @@ import {
   ArrowRight,
   Inbox,
   Eye,
-  EyeOff
+  EyeOff,
+  RotateCcw
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -24,6 +25,7 @@ export function CajeroNotificationsModal({
   onMarkAllAsRead,
   onToggleRead,
   onClearRead,
+  onResetNotifications,
   onSelectOrder
 }) {
   const [activeTab, setActiveTab] = useState('todas'); // 'todas', 'unread', 'flete', 'voucher'
@@ -178,13 +180,13 @@ export function CajeroNotificationsModal({
           </div>
 
           {/* Acciones de Lote */}
-          <div className="flex items-center gap-2 justify-end">
+          <div className="flex items-center gap-1.5 justify-end flex-wrap">
             {counts.unread > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onMarkAllAsRead}
-                className="text-xs text-kenpaku-blue hover:text-blue-800 flex items-center gap-1 font-bold"
+                className="text-xs text-kenpaku-blue hover:text-blue-800 flex items-center gap-1 font-bold whitespace-nowrap"
                 title="Marcar todas como leídas"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
@@ -197,11 +199,24 @@ export function CajeroNotificationsModal({
                 variant="ghost"
                 size="sm"
                 onClick={onClearRead}
-                className="text-xs text-slate-500 hover:text-red-600 flex items-center gap-1"
+                className="text-xs text-slate-500 hover:text-red-600 flex items-center gap-1 whitespace-nowrap"
                 title="Eliminar historial de leídas"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Limpiar leídas</span>
+              </Button>
+            )}
+
+            {onResetNotifications && notifications.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onResetNotifications}
+                className="text-xs text-slate-400 hover:text-slate-700 flex items-center gap-1 whitespace-nowrap"
+                title="Borrar historial anterior y empezar desde ahora"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Iniciar desde cero</span>
               </Button>
             )}
           </div>
@@ -293,11 +308,11 @@ export function CajeroNotificationsModal({
                       <Button
                         variant="primary"
                         size="sm"
+                        iconRight={ArrowRight}
                         onClick={() => onSelectOrder(notif.order_codigo, notif.id)}
-                        className="text-xs flex items-center gap-1.5"
+                        className="text-xs whitespace-nowrap shrink-0"
                       >
-                        <span>Atender Pedido</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        Atender Pedido
                       </Button>
                     )}
                   </div>

@@ -28,7 +28,12 @@ import {
   loadStoredNotifications,
   saveStoredNotifications,
   extractNotificationsFromOrders,
-  formatTimeAgo
+  formatTimeAgo,
+  loadReadIds,
+  saveReadIds,
+  loadClearedIds,
+  saveClearedIds,
+  resetNotificationBaseline
 } from '../../utils/cajeroNotifications';
 
 export function CajeroLayout() {
@@ -122,6 +127,10 @@ export function CajeroLayout() {
   // Manejo de acciones en notificaciones
   const handleSelectOrder = (codigo, notifId = null) => {
     if (notifId) {
+      const readIds = loadReadIds();
+      readIds.add(notifId);
+      saveReadIds(readIds);
+
       setNotifications((prev) => {
         const updated = prev.map((n) =>
           n.id === notifId ? { ...n, leido: true } : n
@@ -141,29 +150,53 @@ export function CajeroLayout() {
   };
 
   const handleToggleRead = (id) => {
+    const readIds = loadReadIds();
     setNotifications((prev) => {
-      const updated = prev.map((n) =>
-        n.id === id ? { ...n, leido: !n.leido } : n
-      );
+      const updated = prev.map((n) => {
+        if (n.id === id) {
+          const nextRead = !n.leido;
+          if (nextRead) {
+            readIds.add(id);
+          } else {
+            readIds.delete(id);
+          }
+          return { ...n, leido: nextRead };
+        }
+        return n;
+      });
+      saveReadIds(readIds);
       saveStoredNotifications(updated);
       return updated;
     });
   };
 
   const handleMarkAllAsRead = () => {
+    const readIds = loadReadIds();
     setNotifications((prev) => {
-      const updated = prev.map((n) => ({ ...n, leido: true }));
+      const updated = prev.map((n) => {
+        readIds.add(n.id);
+        return { ...n, leido: true };
+      });
+      saveReadIds(readIds);
       saveStoredNotifications(updated);
       return updated;
     });
   };
 
   const handleClearRead = () => {
+    const clearedIds = loadClearedIds();
     setNotifications((prev) => {
+      prev.filter((n) => n.leido).forEach((n) => clearedIds.add(n.id));
+      saveClearedIds(clearedIds);
       const updated = prev.filter((n) => !n.leido);
       saveStoredNotifications(updated);
       return updated;
     });
+  };
+
+  const handleResetNotifications = () => {
+    resetNotificationBaseline();
+    setNotifications([]);
   };
 
   const handleDismiss = (codigo) => {
@@ -361,14 +394,14 @@ export function CajeroLayout() {
                         size="sm"
                         fullWidth
                         id="btn-ver-todas-notificaciones"
+                        iconRight={ArrowRight}
                         onClick={() => {
                           setIsBellOpen(false);
                           setIsModalOpen(true);
                         }}
-                        className="flex items-center justify-center gap-2 font-bold text-xs"
+                        className="font-bold text-xs"
                       >
-                        <span>Ver todas las notificaciones</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        Ver todas las notificaciones
                       </Button>
                     </div>
                   </div>
@@ -455,7 +488,7 @@ export function CajeroLayout() {
               size="sm"
               fullWidth
               onClick={() => handleCotizar(activePopupOrder.codigo)}
-              icon={ArrowRight}
+              iconRight={ArrowRight}
             >
               Cotizar ahora
             </Button>
@@ -479,6 +512,7 @@ export function CajeroLayout() {
         onMarkAllAsRead={handleMarkAllAsRead}
         onToggleRead={handleToggleRead}
         onClearRead={handleClearRead}
+        onResetNotifications={handleResetNotifications}
         onSelectOrder={handleSelectOrder}
       />
     </div>
