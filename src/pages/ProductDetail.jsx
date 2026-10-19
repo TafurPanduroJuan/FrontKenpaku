@@ -8,7 +8,6 @@ import { ProductCard } from '../components/catalog/ProductCard';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { Skeleton } from '../components/ui/Skeleton';
 import { Button } from '../components/ui/Button';
-import { Toast } from '../components/ui/Toast';
 import { formatPEN } from '../utils/formatPEN';
 import { useCart } from '../hooks/useCart';
 
@@ -19,7 +18,6 @@ export function ProductDetail() {
 
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('tech'); // 'tech' | 'faq'
-  const [showToast, setShowToast] = useState(false);
 
   // Fetch product detail
   const { data: product, isLoading, isError, error } = useQuery({
@@ -71,7 +69,6 @@ export function ProductDetail() {
   const handleAddToCart = () => {
     if (!isOutOfStock) {
       addToCart(product, quantity);
-      setShowToast(true);
     }
   };
 
@@ -84,13 +81,6 @@ export function ProductDetail() {
 
   return (
     <div className="space-y-12 py-4">
-      {/* Toast feedback */}
-      <Toast
-        message={`Agregado ${quantity} unidad(es) de "${product.nombre}" al carrito.`}
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-      />
-
       {/* Breadcrumb */}
       <Breadcrumb
         items={[

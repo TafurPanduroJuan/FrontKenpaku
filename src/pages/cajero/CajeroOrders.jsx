@@ -25,7 +25,7 @@ import {
 import { getAdminOrders, updateOrderStatus, triggerScheduledTasks } from '../../api/admin';
 import { formatPEN } from '../../utils/formatPEN';
 import { buildStatusWhatsAppUrl } from '../../utils/whatsapp';
-import { getVoucherUrl } from '../../utils/voucher';
+import { getVoucherUrl, getVoucherList } from '../../utils/voucher';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { Modal } from '../../components/ui/Modal';
 import { Toast } from '../../components/ui/Toast';
@@ -59,22 +59,6 @@ const ACTION_LABELS = {
   cancelado: 'Cancelar Pedido'
 };
 
-const MODAL_FLOW_STEPS = {
-  despacho: [
-    { key: 'pendiente', label: '1. Nuevo Pedido', sub: 'Pendiente cotizar flete' },
-    { key: 'flete_cotizado', label: '2. Flete Cotizado', sub: 'Esperando pago/voucher' },
-    { key: 'confirmado', label: '3. En Preparación', sub: 'Venta y abono confirmado' },
-    { key: 'despachado', label: '4. Pedido en Camino', sub: 'Camión en ruta a obra' },
-    { key: 'entregado', label: '5. Entregado Conforme', sub: 'Recibido en obra' },
-  ],
-  recojo: [
-    { key: 'pendiente', label: '1. Nuevo Pedido', sub: 'Pendiente pago y voucher' },
-    { key: 'confirmado', label: '2. En Preparación', sub: 'Venta y abono confirmado' },
-    { key: 'listo_para_recojo', label: '3. Listo para Entrega', sub: 'Almacén Puente Piedra' },
-    { key: 'entregado', label: '4. Entregado Conforme', sub: 'Retiro en tienda' },
-  ],
-};
-
 function getTransitionImpactMessage(targetState) {
   switch (targetState) {
     case 'confirmado':
@@ -88,7 +72,7 @@ function getTransitionImpactMessage(targetState) {
     case 'listo_para_recojo':
       return '🏬 Se notificará que los materiales están listos en el almacén de Puente Piedra para el retiro del cliente.';
     case 'flete_cotizado':
-      return '📋 Se definirá el monto del flete de transporte para que el pedido esté listo para confirmación.';
+      return '';
     default:
       return '¿Deseas proceder con este cambio de fase operativa?';
   }
@@ -405,6 +389,11 @@ export function CajeroOrders() {
                     })
                     : 'Sin fecha';
 
+                  const needsFreightQuote =
+                    !order.recojo_en_tienda &&
+                    order.estado === 'pendiente' &&
+                    (order.estado_flete === 'sin_cotizar' || !order.costo_flete || Number(order.costo_flete) <= 0);
+
                   const hasPendingVoucher =
                     Boolean(order.voucher_referencia) &&
                     order.estado !== 'confirmado' &&
@@ -413,7 +402,9 @@ export function CajeroOrders() {
                   return (
                     <tr
                       key={order.codigo || order.id}
-                      className={`transition-colors ${hasPendingVoucher
+                      className={`transition-colors ${needsFreightQuote
+                        ? 'bg-amber-50/90 border-l-4 border-l-amber-500 hover:bg-amber-100/70'
+                        : hasPendingVoucher
                         ? 'bg-emerald-50/80 border-l-4 border-l-emerald-500 hover:bg-emerald-100/60'
                         : 'hover:bg-slate-50'
                         }`}
@@ -440,7 +431,15 @@ export function CajeroOrders() {
                           >
                             {order.estado?.replace(/_/g, ' ')}
                           </span>
-                          {hasPendingVoucher && (
+                          {needsFreightQuote && (
+                            <div>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500 text-white shadow-2xs animate-pulse">
+                                <Truck className="w-3 h-3" />
+                                <span>Cotización Pendiente</span>
+                              </span>
+                            </div>
+                          )}
+                          {!needsFreightQuote && hasPendingVoucher && (
                             <div>
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-600 text-white shadow-2xs animate-pulse">
                                 <CreditCard className="w-3 h-3" />
@@ -458,12 +457,23 @@ export function CajeroOrders() {
                               hasAutoOpenedRef.current = order.codigo;
                               setSelectedOrder(order);
                             }}
-                            className={`px-3 py-1.5 font-bold rounded-xl transition-all cursor-pointer text-xs ${hasPendingVoucher
+                            className={`px-3 py-1.5 font-bold rounded-xl transition-all cursor-pointer text-xs flex items-center gap-1.5 ${needsFreightQuote
+                              ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md ring-2 ring-amber-300 ring-offset-1 animate-pulse font-extrabold'
+                              : hasPendingVoucher
                               ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
                               : 'bg-kenpaku-blue hover:bg-sky-700 text-white shadow-2xs'
                               }`}
                           >
-                            {hasPendingVoucher ? 'Verificar Pago' : 'Ver Detalle'}
+                            {needsFreightQuote ? (
+                              <>
+                                <Truck className="w-3.5 h-3.5" />
+                                <span>Cotizar Flete</span>
+                              </>
+                            ) : hasPendingVoucher ? (
+                              'Verificar Pago'
+                            ) : (
+                              'Ver Detalle'
+                            )}
                           </button>
 
                           {['confirmado', 'despachado', 'listo_para_recojo', 'entregado'].includes(order.estado) && (
@@ -489,55 +499,233 @@ export function CajeroOrders() {
       </div>
 
       {/* Modal de Detalle y Operación del Pedido */}
-      {selectedOrder && (
-        <Modal
-          isOpen={!!selectedOrder}
-          onClose={handleCloseModal}
-          title={`Gestión de Pedido ${selectedOrder.codigo}`}
-          maxWidth="max-w-3xl"
-        >
-          <div className="space-y-6 text-xs text-slate-700">
-            {/* Visual Operational Pipeline Roadmap */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-200/80 pb-2">
-                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                  Ruta de Fases ({selectedOrder.recojo_en_tienda ? 'Recojo en Almacén' : 'Despacho a Obra'})
-                </span>
-                <span className="text-[11px] text-slate-600 font-medium">
-                  Fase actual: <strong className="text-kenpaku-navy uppercase">{selectedOrder.estado?.replace(/_/g, ' ')}</strong>
-                </span>
-              </div>
+      {selectedOrder && (() => {
+        const selectedOrderNeedsFreightQuote =
+          !selectedOrder.recojo_en_tienda &&
+          selectedOrder.estado === 'pendiente' &&
+          (selectedOrder.estado_flete === 'sin_cotizar' || !selectedOrder.costo_flete || Number(selectedOrder.costo_flete) <= 0);
 
-              <div className={`grid grid-cols-2 ${selectedOrder.recojo_en_tienda ? 'sm:grid-cols-4' : 'sm:grid-cols-5'} gap-2`}>
-                {(selectedOrder.recojo_en_tienda ? MODAL_FLOW_STEPS.recojo : MODAL_FLOW_STEPS.despacho).map((step, idx, arr) => {
-                  const isCancelled = selectedOrder.estado === 'cancelado';
-                  const currentIndex = arr.findIndex((s) => s.key === selectedOrder.estado);
-                  const isPassed = !isCancelled && currentIndex > idx;
-                  const isCurrent = !isCancelled && currentIndex === idx;
-                  const isNext = !isCancelled && currentIndex + 1 === idx;
-
-                  return (
-                    <div
-                      key={step.key}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${isCancelled
-                        ? 'bg-white border-slate-200 opacity-50'
-                        : isCurrent
-                          ? 'bg-sky-50 border-[#0284C7] ring-2 ring-[#0284C7]/20 shadow-xs'
-                          : isPassed
-                            ? 'bg-emerald-50 border-emerald-300'
-                            : isNext
-                              ? 'bg-amber-50/70 border-amber-300 border-dashed'
-                              : 'bg-white border-slate-200 opacity-60'
-                        }`}
-                    >
-                      <span className={`block text-[11px] font-extrabold ${isCurrent ? 'text-[#0284C7]' : isPassed ? 'text-emerald-700' : 'text-slate-700'}`}>
-                        {step.label}
-                      </span>
-                      <span className="block text-[9px] text-slate-400 mt-0.5">{step.sub}</span>
+        return (
+          <Modal
+            isOpen={!!selectedOrder}
+            onClose={handleCloseModal}
+            title={`Gestión de Pedido ${selectedOrder.codigo}`}
+            maxWidth="max-w-3xl"
+          >
+            <div className="space-y-6 text-xs text-slate-700">
+              {/* Aviso destacado si requiere cotización de flete */}
+              {selectedOrderNeedsFreightQuote && (
+                <div className="p-4 rounded-2xl bg-amber-50/95 border-2 border-amber-400 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-fade-in">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <Truck className="w-5 h-5 animate-pulse" />
                     </div>
-                  );
-                })}
+                    <div>
+                      <h4 className="font-extrabold text-amber-950 text-xs flex items-center gap-1.5">
+                        <span>⚠️ Cotización de Flete Pendiente Requerida</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-200/80 text-amber-900 border border-amber-300">
+                          Atención Caja
+                        </span>
+                      </h4>
+                      <p className="text-[11px] text-amber-800 mt-0.5">
+                        Este pedido es con despacho a obra y requiere definir el costo de transporte para que el cliente pueda proceder a pagar.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCostoFleteInput(selectedOrder.costo_flete ? String(selectedOrder.costo_flete) : '');
+                      setTransitionNote('');
+                      setPendingTransition({ order: selectedOrder, targetState: 'flete_cotizado' });
+                    }}
+                    className="px-4 py-2 rounded-xl font-extrabold uppercase text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
+                  >
+                    <Truck className="w-4 h-4" />
+                    <span>Cotizar Flete Ahora</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Gestión Operativa y Fases (Fase Operativa Actual en la parte superior) */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Fase Operativa Actual</span>
+                  <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-extrabold uppercase border ${statusBadgeClasses[selectedOrder.estado] || statusBadgeClasses.pendiente}`}>
+                    {selectedOrder.estado?.replace(/_/g, ' ')}
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  Flujo: <strong className="text-slate-700">{selectedOrder.recojo_en_tienda ? 'Recojo en Almacén' : 'Despacho a Obra'}</strong>
+                </span>
               </div>
+
+              {/* Roadmap Visual de Fases: Fase anterior = Verde, Fase actual = Azul, Fase siguiente = Amarillo. Al entregarse, todo 100% Verde */}
+              {(() => {
+                const isRecojo = Boolean(selectedOrder.recojo_en_tienda);
+                let cajeroActiveStep = 1;
+                if (isRecojo) {
+                  if (selectedOrder.estado === 'entregado') cajeroActiveStep = 4;
+                  else if (selectedOrder.estado === 'listo_para_recojo') cajeroActiveStep = 3;
+                  else if (['confirmado', 'despachado'].includes(selectedOrder.estado)) cajeroActiveStep = 2;
+                  else cajeroActiveStep = 1;
+                } else {
+                  if (selectedOrder.estado === 'entregado') cajeroActiveStep = 5;
+                  else if (selectedOrder.estado === 'despachado') cajeroActiveStep = 4;
+                  else if (selectedOrder.estado === 'confirmado') cajeroActiveStep = 3;
+                  else if (selectedOrder.estado === 'flete_cotizado') cajeroActiveStep = 2;
+                  else cajeroActiveStep = 1;
+                }
+
+                const cajeroSteps = isRecojo
+                  ? [
+                      { fase: 'Fase 1', label: 'Registrado', sub: 'Pedido registrado' },
+                      { fase: 'Fase 2', label: 'Pago y Voucher', sub: 'Pendiente abono' },
+                      { fase: 'Fase 3', label: 'En Preparación', sub: 'Alistando patio' },
+                      { fase: 'Fase 4', label: 'Listo Entrega', sub: 'Almacén Puente Piedra' },
+                      { fase: 'Fase 5', label: 'Entregado', sub: 'Retiro conforme' },
+                    ]
+                  : [
+                      { fase: 'Fase 1', label: 'Registrado', sub: 'Pedido registrado' },
+                      { fase: 'Fase 2', label: 'Cotizar Flete', sub: 'Pendiente por caja' },
+                      { fase: 'Fase 3', label: 'Flete Cotizado', sub: 'Espera pago/voucher' },
+                      { fase: 'Fase 4', label: 'En Preparación', sub: 'Alistando patio' },
+                      { fase: 'Fase 5', label: 'Pedido en Camino', sub: 'Camión en ruta' },
+                      { fase: 'Fase 6', label: 'Entregado', sub: 'Conforme en obra' },
+                    ];
+
+                const isDelivered = selectedOrder.estado === 'entregado';
+
+                return (
+                  <div className="pt-2 border-t border-slate-200/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block mb-2">
+                      Progreso del Flujo de Fases:
+                    </span>
+                    <div className={`grid grid-cols-2 ${isRecojo ? 'sm:grid-cols-5' : 'sm:grid-cols-3 lg:grid-cols-6'} gap-2`}>
+                      {cajeroSteps.map((step, idx) => {
+                        const isPassed = isDelivered ? true : idx < cajeroActiveStep;
+                        const isCurrent = !isDelivered && idx === cajeroActiveStep;
+                        const isNext = !isDelivered && idx === cajeroActiveStep + 1;
+
+                        return (
+                          <div
+                            key={step.label}
+                            className={`p-2.5 rounded-xl border text-left transition-all ${
+                              isPassed
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-2xs'
+                                : isCurrent
+                                ? 'bg-sky-50 border-sky-400 ring-2 ring-sky-500/25 text-sky-950 shadow-xs'
+                                : isNext
+                                ? 'bg-amber-50/90 border-amber-300 border-dashed text-amber-950'
+                                : 'bg-white border-slate-200 text-slate-400 opacity-60'
+                            }`}
+                          >
+                            <span
+                              className={`text-[9px] font-extrabold uppercase block tracking-wider ${
+                                isPassed
+                                  ? 'text-emerald-700'
+                                  : isCurrent
+                                  ? 'text-sky-700'
+                                  : isNext
+                                  ? 'text-amber-700'
+                                  : 'text-slate-400'
+                              }`}
+                            >
+                              {step.fase}
+                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {isPassed ? (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              ) : isCurrent ? (
+                                <Clock className="w-3.5 h-3.5 text-sky-600 animate-pulse shrink-0" />
+                              ) : isNext ? (
+                                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
+                              ) : (
+                                <div className="w-2 h-2 rounded-full bg-slate-300 shrink-0" />
+                              )}
+                              <span className="text-[11px] font-bold truncate">{step.label}</span>
+                            </div>
+                            <span
+                              className={`text-[9px] block truncate mt-0.5 ${
+                                isPassed
+                                  ? 'text-emerald-700'
+                                  : isCurrent
+                                  ? 'text-sky-800 font-bold'
+                                  : isNext
+                                  ? 'text-amber-800'
+                                  : 'text-slate-400'
+                              }`}
+                            >
+                              {step.sub}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Acciones de Fase o Mensaje Terminal */}
+              {isTerminal ? (
+                <div className="pt-2 border-t border-slate-200/80">
+                  {selectedOrder.estado === 'entregado' ? (
+                    <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-emerald-950 text-xs">Pedido Entregado y Cerrado</h4>
+                        <p className="text-[11px] text-emerald-700 mt-0.5">
+                          Este pedido completó su ciclo de entrega con éxito. Se encuentra en estado terminal definitivo y ya no admite modificaciones.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3">
+                      <div className="w-7 h-7 rounded-lg bg-red-100 text-red-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <XCircle className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-red-950 text-xs">Pedido Cancelado</h4>
+                        <p className="text-[11px] text-red-700 mt-0.5">
+                          Este pedido fue cancelado y su inventario fue liberado. Se encuentra en estado terminal definitivo y ya no admite modificaciones.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="pt-2 border-t border-slate-200/80">
+                  <label className="font-bold text-slate-900 uppercase tracking-wider text-[10px] block mb-2">
+                    Avanzar a Siguiente Fase (por Caja):
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {allowedNext.map((st) => {
+                      const isCancel = st === 'cancelado';
+                      return (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => {
+                            setCostoFleteInput(selectedOrder.costo_flete ? String(selectedOrder.costo_flete) : '');
+                            setTransitionNote('');
+                            setPendingTransition({ order: selectedOrder, targetState: st });
+                          }}
+                          className={`px-3.5 py-2 rounded-xl font-bold uppercase text-[11px] transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 ${isCancel
+                            ? 'bg-white hover:bg-red-50 text-red-700 border border-red-300'
+                            : 'bg-kenpaku-navy hover:bg-slate-800 text-white'
+                            }`}
+                        >
+                          {isCancel ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                          <span>{ACTION_LABELS[st] || st.replace(/_/g, ' ')}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Customer & Delivery Information Card */}
@@ -635,31 +823,66 @@ export function CajeroOrders() {
               </a>
             </div>
 
-            {/* Voucher Verification Section (Fase 4) */}
-            {selectedOrder.voucher_referencia && (() => {
-              const isPaymentAlreadyValidated = ['confirmado', 'despachado', 'listo_para_recojo', 'entregado'].includes(selectedOrder.estado);
+            {/* Voucher Verification Section (Soporta múltiples comprobantes 1 o 2) */}
+            {(() => {
+              const vouchers = getVoucherList(
+                selectedOrder.voucher_referencia,
+                selectedOrder.events || selectedOrder.order_events
+              );
+              if (!vouchers.length) return null;
+
+              const isPaymentAlreadyValidated = ['confirmado', 'despachado', 'listo_para_recojo', 'entregado'].includes(
+                selectedOrder.estado
+              );
               const isPendingValidation = ['pendiente', 'flete_cotizado'].includes(selectedOrder.estado);
 
               return (
-                <div className={`p-4 rounded-2xl space-y-3 shadow-2xs transition-all ${isPaymentAlreadyValidated
-                  ? 'bg-emerald-50/80 border border-emerald-200'
-                  : 'bg-sky-50/80 border border-sky-200'
-                  }`}>
+                <div
+                  className={`p-4 rounded-2xl space-y-3.5 shadow-2xs transition-all ${
+                    isPaymentAlreadyValidated
+                      ? 'bg-emerald-50/80 border border-emerald-200'
+                      : 'bg-sky-50/80 border border-sky-200'
+                  }`}
+                >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-xl text-white flex items-center justify-center shrink-0 ${isPaymentAlreadyValidated ? 'bg-emerald-600' : 'bg-sky-600'
-                        }`}>
-                        {isPaymentAlreadyValidated ? <CheckCircle2 className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
+                      <div
+                        className={`w-8 h-8 rounded-xl text-white flex items-center justify-center shrink-0 ${
+                          isPaymentAlreadyValidated ? 'bg-emerald-600' : 'bg-sky-600'
+                        }`}
+                      >
+                        {isPaymentAlreadyValidated ? (
+                          <CheckCircle2 className="w-4 h-4" />
+                        ) : (
+                          <CreditCard className="w-4 h-4" />
+                        )}
                       </div>
                       <div>
-                        <span className={`text-[11px] font-extrabold block ${isPaymentAlreadyValidated ? 'text-emerald-950' : 'text-sky-950'
-                          }`}>
-                          {isPaymentAlreadyValidated
-                            ? 'Comprobante de Pago Verificado y Aprobado'
-                            : 'Comprobante de Pago Subido por el Cliente'}
-                        </span>
-                        <span className={`text-[10px] ${isPaymentAlreadyValidated ? 'text-emerald-700' : 'text-sky-700'
-                          }`}>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className={`text-[11px] font-extrabold block ${
+                              isPaymentAlreadyValidated ? 'text-emerald-950' : 'text-sky-950'
+                            }`}
+                          >
+                            {isPaymentAlreadyValidated
+                              ? 'Comprobante(s) de Pago Verificado(s) y Aprobado(s)'
+                              : 'Comprobante(s) de Pago Subido(s) por el Cliente'}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                              isPaymentAlreadyValidated
+                                ? 'bg-emerald-200/70 text-emerald-900 border border-emerald-300'
+                                : 'bg-sky-200/70 text-sky-900 border border-sky-300'
+                            }`}
+                          >
+                            {vouchers.length} {vouchers.length === 1 ? 'Comprobante' : 'Comprobantes'}
+                          </span>
+                        </div>
+                        <span
+                          className={`text-[10px] ${
+                            isPaymentAlreadyValidated ? 'text-emerald-700' : 'text-sky-700'
+                          }`}
+                        >
                           {selectedOrder.fecha_pago
                             ? `Registrado: ${new Date(selectedOrder.fecha_pago).toLocaleString('es-PE')}`
                             : 'Fecha no registrada'}
@@ -667,53 +890,80 @@ export function CajeroOrders() {
                         </span>
                       </div>
                     </div>
-
-                    <a
-                      href={getVoucherUrl(selectedOrder.voucher_referencia)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors self-start sm:self-auto shrink-0 ${isPaymentAlreadyValidated
-                        ? 'bg-white hover:bg-emerald-100/50 border-emerald-300 text-emerald-900'
-                        : 'bg-white hover:bg-sky-100/50 border-sky-300 text-sky-900'
-                        }`}
-                    >
-                      <ExternalLink className={`w-3.5 h-3.5 ${isPaymentAlreadyValidated ? 'text-emerald-600' : 'text-sky-600'}`} />
-                      <span>Ver Voucher Completo</span>
-                    </a>
                   </div>
 
-                  {/* Vista previa compacta si es imagen */}
-                  {(() => {
-                    const voucherUrl = getVoucherUrl(selectedOrder.voucher_referencia);
-                    const isImage = !voucherUrl.toLowerCase().endsWith('.pdf');
-                    if (!isImage) return null;
-                    return (
-                      <div className="pt-2 border-t border-sky-200/60 flex items-center gap-3">
-                        <a
-                          href={voucherUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block group relative overflow-hidden rounded-xl border border-sky-200 bg-white shadow-2xs shrink-0"
-                          title="Haga clic para abrir en tamaño completo"
-                        >
-                          <img
-                            src={voucherUrl}
-                            alt="Vista previa del comprobante"
-                            className="w-24 h-24 object-cover group-hover:scale-105 transition-transform"
-                          />
-                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-bold">
-                            Ampliar
-                          </div>
-                        </a>
-                        <div className="text-xs text-gray-600 space-y-0.5">
-                          <p className="font-bold text-gray-900">Vista previa del comprobante</p>
-                          <p className="text-[11px] text-gray-500">
-                            Haz clic en la miniatura o en &quot;Ver Voucher Completo&quot; para abrir la imagen en tamaño original.
-                          </p>
+                  {/* Grid de Comprobantes (Permite ver ambos comprobantes claramente) */}
+                  <div
+                    className={`grid grid-cols-1 ${
+                      vouchers.length > 1 ? 'sm:grid-cols-2' : ''
+                    } gap-3 pt-2 border-t ${
+                      isPaymentAlreadyValidated ? 'border-emerald-200/60' : 'border-sky-200/60'
+                    }`}
+                  >
+                    {vouchers.map((voucher, index) => (
+                      <div
+                        key={voucher.url || index}
+                        className="p-3 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-2 flex flex-col justify-between"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-extrabold text-slate-800 flex items-center gap-1.5">
+                            <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-[10px] font-bold">
+                              {index + 1}
+                            </span>
+                            {voucher.label || `Comprobante #${index + 1}`}
+                          </span>
+                          <a
+                            href={voucher.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 transition-colors ${
+                              isPaymentAlreadyValidated
+                                ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-300'
+                                : 'bg-sky-50 hover:bg-sky-100 text-sky-900 border-sky-300'
+                            }`}
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>Abrir Completo</span>
+                          </a>
                         </div>
+
+                        {!voucher.isPdf ? (
+                          <a
+                            href={voucher.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block group relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-2xs h-36 flex items-center justify-center"
+                            title={`Haga clic para ver ${voucher.label} en tamaño completo`}
+                          >
+                            <img
+                              src={voucher.url}
+                              alt={`Comprobante de pago ${index + 1}`}
+                              className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold gap-1">
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              <span>Ampliar Imagen</span>
+                            </div>
+                          </a>
+                        ) : (
+                          <a
+                            href={voucher.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-3 rounded-xl bg-red-50 border border-red-200 hover:bg-red-100/70 transition-colors h-36 justify-center"
+                          >
+                            <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 flex items-center justify-center shrink-0">
+                              <FileText className="w-5 h-5" />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-xs font-bold text-red-950">Documento PDF</p>
+                              <p className="text-[10px] text-red-700">Haz clic para abrir</p>
+                            </div>
+                          </a>
+                        )}
                       </div>
-                    );
-                  })()}
+                    ))}
+                  </div>
 
                   {/* Estado cuando el abono ya fue validado */}
                   {isPaymentAlreadyValidated && (
@@ -729,7 +979,7 @@ export function CajeroOrders() {
                       <button
                         type="button"
                         onClick={() => {
-                          setTransitionNote('Pago validado por caja tras revisión de voucher. Pedido aceptado y pasa a preparación.');
+                          setTransitionNote('');
                           setPendingTransition({ order: selectedOrder, targetState: 'confirmado' });
                         }}
                         className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
@@ -743,187 +993,7 @@ export function CajeroOrders() {
               );
             })()}
 
-            {/* State Management Section */}
-            <div>
-              {isTerminal ? (
-                <div>
-                  {selectedOrder.estado === 'entregado' ? (
-                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                        <CheckCircle2 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="font-extrabold text-emerald-950 text-xs">Pedido Entregado y Cerrado</h4>
-                        <p className="text-[11px] text-emerald-700 mt-0.5">
-                          Este pedido completó su ciclo de entrega con éxito. Se encuentra en estado terminal definitivo y ya no admite modificaciones.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-4 rounded-2xl bg-red-50 border border-red-200 flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-red-100 text-red-700 flex items-center justify-center shrink-0 mt-0.5">
-                        <XCircle className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="font-extrabold text-red-950 text-xs">Pedido Cancelado</h4>
-                        <p className="text-[11px] text-red-700 mt-0.5">
-                          Este pedido fue cancelado y su inventario fue liberado. Se encuentra en estado terminal definitivo y ya no admite modificaciones.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Fase Operativa Actual</span>
-                      <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-extrabold uppercase border ${statusBadgeClasses[selectedOrder.estado] || statusBadgeClasses.pendiente}`}>
-                        {selectedOrder.estado?.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-slate-500 font-medium">
-                      Flujo: <strong className="text-slate-700">{selectedOrder.recojo_en_tienda ? 'Recojo en Almacén' : 'Despacho a Obra'}</strong>
-                    </span>
-                  </div>
 
-                  {/* Roadmap Visual de Fases: Fase anterior = Verde, Fase actual = Azul, Fase siguiente = Amarillo */}
-                  {(() => {
-                    const isRecojo = Boolean(selectedOrder.recojo_en_tienda);
-                    let cajeroActiveStep = 1;
-                    if (isRecojo) {
-                      if (selectedOrder.estado === 'entregado') cajeroActiveStep = 4;
-                      else if (selectedOrder.estado === 'listo_para_recojo') cajeroActiveStep = 3;
-                      else if (['confirmado', 'despachado'].includes(selectedOrder.estado)) cajeroActiveStep = 2;
-                      else cajeroActiveStep = 1;
-                    } else {
-                      if (selectedOrder.estado === 'entregado') cajeroActiveStep = 5;
-                      else if (selectedOrder.estado === 'despachado') cajeroActiveStep = 4;
-                      else if (selectedOrder.estado === 'confirmado') cajeroActiveStep = 3;
-                      else if (selectedOrder.estado === 'flete_cotizado') cajeroActiveStep = 2;
-                      else cajeroActiveStep = 1;
-                    }
-
-                    const cajeroSteps = isRecojo
-                      ? [
-                          { fase: 'Fase 1', label: 'Registrado', sub: 'Pedido registrado' },
-                          { fase: 'Fase 2', label: 'Pago y Voucher', sub: 'Pendiente abono' },
-                          { fase: 'Fase 3', label: 'En Preparación', sub: 'Alistando patio' },
-                          { fase: 'Fase 4', label: 'Listo Entrega', sub: 'Almacén Puente Piedra' },
-                          { fase: 'Fase 5', label: 'Entregado', sub: 'Retiro conforme' },
-                        ]
-                      : [
-                          { fase: 'Fase 1', label: 'Registrado', sub: 'Pedido registrado' },
-                          { fase: 'Fase 2', label: 'Cotizar Flete', sub: 'Pendiente por caja' },
-                          { fase: 'Fase 3', label: 'Flete Cotizado', sub: 'Espera pago/voucher' },
-                          { fase: 'Fase 4', label: 'En Preparación', sub: 'Alistando patio' },
-                          { fase: 'Fase 5', label: 'Pedido en Camino', sub: 'Camión en ruta' },
-                          { fase: 'Fase 6', label: 'Entregado', sub: 'Conforme en obra' },
-                        ];
-
-                    const isDelivered = selectedOrder.estado === 'entregado';
-
-                    return (
-                      <div className="pt-2 border-t border-slate-200/80">
-                        <span className="text-[10px] uppercase font-bold text-slate-500 block mb-2">
-                          Progreso del Flujo de Fases:
-                        </span>
-                        <div className={`grid grid-cols-2 ${isRecojo ? 'sm:grid-cols-5' : 'sm:grid-cols-3 lg:grid-cols-6'} gap-2`}>
-                          {cajeroSteps.map((step, idx) => {
-                            const isPassed = isDelivered ? true : idx < cajeroActiveStep;
-                            const isCurrent = !isDelivered && idx === cajeroActiveStep;
-                            const isNext = !isDelivered && idx === cajeroActiveStep + 1;
-
-                            return (
-                              <div
-                                key={step.label}
-                                className={`p-2.5 rounded-xl border text-left transition-all ${
-                                  isPassed
-                                    ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-2xs'
-                                    : isCurrent
-                                    ? 'bg-sky-50 border-sky-400 ring-2 ring-sky-500/25 text-sky-950 shadow-xs'
-                                    : isNext
-                                    ? 'bg-amber-50/90 border-amber-300 border-dashed text-amber-950'
-                                    : 'bg-white border-slate-200 text-slate-400 opacity-60'
-                                }`}
-                              >
-                                <span
-                                  className={`text-[9px] font-extrabold uppercase block tracking-wider ${
-                                    isPassed
-                                      ? 'text-emerald-700'
-                                      : isCurrent
-                                      ? 'text-sky-700'
-                                      : isNext
-                                      ? 'text-amber-700'
-                                      : 'text-slate-400'
-                                  }`}
-                                >
-                                  {step.fase}
-                                </span>
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                  {isPassed ? (
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                  ) : isCurrent ? (
-                                    <Clock className="w-3.5 h-3.5 text-sky-600 animate-pulse shrink-0" />
-                                  ) : isNext ? (
-                                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
-                                  ) : (
-                                    <div className="w-2 h-2 rounded-full bg-slate-300 shrink-0" />
-                                  )}
-                                  <span className="text-[11px] font-bold truncate">{step.label}</span>
-                                </div>
-                                <span
-                                  className={`text-[9px] block truncate mt-0.5 ${
-                                    isPassed
-                                      ? 'text-emerald-700'
-                                      : isCurrent
-                                      ? 'text-sky-800 font-bold'
-                                      : isNext
-                                      ? 'text-amber-800'
-                                      : 'text-slate-400'
-                                  }`}
-                                >
-                                  {step.sub}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  <div className="pt-2 border-t border-slate-200/80">
-                    <label className="font-bold text-slate-900 uppercase tracking-wider text-[10px] block mb-2">
-                      Avanzar a Siguiente Fase (por Caja):
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {allowedNext.map((st) => {
-                        const isCancel = st === 'cancelado';
-                        return (
-                          <button
-                            key={st}
-                            type="button"
-                            onClick={() => {
-                              setCostoFleteInput(selectedOrder.costo_flete ? String(selectedOrder.costo_flete) : '');
-                              setTransitionNote('');
-                              setPendingTransition({ order: selectedOrder, targetState: st });
-                            }}
-                            className={`px-3.5 py-2 rounded-xl font-bold uppercase text-[11px] transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 ${isCancel
-                              ? 'bg-white hover:bg-red-50 text-red-700 border border-red-300'
-                              : 'bg-kenpaku-navy hover:bg-slate-800 text-white'
-                              }`}
-                          >
-                            {isCancel ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                            <span>{ACTION_LABELS[st] || st.replace(/_/g, ' ')}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Timeline Events */}
             {selectedOrder.events && selectedOrder.events.length > 0 && (
@@ -994,35 +1064,11 @@ export function CajeroOrders() {
               <span className="text-xl font-extrabold text-amber-400">{formatPEN(selectedOrder.total)}</span>
             </div>
 
-            {/* Modal Bottom Actions */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200">
-              <span className="text-[11px] text-slate-500">
-                💡 Presiona Escape o usa el botón para cerrar la ventana del pedido.
-              </span>
-              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                {['confirmado', 'despachado', 'listo_para_recojo', 'entregado'].includes(selectedOrder.estado) && (
-                  <button
-                    type="button"
-                    onClick={() => handleOpenReceipt(selectedOrder)}
-                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-kenpaku-navy hover:bg-slate-800 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                  >
-                    <FileText className="w-4 h-4 text-amber-300" />
-                    <span>Ver / Imprimir Boleta</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  data-testid="modal-bottom-close-button"
-                  onClick={handleCloseModal}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs transition-colors cursor-pointer"
-                >
-                  Cerrar Ventana
-                </button>
-              </div>
-            </div>
+
           </div>
         </Modal>
-      )}
+        );
+      })()}
 
       {/* Confirmation Modal for State Transition */}
       {pendingTransition && (
@@ -1049,9 +1095,11 @@ export function CajeroOrders() {
             </div>
 
             {/* Detailed operational impact note */}
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 leading-relaxed text-[11px]">
-              {getTransitionImpactMessage(pendingTransition?.targetState)}
-            </div>
+            {getTransitionImpactMessage(pendingTransition?.targetState) && (
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 leading-relaxed text-[11px]">
+                {getTransitionImpactMessage(pendingTransition?.targetState)}
+              </div>
+            )}
 
             {/* Optional Freight Cost Input when target is flete_cotizado */}
             {pendingTransition?.targetState === 'flete_cotizado' && (

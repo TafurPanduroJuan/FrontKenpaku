@@ -1,11 +1,13 @@
 import React, { createContext, useState, useEffect, useMemo } from 'react';
 import { calcIGV } from '../utils/calcIGV';
+import { Toast } from '../components/ui/Toast';
 
 export const CartContext = createContext(null);
 
 const LOCAL_STORAGE_KEY = 'kenpaku_cart_v1';
 
 export function CartProvider({ children }) {
+  const [cartToast, setCartToast] = useState({ isVisible: false, message: '' });
   const [items, setItems] = useState(() => {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -40,6 +42,11 @@ export function CartProvider({ children }) {
         return updated;
       }
       return [...prevItems, { product, cantidad: Math.min(cantidad, product.stock_disponible) }];
+    });
+
+    setCartToast({
+      isVisible: true,
+      message: `✓ Se agregó "${product.nombre}" al carrito de compras.`
     });
   };
 
@@ -99,5 +106,14 @@ export function CartProvider({ children }) {
     toggleCart,
   };
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+      <Toast
+        message={cartToast.message}
+        isVisible={cartToast.isVisible}
+        onClose={() => setCartToast({ isVisible: false, message: '' })}
+      />
+    </CartContext.Provider>
+  );
 }

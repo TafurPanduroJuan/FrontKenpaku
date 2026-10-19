@@ -144,10 +144,6 @@ export function CartDrawer() {
                 </div>
               </div>
 
-              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800 leading-snug">
-                ⚠️ Flete a coordinar con administración post-orden.
-              </div>
-
               <Button
                 variant="primary"
                 fullWidth

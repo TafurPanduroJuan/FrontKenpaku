@@ -593,9 +593,11 @@ export function Checkout() {
             </div>
           </div>
 
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 leading-snug">
-            ⚠️ Flete a coordinar con administración post-orden. Los montos son referenciales hasta la validación de un asesor.
-          </div>
+          {deliveryType === 'despacho' && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 leading-snug">
+              ⚠️ Flete a coordinar con administración post-orden. Los montos son referenciales hasta la validación de un asesor.
+            </div>
+          )}
 
           <Button
             type="submit"

@@ -19,13 +19,15 @@ import {
   ThumbsDown,
   RefreshCw,
   Store,
-  MapPin
+  MapPin,
+  ExternalLink
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { formatPEN } from '../utils/formatPEN';
 import { buildWhatsAppUrl } from '../utils/whatsapp';
 import { getOrderTracking, submitFleteDecision, uploadOrderVoucher } from '../api/orders';
 import { ReceiptModal } from '../components/pos/ReceiptModal';
+import { getVoucherList } from '../utils/voucher';
 
 const BANK_ACCOUNTS = [
   {
@@ -777,11 +779,34 @@ export function OrderConfirmation() {
                     <p className="text-xs text-sky-800 leading-relaxed">
                       Nuestro cajero se encuentra verificando la transferencia en el sistema bancario. Esta pantalla se actualizará de forma instantánea al confirmarse.
                     </p>
-                    <div className="p-3 bg-white/90 rounded-2xl border border-sky-200 text-xs text-sky-900 font-semibold space-y-1">
+                    <div className="p-3 bg-white/90 rounded-2xl border border-sky-200 text-xs text-sky-900 font-semibold space-y-2">
                       <p className="flex items-center justify-center gap-1.5 text-emerald-700">
                         <Check className="w-4 h-4 text-emerald-600" />
                         Comprobante registrado en el pedido
                       </p>
+                      {(() => {
+                        const vList = getVoucherList(
+                          displayOrder.voucher_referencia,
+                          displayOrder.events || displayOrder.order_events
+                        );
+                        if (!vList.length) return null;
+                        return (
+                          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                            {vList.map((v, i) => (
+                              <a
+                                key={v.url || i}
+                                href={v.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-[11px] font-bold transition-colors"
+                              >
+                                <ExternalLink className="w-3 h-3 text-sky-600" />
+                                <span>{v.label || `Comprobante #${i + 1}`}</span>
+                              </a>
+                            ))}
+                          </div>
+                        );
+                      })()}
                       <p className="text-[11px] text-slate-500 font-normal">
                         🔒 No necesitas volver a adjuntar archivos ni subir duplicados.
                       </p>
@@ -870,20 +895,10 @@ export function OrderConfirmation() {
       {/* 4. RESUMEN DE PRODUCTOS & DETALLES DEL PEDIDO (SIEMPRE VISIBLE) */}
       {displayOrder.items && displayOrder.items.length > 0 && (
         <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-soft space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div className="border-b border-slate-100 pb-3">
             <h2 className="text-base font-bold text-kenpaku-navy">
               Detalle del Registro de Pedido
             </h2>
-            {isPaymentConfirmed && (
-              <button
-                type="button"
-                onClick={() => setIsReceiptModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-kenpaku-navy hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
-              >
-                <FileText className="w-3.5 h-3.5 text-amber-400" />
-                <span>Descargar o Imprimir Boleta</span>
-              </button>
-            )}
           </div>
 
           <div className="divide-y divide-slate-100">

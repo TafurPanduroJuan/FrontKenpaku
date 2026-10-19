@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { getOrderTracking, submitFleteDecision, uploadOrderVoucher } from '../api/orders';
 import { formatPEN } from '../utils/formatPEN';
-import { getVoucherUrl } from '../utils/voucher';
+import { getVoucherUrl, getVoucherList } from '../utils/voucher';
 import { Button } from '../components/ui/Button';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { sanitizeOrderCode, sanitizeDigits } from '../utils/sanitizers';
@@ -868,17 +868,29 @@ export function TrackingPage() {
                   </div>
                 </div>
 
-                {order.voucher_referencia && (
-                  <a
-                    href={getVoucherUrl(order.voucher_referencia)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2.5 rounded-xl bg-white hover:bg-emerald-100/50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2 shadow-2xs transition-colors shrink-0 self-start sm:self-auto"
-                  >
-                    <ExternalLink className="w-4 h-4 text-emerald-600" />
-                    <span>Ver Comprobante Validado</span>
-                  </a>
-                )}
+                {order.voucher_referencia && (() => {
+                  const vList = getVoucherList(order.voucher_referencia, order.events || order.order_events);
+                  return (
+                    <div className="flex flex-wrap gap-2 shrink-0 self-start sm:self-auto">
+                      {vList.map((v, i) => (
+                        <a
+                          key={v.url || i}
+                          href={v.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2.5 rounded-xl bg-white hover:bg-emerald-100/50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2 shadow-2xs transition-colors shrink-0"
+                        >
+                          <ExternalLink className="w-4 h-4 text-emerald-600" />
+                          <span>
+                            {vList.length === 1
+                              ? 'Ver Comprobante Validado'
+                              : `Ver ${v.label || `Comprobante #${i + 1}`}`}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -1016,31 +1028,51 @@ export function TrackingPage() {
                 </span>
 
                 {/* Si ya hay voucher subido */}
-                {order.voucher_referencia && (
-                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                      <div>
-                        <span className="font-extrabold text-emerald-950 text-xs block">
-                          Comprobante de Pago Registrado
-                        </span>
-                        <span className="text-[11px] text-emerald-700 block">
-                          En proceso de verificación por caja. {order.fecha_pago ? `Subido el ${new Date(order.fecha_pago).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}.` : ''}
-                        </span>
+                {order.voucher_referencia && (() => {
+                  const vList = getVoucherList(order.voucher_referencia, order.events || order.order_events);
+                  return (
+                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                        <div>
+                          <span className="font-extrabold text-emerald-950 text-xs block">
+                            {vList.length > 1
+                              ? `${vList.length} Comprobantes de Pago Registrados`
+                              : 'Comprobante de Pago Registrado'}
+                          </span>
+                          <span className="text-[11px] text-emerald-700 block">
+                            En proceso de verificación por caja.{' '}
+                            {order.fecha_pago
+                              ? `Subido el ${new Date(order.fecha_pago).toLocaleString('es-PE', {
+                                  dateStyle: 'short',
+                                  timeStyle: 'short',
+                                })}.`
+                              : ''}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 shrink-0">
+                        {vList.map((v, i) => (
+                          <a
+                            key={v.url || i}
+                            href={v.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-100/50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors shrink-0"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>
+                              {vList.length === 1
+                                ? 'Ver Comprobante'
+                                : `Ver ${v.label || `Comprobante #${i + 1}`}`}
+                            </span>
+                          </a>
+                        ))}
                       </div>
                     </div>
-
-                    <a
-                      href={getVoucherUrl(order.voucher_referencia)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-100/50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors shrink-0"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Ver Comprobante</span>
-                    </a>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Selector de Archivo / Drag & Drop */}
                 <div className="p-4 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-300 space-y-3 text-center">

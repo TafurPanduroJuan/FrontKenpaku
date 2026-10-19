@@ -134,7 +134,7 @@ describe('CajeroOrders Ver Boleta Integration', () => {
     });
   });
 
-  it('opening order detail and clicking "Ver / Imprimir Boleta" shows boleta and allows closing boleta without exiting details', async () => {
+  it('opening order detail modal displays the Fase Operativa Actual at the top and closes with modal-close-button', async () => {
     adminApi.getAdminOrders.mockResolvedValueOnce({
       items: mockOrders,
       total: 2,
@@ -158,32 +158,128 @@ describe('CajeroOrders Ver Boleta Integration', () => {
     const verDetalleButtons = screen.getAllByRole('button', { name: /ver detalle/i });
     fireEvent.click(verDetalleButtons[0]);
 
-    // Order detail modal opens
+    // Order detail modal opens with Fase Operativa Actual at top
     expect(await screen.findByText('Gestión de Pedido KPK-000033')).toBeInTheDocument();
+    expect(screen.getByText('Fase Operativa Actual')).toBeInTheDocument();
+    expect(screen.getByText('Progreso del Flujo de Fases:')).toBeInTheDocument();
 
-    // Inside detail modal, find "Ver / Imprimir Boleta"
-    const verImprimirBoletaBtn = screen.getByRole('button', { name: /ver \/ imprimir boleta/i });
-    fireEvent.click(verImprimirBoletaBtn);
-
-    // Boleta modal opens
-    expect(await screen.findByText('Boleta de Venta Electrónica')).toBeInTheDocument();
-
-    // Close boleta modal
-    const cerrarVistaBtn = screen.getByRole('button', { name: /cerrar vista/i });
-    fireEvent.click(cerrarVistaBtn);
-
-    // Boleta closes, but Order Details modal stays open
-    await waitFor(() => {
-      expect(screen.queryByText('Boleta de Venta Electrónica')).not.toBeInTheDocument();
-    });
-    expect(screen.getByText('Gestión de Pedido KPK-000033')).toBeInTheDocument();
-
-    // Now close order detail modal
-    const cerrarVentanaBtn = screen.getByTestId('modal-bottom-close-button');
-    fireEvent.click(cerrarVentanaBtn);
+    // Now close order detail modal using the top close button (X)
+    const cerrarModalBtn = screen.getByTestId('modal-close-button');
+    fireEvent.click(cerrarModalBtn);
 
     await waitFor(() => {
       expect(screen.queryByText('Gestión de Pedido KPK-000033')).not.toBeInTheDocument();
     });
+  });
+
+  it('highlights orders requiring freight quote with "Cotización Pendiente" badge and "Cotizar Flete" action button', async () => {
+    const freightOrder = {
+      id: 'ord-freight',
+      codigo: 'KPK-000099',
+      cliente_nombre: 'Constructora Lima Norte',
+      cliente_telefono: '999888777',
+      cliente_dni: '20123456789',
+      estado: 'pendiente',
+      estado_flete: 'sin_cotizar',
+      recojo_en_tienda: false,
+      costo_flete: 0,
+      subtotal: 350.0,
+      igv: 63.0,
+      total: 413.0,
+      items: [
+        {
+          nombre: 'Bolsa de Cemento Andino',
+          cantidad: 10,
+          precio_unitario: 35.0,
+        },
+      ],
+      created_at: '2026-10-18T19:00:00Z',
+      order_events: [],
+    };
+
+    adminApi.getAdminOrders.mockResolvedValueOnce({
+      items: [freightOrder],
+      total: 1,
+      page: 1,
+      page_size: 12,
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <CajeroOrders />
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('KPK-000099')).toBeInTheDocument();
+    });
+
+    // Should display the prominent "Cotización Pendiente" badge
+    expect(screen.getByText('Cotización Pendiente')).toBeInTheDocument();
+
+    // Should render the emphasized "Cotizar Flete" action button instead of generic "Ver Detalle"
+    const cotizarBtn = screen.getByRole('button', { name: /cotizar flete/i });
+    expect(cotizarBtn).toBeInTheDocument();
+
+    // Clicking "Cotizar Flete" opens the modal and displays the freight quotation banner
+    fireEvent.click(cotizarBtn);
+
+    expect(await screen.findByText(/Cotización de Flete Pendiente Requerida/i)).toBeInTheDocument();
+    expect(screen.getByText('Cotizar Flete Ahora')).toBeInTheDocument();
+  });
+
+  it('renders multiple vouchers (2 vouchers) in cashier modal when customer uploaded multiple receipts', async () => {
+    const multiVoucherOrder = {
+      id: 'ord-multi',
+      codigo: 'KPK-000088',
+      cliente_nombre: 'Juan Perez',
+      cliente_telefono: '988776655',
+      cliente_dni: '44556677',
+      estado: 'pendiente',
+      recojo_en_tienda: true,
+      costo_flete: 0,
+      subtotal: 500.0,
+      igv: 90.0,
+      total: 590.0,
+      voucher_referencia: 'https://supabase.co/voucher1.png, /api/orders/voucher/voucher2.pdf',
+      fecha_pago: '2026-10-18T19:15:00Z',
+      items: [],
+      created_at: '2026-10-18T19:10:00Z',
+      order_events: [],
+    };
+
+    adminApi.getAdminOrders.mockResolvedValueOnce({
+      items: [multiVoucherOrder],
+      total: 1,
+      page: 1,
+      page_size: 12,
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <CajeroOrders />
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('KPK-000088')).toBeInTheDocument();
+    });
+
+    // Click "Verificar Pago"
+    const verificarBtn = screen.getByRole('button', { name: /verificar pago/i });
+    fireEvent.click(verificarBtn);
+
+    // Modal opens and shows "2 Comprobantes" count badge
+    expect(await screen.findByText('2 Comprobantes')).toBeInTheDocument();
+    expect(screen.getByText('Comprobante #1')).toBeInTheDocument();
+    expect(screen.getByText('Comprobante #2')).toBeInTheDocument();
+
+    // Check that both complete opening links are rendered
+    const abrirCompletoLinks = screen.getAllByRole('link', { name: /abrir completo/i });
+    expect(abrirCompletoLinks).toHaveLength(2);
   });
 });
