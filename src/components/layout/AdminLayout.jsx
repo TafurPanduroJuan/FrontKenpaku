@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink, useNavigate, Navigate } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, Package, BrainCircuit, MessageSquare, AlertOctagon, LogOut, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Package, BrainCircuit, MessageSquare, AlertOctagon, LogOut, ArrowLeft, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { NotFound } from '../../pages/NotFound';
 
@@ -19,6 +19,7 @@ export function AdminLayout() {
   const navItems = [
     { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/admin/productos', label: 'Productos (Catálogo)', icon: Package },
+    { to: '/admin/ventas', label: 'Ventas (Reportes)', icon: TrendingUp },
     { to: '/admin/conocimiento', label: 'Base de Conocimiento IA', icon: BrainCircuit },
     { to: '/admin/chat', label: 'Historial del Chat', icon: MessageSquare },
     { to: '/admin/reclamos', label: 'Libro de Reclamaciones', icon: AlertOctagon },

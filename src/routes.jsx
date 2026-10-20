@@ -22,6 +22,7 @@ import { ProductForm } from './pages/admin/ProductForm';
 import { Knowledge } from './pages/admin/Knowledge';
 import { ChatLogs } from './pages/admin/ChatLogs';
 import { ClaimsAdmin } from './pages/admin/ClaimsAdmin';
+import { AdminVentas } from './pages/admin/AdminVentas';
 import { CajeroLayout } from './components/layout/CajeroLayout';
 import { PosView } from './pages/cajero/PosView';
 import { CajeroMisVentas } from './pages/cajero/CajeroMisVentas';
@@ -59,6 +60,7 @@ const router = createBrowserRouter([
       { path: 'productos', element: <Products /> },
       { path: 'productos/nuevo', element: <ProductForm /> },
       { path: 'productos/:id', element: <ProductForm /> },
+      { path: 'ventas', element: <AdminVentas /> },
       { path: 'conocimiento', element: <Knowledge /> },
       { path: 'chat', element: <ChatLogs /> },
       { path: 'reclamos', element: <ClaimsAdmin /> },
