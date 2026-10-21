@@ -82,22 +82,22 @@ export function AdminVentas() {
           o.observaciones?.includes('MOSTRADOR');
 
         const obsUpper = (o.observaciones || '').toUpperCase();
-        let metodo = 'No especificado';
+        let metodo = 'no_especificado';
         if (obsUpper.includes('PAGO: EFECTIVO') || obsUpper.includes('EFECTIVO')) {
           metodo = 'efectivo';
-        } else if (obsUpper.includes('YAPE') || obsUpper.includes('PLIN')) {
-          metodo = 'yape_plin';
-        } else if (obsUpper.includes('BCP') || obsUpper.includes('BBVA') || obsUpper.includes('TRANSFERENCIA')) {
-          metodo = 'transferencia';
-        } else if (obsUpper.includes('TARJETA') || obsUpper.includes('POS')) {
-          metodo = 'tarjeta';
+        } else if (obsUpper.includes('PAGO: YAPE') || obsUpper.includes('YAPE') || obsUpper.includes('PLIN')) {
+          metodo = 'yape';
+        } else if (obsUpper.includes('PAGO: TRANSFERENCIA INTERBANK') || obsUpper.includes('INTERBANK')) {
+          metodo = 'interbank';
+        } else if (obsUpper.includes('PAGO: TRANSFERENCIA BCP') || obsUpper.includes('BCP') || obsUpper.includes('BBVA') || obsUpper.includes('TRANSFERENCIA')) {
+          metodo = 'bcp';
         } else if (o.voucher_referencia || o.fecha_pago) {
-          metodo = 'transferencia';
+          metodo = 'bcp';
         }
 
-        const isFactura = obsUpper.includes('FACTURA');
+        const isFactura = obsUpper.includes('FACTURA') || obsUpper.includes('[DOC: RUC');
         let docNum = '';
-        const matchDoc = o.observaciones?.match(/Doc:\s*([0-9A-Za-z]+)/i);
+        const matchDoc = o.observaciones?.match(/(?:DOC:\s*(?:RUC|DNI)?|Doc:\s*|DNI:\s*|RUC:\s*)([0-9A-Za-z]+)/i);
         if (matchDoc) docNum = matchDoc[1];
 
         salesMap.set(o.codigo, {
@@ -130,6 +130,10 @@ export function AdminVentas() {
       // Agregar ventas locales que no estén en la API
       localSales.forEach((loc) => {
         if (!loc || !loc.codigo || salesMap.has(loc.codigo)) return;
+        let locMetodo = (loc.metodoPago || 'efectivo').toLowerCase();
+        if (locMetodo === 'yape_plin' || locMetodo === 'plin') locMetodo = 'yape';
+        if (locMetodo === 'transferencia' || locMetodo === 'bbva') locMetodo = 'bcp';
+
         salesMap.set(loc.codigo, {
           id: loc.id || loc.codigo,
           codigo: loc.codigo,
@@ -141,7 +145,7 @@ export function AdminVentas() {
           comprobanteTipo: loc.comprobanteTipo || 'boleta',
           recojo_en_tienda: true,
           direccion: 'Puente Piedra - Almacén Principal',
-          metodoPago: loc.metodoPago || 'efectivo',
+          metodoPago: locMetodo,
           observaciones: loc.observaciones || '[VENTA MOSTRADOR]',
           subtotal: Number(loc.subtotal || 0),
           igv: Number(loc.igv || 0),
@@ -245,8 +249,12 @@ export function AdminVentas() {
 
       // 3. Medio de Pago
       if (metodoPagoFilter !== 'todos') {
-        if (metodoPagoFilter === 'yape_plin') {
-          if (sale.metodoPago !== 'yape_plin' && sale.metodoPago !== 'yape' && sale.metodoPago !== 'plin') {
+        if (metodoPagoFilter === 'yape') {
+          if (sale.metodoPago !== 'yape' && sale.metodoPago !== 'yape_plin' && sale.metodoPago !== 'plin') {
+            return false;
+          }
+        } else if (metodoPagoFilter === 'bcp') {
+          if (sale.metodoPago !== 'bcp' && sale.metodoPago !== 'transferencia' && sale.metodoPago !== 'bbva') {
             return false;
           }
         } else if (sale.metodoPago !== metodoPagoFilter) {
@@ -340,13 +348,13 @@ export function AdminVentas() {
       case 'yape_plin':
       case 'yape':
       case 'plin':
-        return <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">Yape / Plin</span>;
+        return <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">Yape</span>;
       case 'transferencia':
       case 'bcp':
       case 'bbva':
-        return <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-sky-100 text-sky-800 border border-sky-200">Transferencia</span>;
-      case 'tarjeta':
-        return <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">Tarjeta</span>;
+        return <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-sky-100 text-sky-800 border border-sky-200">Transf. BCP</span>;
+      case 'interbank':
+        return <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-100 text-teal-800 border border-teal-200">Transf. Interbank</span>;
       default:
         return <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700">Digital</span>;
     }
@@ -560,9 +568,9 @@ export function AdminVentas() {
             >
               <option value="todos">Todos los medios de pago</option>
               <option value="efectivo">Efectivo</option>
-              <option value="yape_plin">Yape / Plin</option>
-              <option value="transferencia">Transferencia (BCP / BBVA)</option>
-              <option value="tarjeta">Tarjeta (POS)</option>
+              <option value="yape">Yape</option>
+              <option value="bcp">Transferencia BCP</option>
+              <option value="interbank">Transferencia Interbank</option>
             </select>
           </div>
 

@@ -252,3 +252,30 @@ export async function triggerScheduledTasks(params = {}) {
   return data;
 }
 
+export async function validateOrderVoucher({ orderId, aprobado, nota, metodo_pago } = {}) {
+  if (USE_MOCKS) {
+    checkAuth();
+    await new Promise((res) => setTimeout(res, 300));
+    return { ok: true, estado: aprobado ? 'confirmado' : 'pendiente' };
+  }
+  const { data } = await apiClient.put(`/admin/orders/${orderId}/validate-voucher`, {
+    aprobado,
+    nota,
+    metodo_pago
+  });
+  return data;
+}
+
+export async function updateOrderPaymentMethod({ orderId, metodo_pago, nota } = {}) {
+  if (USE_MOCKS) {
+    checkAuth();
+    await new Promise((res) => setTimeout(res, 300));
+    return { ok: true, metodo_pago };
+  }
+  const { data } = await apiClient.put(`/admin/orders/${orderId}/metodo-pago`, {
+    metodo_pago,
+    nota
+  });
+  return data;
+}
+

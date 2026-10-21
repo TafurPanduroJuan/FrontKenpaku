@@ -14,30 +14,25 @@ export function exportSalesToExcel(sales = [], filterSummary = {}) {
 
     // Parseo de método de pago
     let metodo = 'No especificado';
+    const rawMetodo = (sale.metodoPago || '').toLowerCase();
     const obsUpper = (sale.observaciones || '').toUpperCase();
-    if (obsUpper.includes('PAGO: EFECTIVO') || obsUpper.includes('EFECTIVO')) {
+    if (rawMetodo === 'efectivo' || obsUpper.includes('PAGO: EFECTIVO') || obsUpper.includes('EFECTIVO')) {
       metodo = 'Efectivo';
-    } else if (obsUpper.includes('YAPE')) {
+    } else if (rawMetodo === 'yape' || obsUpper.includes('PAGO: YAPE') || obsUpper.includes('YAPE') || obsUpper.includes('PLIN')) {
       metodo = 'Yape';
-    } else if (obsUpper.includes('PLIN')) {
-      metodo = 'Plin';
-    } else if (obsUpper.includes('BCP')) {
+    } else if (rawMetodo === 'interbank' || obsUpper.includes('PAGO: TRANSFERENCIA INTERBANK') || obsUpper.includes('INTERBANK')) {
+      metodo = 'Transferencia Interbank';
+    } else if (rawMetodo === 'bcp' || obsUpper.includes('PAGO: TRANSFERENCIA BCP') || obsUpper.includes('BCP') || obsUpper.includes('BBVA') || obsUpper.includes('TRANSFERENCIA') || sale.voucher_referencia || sale.fecha_pago) {
       metodo = 'Transferencia BCP';
-    } else if (obsUpper.includes('BBVA')) {
-      metodo = 'Transferencia BBVA';
-    } else if (obsUpper.includes('TARJETA') || obsUpper.includes('POS')) {
-      metodo = 'Tarjeta';
-    } else if (sale.voucher_referencia || sale.fecha_pago) {
-      metodo = 'Transferencia Bancaria';
     }
 
     // Parseo de comprobante y documento
-    const isFactura = obsUpper.includes('FACTURA') || sale.comprobanteTipo === 'factura';
+    const isFactura = obsUpper.includes('FACTURA') || obsUpper.includes('[DOC: RUC') || sale.comprobanteTipo === 'factura';
     const comprobanteTipo = isFactura ? 'Factura' : 'Boleta';
 
     let docNumero = sale.docNumero || sale.numeroDocumento || '';
     if (!docNumero) {
-      const matchDoc = sale.observaciones?.match(/Doc:\s*([0-9A-Za-z]+)/i);
+      const matchDoc = sale.observaciones?.match(/(?:DOC:\s*(?:RUC|DNI)?|Doc:\s*|DNI:\s*|RUC:\s*)([0-9A-Za-z]+)/i);
       if (matchDoc) docNumero = matchDoc[1];
     }
 

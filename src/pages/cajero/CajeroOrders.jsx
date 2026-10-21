@@ -22,7 +22,13 @@ import {
   RefreshCw,
   Store
 } from 'lucide-react';
-import { getAdminOrders, updateOrderStatus, triggerScheduledTasks } from '../../api/admin';
+import {
+  getAdminOrders,
+  updateOrderStatus,
+  triggerScheduledTasks,
+  validateOrderVoucher,
+  updateOrderPaymentMethod
+} from '../../api/admin';
 import { formatPEN } from '../../utils/formatPEN';
 import { buildStatusWhatsAppUrl } from '../../utils/whatsapp';
 import { getVoucherUrl, getVoucherList } from '../../utils/voucher';
@@ -120,6 +126,66 @@ export function CajeroOrders() {
   const [receiptOrder, setReceiptOrder] = useState(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
+  // Estado para confirmación y edición de medio de pago por el cajero
+  const [verifiedMethod, setVerifiedMethod] = useState('bcp');
+  const [isUpdatingMethod, setIsUpdatingMethod] = useState(false);
+
+  useEffect(() => {
+    if (selectedOrder) {
+      const obs = (selectedOrder.observaciones || '').toUpperCase();
+      if (obs.includes('PAGO: YAPE') || obs.includes('PAGO DECLARADO: YAPE') || obs.includes('YAPE')) {
+        setVerifiedMethod('yape');
+      } else if (obs.includes('PAGO: INTERBANK') || obs.includes('PAGO DECLARADO: INTERBANK') || obs.includes('INTERBANK')) {
+        setVerifiedMethod('interbank');
+      } else if (obs.includes('PAGO: BCP') || obs.includes('PAGO DECLARADO: BCP') || obs.includes('BCP')) {
+        setVerifiedMethod('bcp');
+      } else if (obs.includes('PAGO: EFECTIVO') || obs.includes('EFECTIVO')) {
+        setVerifiedMethod('efectivo');
+      } else {
+        setVerifiedMethod('bcp');
+      }
+    }
+  }, [selectedOrder?.id, selectedOrder?.observaciones]);
+
+  const handleUpdatePaymentMethodOnly = async () => {
+    if (!selectedOrder) return;
+    setIsUpdatingMethod(true);
+    try {
+      const cleanMap = {
+        yape: 'Yape',
+        bcp: 'Transferencia BCP',
+        interbank: 'Transferencia Interbank',
+        efectivo: 'Efectivo'
+      };
+      const cleanName = cleanMap[verifiedMethod] || 'Transferencia BCP';
+      await updateOrderPaymentMethod({
+        orderId: selectedOrder.id || selectedOrder.codigo,
+        metodo_pago: verifiedMethod,
+        nota: `Cajero verificó/ajustó medio de pago a: ${cleanName}`
+      });
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      setToastMessage(`Medio de pago actualizado a "${cleanName}".`);
+      setShowToast(true);
+      setSelectedOrder((prev) => {
+        if (!prev) return prev;
+        const obsActual = prev.observaciones || '';
+        const obsLimpia = obsActual.replace(/\[PAGO[^\]]*\]/g, '').trim();
+        return {
+          ...prev,
+          observaciones: `${obsLimpia} [PAGO: ${cleanName}]`.trim()
+        };
+      });
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const errorMsg = typeof detail === 'string' ? detail : err.message || 'Error al actualizar medio de pago.';
+      setToastMessage(`Error: ${errorMsg}`);
+      setShowToast(true);
+    } finally {
+      setIsUpdatingMethod(false);
+    }
+  };
+
   const handleOpenReceipt = (order) => {
     setReceiptOrder(order);
     setIsReceiptModalOpen(true);
@@ -170,7 +236,17 @@ export function CajeroOrders() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, estado, nota, costo_flete }) => updateOrderStatus(id, { estado, nota, costo_flete }),
+    mutationFn: async ({ id, estado, nota, costo_flete, metodo_pago }) => {
+      if (estado === 'confirmado' && metodo_pago) {
+        return await validateOrderVoucher({
+          orderId: id,
+          aprobado: true,
+          nota,
+          metodo_pago
+        });
+      }
+      return await updateOrderStatus(id, { estado, nota, costo_flete });
+    },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
@@ -179,9 +255,19 @@ export function CajeroOrders() {
       setShowToast(true);
       setPendingTransition(null);
       if (selectedOrder && (selectedOrder.id === variables.id || selectedOrder.codigo === variables.id)) {
+        const cleanMap = {
+          yape: 'Yape',
+          bcp: 'Transferencia BCP',
+          interbank: 'Transferencia Interbank',
+          efectivo: 'Efectivo'
+        };
+        const pMethodName = variables.metodo_pago ? cleanMap[variables.metodo_pago] : null;
         setSelectedOrder((prev) => ({
           ...prev,
           estado: variables.estado,
+          observaciones: pMethodName
+            ? `${(prev.observaciones || '').replace(/\[PAGO[^\]]*\]/g, '').trim()} [PAGO: ${pMethodName}]`
+            : prev.observaciones,
           costo_flete: variables.costo_flete !== undefined ? variables.costo_flete : prev.costo_flete,
           estado_flete: variables.estado === 'flete_cotizado' ? 'cotizado' : prev.estado_flete,
           events: data?.events || [
@@ -215,7 +301,8 @@ export function CajeroOrders() {
     const payload = {
       estado: targetState,
       nota: transitionNote.trim() || undefined,
-      costo_flete: targetState === 'flete_cotizado' && costoFleteInput ? Number(costoFleteInput) : undefined
+      costo_flete: targetState === 'flete_cotizado' && costoFleteInput ? Number(costoFleteInput) : undefined,
+      metodo_pago: targetState === 'confirmado' ? verifiedMethod : undefined
     };
     updateStatusMutation.mutate({
       id: order.id || order.codigo,
@@ -964,6 +1051,59 @@ export function CajeroOrders() {
                       </div>
                     ))}
                   </div>
+
+                  {/* Selector y verificación de Medio de Pago */}
+                  {(() => {
+                    const obsUpper = (selectedOrder.observaciones || '').toUpperCase();
+                    let declaredMethod = 'No especificado';
+                    if (obsUpper.includes('PAGO: YAPE') || obsUpper.includes('PAGO DECLARADO: YAPE') || obsUpper.includes('YAPE')) {
+                      declaredMethod = 'Yape';
+                    } else if (obsUpper.includes('PAGO: INTERBANK') || obsUpper.includes('PAGO DECLARADO: INTERBANK') || obsUpper.includes('INTERBANK')) {
+                      declaredMethod = 'Transferencia Interbank';
+                    } else if (obsUpper.includes('PAGO: BCP') || obsUpper.includes('PAGO DECLARADO: BCP') || obsUpper.includes('BCP')) {
+                      declaredMethod = 'Transferencia BCP';
+                    } else if (obsUpper.includes('PAGO: EFECTIVO') || obsUpper.includes('EFECTIVO')) {
+                      declaredMethod = 'Efectivo';
+                    }
+
+                    return (
+                      <div className="pt-2 border-t border-slate-200/80 p-3 bg-white/95 rounded-xl space-y-2.5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-kenpaku-blue shrink-0" />
+                            <span className="text-xs font-bold text-slate-800">
+                              Medio de Pago Verificado por Caja:
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                            Declarado por cliente: <strong className="text-kenpaku-navy font-bold">{declaredMethod}</strong>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                          <select
+                            value={verifiedMethod}
+                            onChange={(e) => setVerifiedMethod(e.target.value)}
+                            className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white focus:ring-2 focus:ring-kenpaku-blue focus:outline-none flex-1"
+                          >
+                            <option value="yape">Yape</option>
+                            <option value="bcp">Transferencia BCP</option>
+                            <option value="interbank">Transferencia Interbank</option>
+                            <option value="efectivo">Efectivo</option>
+                          </select>
+
+                          <button
+                            type="button"
+                            onClick={handleUpdatePaymentMethodOnly}
+                            disabled={isUpdatingMethod}
+                            className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-colors border border-slate-300 cursor-pointer whitespace-nowrap shadow-2xs"
+                          >
+                            {isUpdatingMethod ? 'Guardando...' : 'Confirmar / Editar Medio'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Estado cuando el abono ya fue validado */}
                   {isPaymentAlreadyValidated && (

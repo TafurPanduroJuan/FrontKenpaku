@@ -88,12 +88,12 @@ const STATUS_CONFIG = {
 const BANK_ACCOUNTS = [
   {
     id: 'yape',
-    name: 'Yape / Plin',
+    name: 'Yape',
     badge: 'Inmediato sin comisión',
     number: '987 654 321',
     holder: 'Comercial Kenpaku S.A.C.',
     icon: QrCode,
-    note: 'Escanea el QR o transfiere al número directo desde tu app de Yape o Plin.',
+    note: 'Escanea el QR o transfiere al número directo desde tu app Yape.',
   },
   {
     id: 'bcp',
@@ -103,17 +103,17 @@ const BANK_ACCOUNTS = [
     cci: '002-191-002345678012-55',
     holder: 'Comercial Kenpaku S.A.C.',
     icon: Building2,
-    note: 'Transferencia directa o interbancaria a la cuenta corriente empresarial.',
+    note: 'Transferencia directa o interbancaria (CCI) a la cuenta corriente empresarial BCP.',
   },
   {
-    id: 'bbva',
-    name: 'BBVA Soles',
+    id: 'interbank',
+    name: 'Interbank Soles',
     badge: 'Cuenta Corriente',
-    number: '0011-0123-0100456789',
-    cci: '011-123-000100456789-78',
+    number: '200-3001234567',
+    cci: '003-200-003001234567-31',
     holder: 'Comercial Kenpaku S.A.C.',
-    icon: CreditCard,
-    note: 'Abonos directos en ventanilla, agentes o banca por internet.',
+    icon: Building2,
+    note: 'Depósitos y transferencias inmediatas vía Interbank Empresas.',
   },
 ];
 
@@ -294,6 +294,7 @@ export function TrackingPage() {
         codigo: order.codigo,
         telefono: telefonoInput,
         file: voucherFile,
+        metodo_pago: activeBankTab,
       });
       setVoucherMsg({
         type: 'success',

@@ -155,7 +155,7 @@ export async function submitFleteDecision({ token, codigo, telefono, decision, n
 /**
  * POST /orders/tracking/voucher
  */
-export async function uploadOrderVoucher({ token, codigo, telefono, file } = {}) {
+export async function uploadOrderVoucher({ token, codigo, telefono, file, metodo_pago } = {}) {
   if (USE_MOCKS) {
     await new Promise((res) => setTimeout(res, 500));
     return {
@@ -173,6 +173,9 @@ export async function uploadOrderVoucher({ token, codigo, telefono, file } = {})
 
   const formData = new FormData();
   formData.append('file', file);
+  if (metodo_pago) {
+    formData.append('metodo_pago', metodo_pago);
+  }
 
   const { data } = await apiClient.post('/orders/tracking/voucher', formData, {
     params,
@@ -184,7 +187,7 @@ export async function uploadOrderVoucher({ token, codigo, telefono, file } = {})
 /**
  * PUT /admin/orders/{orderId}/validate-voucher
  */
-export async function validateOrderVoucher({ orderId, aprobado, nota } = {}) {
+export async function validateOrderVoucher({ orderId, aprobado, nota, metodo_pago } = {}) {
   if (USE_MOCKS) {
     await new Promise((res) => setTimeout(res, 300));
     return { ok: true, estado: aprobado ? 'confirmado' : 'pendiente' };
@@ -192,6 +195,23 @@ export async function validateOrderVoucher({ orderId, aprobado, nota } = {}) {
 
   const { data } = await apiClient.put(`/admin/orders/${orderId}/validate-voucher`, {
     aprobado,
+    nota,
+    metodo_pago
+  });
+  return data;
+}
+
+/**
+ * PUT /admin/orders/{orderId}/metodo-pago
+ */
+export async function updateOrderPaymentMethod({ orderId, metodo_pago, nota } = {}) {
+  if (USE_MOCKS) {
+    await new Promise((res) => setTimeout(res, 300));
+    return { ok: true, metodo_pago };
+  }
+
+  const { data } = await apiClient.put(`/admin/orders/${orderId}/metodo-pago`, {
+    metodo_pago,
     nota
   });
   return data;

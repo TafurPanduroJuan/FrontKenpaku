@@ -849,7 +849,7 @@ export function PosView() {
                   { id: 'efectivo', label: 'Efectivo', icon: DollarSign },
                   { id: 'yape', label: 'Yape', icon: CreditCard },
                   { id: 'bcp', label: 'BCP', icon: Building2 },
-                  { id: 'bbva', label: 'BBVA', icon: Building2 }
+                  { id: 'interbank', label: 'Interbank', icon: Building2 }
                 ].map((m) => {
                   const Icon = m.icon;
                   const active = metodoPago === m.id;

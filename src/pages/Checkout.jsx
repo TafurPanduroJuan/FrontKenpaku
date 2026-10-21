@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ShieldCheck, Truck, Store, AlertTriangle, ArrowRight, ShoppingBag, MapPin } from 'lucide-react';
+import { ShieldCheck, Truck, Store, AlertTriangle, ArrowRight, ShoppingBag, MapPin, User, Building2, FileText } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { createOrder } from '../api/orders';
 import { Input } from '../components/ui/Input';
@@ -24,210 +24,275 @@ import {
 const NAME_REGEX = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
 const ADDRESS_REGEX = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s/.\-º°#,()]+$/;
 
-const checkoutSchema = z.object({
-  nombres: z
-    .string()
-    .min(1, 'Ingrese sus nombres')
-    .superRefine((val, ctx) => {
-      const trimmed = val.trim();
-      if (!trimmed) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Ingrese sus nombres'
-        });
-        return;
-      }
-      if (trimmed.length < 2) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'El nombre debe tener al menos 2 caracteres'
-        });
-        return;
-      }
-      if (trimmed.length > 80) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'El nombre no puede exceder los 80 caracteres'
-        });
-        return;
-      }
-      if (!NAME_REGEX.test(val)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Los nombres solo deben contener letras y espacios'
-        });
-      }
-    }),
-
-  apellidos: z
-    .string()
-    .min(1, 'Ingrese sus apellidos')
-    .superRefine((val, ctx) => {
-      const trimmed = val.trim();
-      if (!trimmed) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Ingrese sus apellidos'
-        });
-        return;
-      }
-      if (trimmed.length < 2) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Los apellidos deben tener al menos 2 caracteres'
-        });
-        return;
-      }
-      if (trimmed.length > 80) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Los apellidos no pueden exceder los 80 caracteres'
-        });
-        return;
-      }
-      if (!NAME_REGEX.test(val)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Los apellidos solo deben contener letras y espacios'
-        });
-      }
-    }),
-
-  dni: z
-    .string()
-    .min(1, 'Ingrese su número de DNI')
-    .superRefine((val, ctx) => {
-      const trimmed = val.trim();
-      if (!trimmed) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Ingrese su número de DNI'
-        });
-        return;
-      }
-      if (!/^\d+$/.test(trimmed)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'El DNI solo debe contener números'
-        });
-        return;
-      }
-      if (trimmed.length !== 8) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `El DNI debe tener exactamente 8 dígitos (ingresó ${trimmed.length})`
-        });
-      }
-    }),
-
-  telefono: z
-    .string()
-    .min(1, 'Ingrese su número de teléfono o WhatsApp')
-    .superRefine((val, ctx) => {
-      const trimmed = val.trim();
-      if (!trimmed) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Ingrese su número de teléfono o WhatsApp'
-        });
-        return;
-      }
-      if (!/^\d+$/.test(trimmed)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'El teléfono solo debe contener números (sin letras, espacios ni caracteres especiales)'
-        });
-        return;
-      }
-      if (trimmed.length !== 9) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `El teléfono debe tener exactamente 9 dígitos (ingresó ${trimmed.length})`
-        });
-        return;
-      }
-      if (!trimmed.startsWith('9')) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'El número de teléfono o WhatsApp debe empezar con 9 (ej. 987654321)'
-        });
-        return;
-      }
-    }),
-
-  correo: z
-    .string()
-    .min(1, 'Ingrese su correo electrónico')
-    .superRefine((val, ctx) => {
-      const trimmed = val.trim();
-      if (!trimmed) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Ingrese su correo electrónico'
-        });
-        return;
-      }
-      if (!trimmed.includes('@')) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "El correo debe incluir el símbolo '@' (ejemplo: usuario@correo.com)"
-        });
-        return;
-      }
-      if (!isValidEmail(trimmed)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'El correo debe tener un formato válido con dominio (ejemplo: usuario@correo.com)'
-        });
-        return;
-      }
-    }),
-
-  delivery_type: z.enum(['despacho', 'recojo']),
-  direccion: z.string().optional(),
-  observaciones: z
-    .string()
-    .max(500, 'Las observaciones no pueden exceder los 500 caracteres')
-    .optional(),
-  acepto_privacidad: z.boolean().refine((val) => val === true, {
-    message: 'Debe aceptar la política de privacidad para proceder'
+const checkoutSchema = z
+  .object({
+    tipo_documento: z.enum(['dni', 'ruc']).default('dni'),
+    nombres: z.string().optional(),
+    apellidos: z.string().optional(),
+    dni: z.string().optional(),
+    ruc: z.string().optional(),
+    razon_social: z.string().optional(),
+    contacto_nombre: z.string().optional(),
+    telefono: z
+      .string()
+      .min(1, 'Ingrese su número de teléfono o WhatsApp')
+      .superRefine((val, ctx) => {
+        const trimmed = val.trim();
+        if (!trimmed) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Ingrese su número de teléfono o WhatsApp'
+          });
+          return;
+        }
+        if (!/^\d+$/.test(trimmed)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'El teléfono solo debe contener números (sin letras, espacios ni caracteres especiales)'
+          });
+          return;
+        }
+        if (trimmed.length !== 9) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `El teléfono debe tener exactamente 9 dígitos (ingresó ${trimmed.length})`
+          });
+          return;
+        }
+        if (!trimmed.startsWith('9')) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'El número de teléfono o WhatsApp debe empezar con 9 (ej. 987654321)'
+          });
+          return;
+        }
+      }),
+    correo: z
+      .string()
+      .min(1, 'Ingrese su correo electrónico')
+      .superRefine((val, ctx) => {
+        const trimmed = val.trim();
+        if (!trimmed) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Ingrese su correo electrónico'
+          });
+          return;
+        }
+        if (!trimmed.includes('@')) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "El correo debe incluir el símbolo '@' (ejemplo: usuario@correo.com)"
+          });
+          return;
+        }
+        if (!isValidEmail(trimmed)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'El correo debe tener un formato válido con dominio (ejemplo: usuario@correo.com)'
+          });
+          return;
+        }
+      }),
+    delivery_type: z.enum(['despacho', 'recojo']),
+    direccion: z.string().optional(),
+    observaciones: z
+      .string()
+      .max(500, 'Las observaciones no pueden exceder los 500 caracteres')
+      .optional(),
+    acepto_privacidad: z.boolean().refine((val) => val === true, {
+      message: 'Debe aceptar la política de privacidad para proceder'
+    })
   })
-}).superRefine((data, ctx) => {
-  if (data.delivery_type === 'despacho') {
-    const dir = data.direccion ? data.direccion.trim() : '';
-    if (!dir) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'La dirección de entrega es obligatoria para despacho a obra',
-        path: ['direccion']
-      });
-    } else if (dir.length < 5) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'La dirección es muy corta: ingrese una dirección más completa (mínimo 5 caracteres)',
-        path: ['direccion']
-      });
-    } else if (dir.length > 200) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'La dirección no puede exceder los 200 caracteres',
-        path: ['direccion']
-      });
-    } else if (!ADDRESS_REGEX.test(dir)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'La dirección contiene caracteres especiales no válidos (solo letras, números, #, °, -, /)',
-        path: ['direccion']
-      });
-    } else if (!/[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]/.test(dir)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'La dirección debe incluir el nombre de la vía, calle o manzana',
-        path: ['direccion']
-      });
+  .superRefine((data, ctx) => {
+    // 1. Validación condicional por tipo de comprobante / documento
+    if (data.tipo_documento === 'dni') {
+      const nom = data.nombres ? data.nombres.trim() : '';
+      if (!nom) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Ingrese sus nombres',
+          path: ['nombres']
+        });
+      } else if (nom.length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El nombre debe tener al menos 2 caracteres',
+          path: ['nombres']
+        });
+      } else if (nom.length > 80) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El nombre no puede exceder los 80 caracteres',
+          path: ['nombres']
+        });
+      } else if (!NAME_REGEX.test(nom)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Los nombres solo deben contener letras y espacios',
+          path: ['nombres']
+        });
+      }
+
+      const ape = data.apellidos ? data.apellidos.trim() : '';
+      if (!ape) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Ingrese sus apellidos',
+          path: ['apellidos']
+        });
+      } else if (ape.length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Los apellidos deben tener al menos 2 caracteres',
+          path: ['apellidos']
+        });
+      } else if (ape.length > 80) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Los apellidos no pueden exceder los 80 caracteres',
+          path: ['apellidos']
+        });
+      } else if (!NAME_REGEX.test(ape)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Los apellidos solo deben contener letras y espacios',
+          path: ['apellidos']
+        });
+      }
+
+      const dniVal = data.dni ? data.dni.trim() : '';
+      if (!dniVal) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Ingrese su número de DNI',
+          path: ['dni']
+        });
+      } else if (!/^\d+$/.test(dniVal)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El DNI solo debe contener números',
+          path: ['dni']
+        });
+      } else if (dniVal.length !== 8) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `El DNI debe tener exactamente 8 dígitos (ingresó ${dniVal.length})`,
+          path: ['dni']
+        });
+      }
+    } else if (data.tipo_documento === 'ruc') {
+      const rucVal = data.ruc ? data.ruc.trim() : '';
+      if (!rucVal) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Ingrese el número de RUC',
+          path: ['ruc']
+        });
+      } else if (!/^\d+$/.test(rucVal)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El RUC solo debe contener números',
+          path: ['ruc']
+        });
+      } else if (rucVal.length !== 11) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `El RUC debe tener exactamente 11 dígitos (ingresó ${rucVal.length})`,
+          path: ['ruc']
+        });
+      } else if (
+        !rucVal.startsWith('10') &&
+        !rucVal.startsWith('20') &&
+        !rucVal.startsWith('15') &&
+        !rucVal.startsWith('17')
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El RUC debe iniciar con 10, 20 o dígitos válidos de SUNAT',
+          path: ['ruc']
+        });
+      }
+
+      const rz = data.razon_social ? data.razon_social.trim() : '';
+      if (!rz) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Ingrese la Razón Social de la empresa',
+          path: ['razon_social']
+        });
+      } else if (rz.length < 3) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'La Razón Social debe tener al menos 3 caracteres',
+          path: ['razon_social']
+        });
+      } else if (rz.length > 150) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'La Razón Social no puede exceder 150 caracteres',
+          path: ['razon_social']
+        });
+      }
+
+      const cont = data.contacto_nombre ? data.contacto_nombre.trim() : '';
+      if (!cont) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Ingrese el nombre de la persona de contacto o recepción',
+          path: ['contacto_nombre']
+        });
+      } else if (cont.length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El nombre de contacto debe tener al menos 2 caracteres',
+          path: ['contacto_nombre']
+        });
+      } else if (!NAME_REGEX.test(cont)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'El nombre de contacto solo debe contener letras y espacios',
+          path: ['contacto_nombre']
+        });
+      }
     }
-  }
-});
+
+    // 2. Validación condicional por despacho a obra
+    if (data.delivery_type === 'despacho') {
+      const dir = data.direccion ? data.direccion.trim() : '';
+      if (!dir) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'La dirección de entrega es obligatoria para despacho a obra',
+          path: ['direccion']
+        });
+      } else if (dir.length < 5) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'La dirección es muy corta: ingrese una dirección más completa (mínimo 5 caracteres)',
+          path: ['direccion']
+        });
+      } else if (dir.length > 200) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'La dirección no puede exceder los 200 caracteres',
+          path: ['direccion']
+        });
+      } else if (!ADDRESS_REGEX.test(dir)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'La dirección contiene caracteres especiales no válidos (solo letras, números, #, °, -, /)',
+          path: ['direccion']
+        });
+      } else if (!/[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]/.test(dir)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'La dirección debe incluir el nombre de la vía, calle o manzana',
+          path: ['direccion']
+        });
+      }
+    }
+  });
 
 export function Checkout() {
   const navigate = useNavigate();
@@ -240,15 +305,20 @@ export function Checkout() {
     register,
     handleSubmit,
     watch,
+    setValue,
     clearErrors,
     formState: { errors }
   } = useForm({
     resolver: zodResolver(checkoutSchema),
     mode: 'onTouched',
     defaultValues: {
+      tipo_documento: 'dni',
       nombres: '',
       apellidos: '',
       dni: '',
+      ruc: '',
+      razon_social: '',
+      contacto_nombre: '',
       telefono: '',
       correo: '',
       delivery_type: 'despacho',
@@ -258,6 +328,7 @@ export function Checkout() {
     }
   });
 
+  const tipoDocumento = watch('tipo_documento');
   const deliveryType = watch('delivery_type');
   const aceptoPrivacidad = watch('acepto_privacidad');
 
@@ -284,15 +355,29 @@ export function Checkout() {
     setIsSubmitting(true);
     setServerError(null);
 
+    let clienteNombre = '';
+    let docTag = '';
+    if (data.tipo_documento === 'ruc') {
+      const rz = data.razon_social?.trim() || 'Empresa';
+      const contacto = data.contacto_nombre?.trim() || '';
+      clienteNombre = contacto ? `${rz} (${contacto})` : rz;
+      docTag = `[DOC: RUC ${data.ruc?.trim()}] [FACTURA] [EMPRESA: ${rz}]`;
+    } else {
+      clienteNombre = `${data.nombres?.trim() || ''} ${data.apellidos?.trim() || ''}`.trim();
+      docTag = `[DNI: ${data.dni?.trim()}]`;
+    }
+
+    const obsText = data.observaciones?.trim() ? ` | ${data.observaciones.trim()}` : '';
+
     const payload = {
       cliente: {
-        nombre: `${data.nombres.trim()} ${data.apellidos.trim()}`,
+        nombre: clienteNombre,
         telefono: data.telefono.trim(),
         correo: data.correo.trim().toLowerCase()
       },
       recojo_en_tienda: data.delivery_type === 'recojo',
       direccion: data.delivery_type === 'despacho' ? (data.direccion?.trim() || null) : null,
-      observaciones: `[DNI: ${data.dni.trim()}]${data.observaciones?.trim() ? ` | ${data.observaciones.trim()}` : ''}`,
+      observaciones: `${docTag}${obsText}`,
       acepto_privacidad: data.acepto_privacidad,
       items: items.map((i) => ({
         product_id: i.product.id,
@@ -380,77 +465,190 @@ export function Checkout() {
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Client Details */}
         <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-soft space-y-6">
-          <h2 className="text-lg font-bold text-kenpaku-navy border-b border-slate-100 pb-3">
-            1. Datos del Cliente
-          </h2>
+          {/* Header con Selector de Comprobante / Tipo de Documento */}
+          <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-kenpaku-navy">
+                1. Datos del Cliente y Comprobante
+              </h2>
+              <p className="text-xs text-slate-500">
+                Selecciona si requieres Boleta de Venta personal o Factura con RUC.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl self-start sm:self-auto border border-slate-200">
+              <button
+                type="button"
+                onClick={() => {
+                  setValue('tipo_documento', 'dni');
+                  clearErrors(['ruc', 'razon_social', 'contacto_nombre']);
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  tipoDocumento === 'dni'
+                    ? 'bg-white text-kenpaku-navy shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <User className="w-3.5 h-3.5 text-kenpaku-blue" />
+                <span>Boleta (DNI)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setValue('tipo_documento', 'ruc');
+                  clearErrors(['dni', 'nombres', 'apellidos']);
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  tipoDocumento === 'ruc'
+                    ? 'bg-white text-kenpaku-blue shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5 text-kenpaku-blue" />
+                <span>Factura (RUC)</span>
+              </button>
+            </div>
+          </div>
 
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label="Nombres *"
-                placeholder="Ej. Juan Carlos"
-                maxLength={80}
-                error={errors.nombres?.message}
-                {...register('nombres', {
-                  onChange: (e) => {
-                    e.target.value = sanitizeOnlyLettersAndSpaces(e.target.value);
-                  }
-                })}
-              />
+            {tipoDocumento === 'dni' ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="Nombres *"
+                    placeholder="Ej. Juan Carlos"
+                    maxLength={80}
+                    error={errors.nombres?.message}
+                    {...register('nombres', {
+                      onChange: (e) => {
+                        e.target.value = sanitizeOnlyLettersAndSpaces(e.target.value);
+                      }
+                    })}
+                  />
 
-              <Input
-                label="Apellidos *"
-                placeholder="Ej. Pérez Tafur"
-                maxLength={80}
-                error={errors.apellidos?.message}
-                {...register('apellidos', {
-                  onChange: (e) => {
-                    e.target.value = sanitizeOnlyLettersAndSpaces(e.target.value);
-                  }
-                })}
-              />
-            </div>
+                  <Input
+                    label="Apellidos *"
+                    placeholder="Ej. Pérez Tafur"
+                    maxLength={80}
+                    error={errors.apellidos?.message}
+                    {...register('apellidos', {
+                      onChange: (e) => {
+                        e.target.value = sanitizeOnlyLettersAndSpaces(e.target.value);
+                      }
+                    })}
+                  />
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Input
-                label="DNI *"
-                type="text"
-                maxLength={8}
-                placeholder="Ej. 12345678"
-                error={errors.dni?.message}
-                {...register('dni', {
-                  onChange: (e) => {
-                    e.target.value = sanitizeDigits(e.target.value, 8);
-                  }
-                })}
-              />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Input
+                    label="DNI *"
+                    type="text"
+                    maxLength={8}
+                    placeholder="8 dígitos (Ej. 12345678)"
+                    error={errors.dni?.message}
+                    {...register('dni', {
+                      onChange: (e) => {
+                        e.target.value = sanitizeDigits(e.target.value, 8);
+                      }
+                    })}
+                  />
 
-              <Input
-                label="Teléfono o WhatsApp *"
-                type="tel"
-                maxLength={9}
-                placeholder="Ej. 987654321"
-                error={errors.telefono?.message}
-                {...register('telefono', {
-                  onChange: (e) => {
-                    e.target.value = sanitizeDigits(e.target.value, 9);
-                  }
-                })}
-              />
+                  <Input
+                    label="Teléfono o WhatsApp *"
+                    type="tel"
+                    maxLength={9}
+                    placeholder="Ej. 987654321"
+                    error={errors.telefono?.message}
+                    {...register('telefono', {
+                      onChange: (e) => {
+                        e.target.value = sanitizeDigits(e.target.value, 9);
+                      }
+                    })}
+                  />
 
-              <Input
-                label="Correo Electrónico *"
-                type="email"
-                maxLength={100}
-                placeholder="ejemplo@correo.com"
-                error={errors.correo?.message}
-                {...register('correo', {
-                  onChange: (e) => {
-                    e.target.value = sanitizeEmailInput(e.target.value);
-                  }
-                })}
-              />
-            </div>
+                  <Input
+                    label="Correo Electrónico *"
+                    type="email"
+                    maxLength={100}
+                    placeholder="ejemplo@correo.com"
+                    error={errors.correo?.message}
+                    {...register('correo', {
+                      onChange: (e) => {
+                        e.target.value = sanitizeEmailInput(e.target.value);
+                      }
+                    })}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <Input
+                  label="Razón Social / Nombre Comercial *"
+                  placeholder="Ej. Constructora & Inversiones Los Andes S.A.C."
+                  maxLength={150}
+                  error={errors.razon_social?.message}
+                  {...register('razon_social', {
+                    onChange: (e) => {
+                      e.target.value = sanitizeSafeText(e.target.value);
+                    }
+                  })}
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="RUC (11 dígitos) *"
+                    type="text"
+                    maxLength={11}
+                    placeholder="Ej. 20521664623"
+                    error={errors.ruc?.message}
+                    {...register('ruc', {
+                      onChange: (e) => {
+                        e.target.value = sanitizeDigits(e.target.value, 11);
+                      }
+                    })}
+                  />
+
+                  <Input
+                    label="Persona de Contacto / Encargado *"
+                    placeholder="Ej. Ing. Carlos Mendoza"
+                    maxLength={80}
+                    error={errors.contacto_nombre?.message}
+                    {...register('contacto_nombre', {
+                      onChange: (e) => {
+                        e.target.value = sanitizeOnlyLettersAndSpaces(e.target.value);
+                      }
+                    })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="Teléfono o WhatsApp de Coordinación *"
+                    type="tel"
+                    maxLength={9}
+                    placeholder="Ej. 987654321"
+                    error={errors.telefono?.message}
+                    {...register('telefono', {
+                      onChange: (e) => {
+                        e.target.value = sanitizeDigits(e.target.value, 9);
+                      }
+                    })}
+                  />
+
+                  <Input
+                    label="Correo Electrónico para Factura Electrónica *"
+                    type="email"
+                    maxLength={100}
+                    placeholder="facturacion@empresa.com"
+                    error={errors.correo?.message}
+                    {...register('correo', {
+                      onChange: (e) => {
+                        e.target.value = sanitizeEmailInput(e.target.value);
+                      }
+                    })}
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           <h2 className="text-lg font-bold text-kenpaku-navy border-b border-slate-100 pb-3 pt-4">

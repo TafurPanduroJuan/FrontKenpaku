@@ -85,9 +85,9 @@ describe('Phase 4: Flete y Pago con Voucher - Frontend Tests', () => {
     );
 
     expect(await screen.findByText('Cuentas de Abono y Subida de Comprobante')).toBeInTheDocument();
-    expect(screen.getByText('Yape / Plin')).toBeInTheDocument();
+    expect(screen.getByText('Yape')).toBeInTheDocument();
     expect(screen.getByText('BCP Soles')).toBeInTheDocument();
-    expect(screen.getByText('BBVA Soles')).toBeInTheDocument();
+    expect(screen.getByText('Interbank Soles')).toBeInTheDocument();
 
     // Switch to BCP tab
     fireEvent.click(screen.getByText('BCP Soles'));
