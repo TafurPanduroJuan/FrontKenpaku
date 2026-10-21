@@ -32,6 +32,7 @@ import { Button } from '../components/ui/Button';
 import { Breadcrumb } from '../components/ui/Breadcrumb';
 import { sanitizeOrderCode, sanitizeDigits } from '../utils/sanitizers';
 import { ReceiptModal } from '../components/pos/ReceiptModal';
+import { extractOrderPaymentMethod, extractOrderDocumentInfo } from '../utils/paymentMethod';
 
 const STATUS_CONFIG = {
   pendiente: {
@@ -1221,23 +1222,31 @@ export function TrackingPage() {
       <ReceiptModal
         isOpen={isReceiptModalOpen}
         onClose={() => setIsReceiptModalOpen(false)}
-        saleData={order ? {
-          codigo: order.codigo,
-          comprobanteTipo: 'boleta',
-          docNumero: order.cliente_dni || order.cliente_ruc || order.docNumero || '',
-          clienteNombre: order.cliente_nombre || order.cliente_resumen || order.clienteNombre || 'Cliente General',
-          clienteTelefono: order.cliente_telefono || telefonoInput || '',
-          clienteCorreo: order.cliente_correo || '',
-          metodoPago: order.metodo_pago || 'transferencia',
-          montoRecibido: Number(order.total || 0),
-          vuelto: 0,
-          items: order.items || [],
-          subtotal: Number(order.subtotal || 0),
-          costo_flete: Number(order.costo_flete || 0),
-          igv: Number(order.igv || 0),
-          total: Number(order.total || 0),
-          fechaEmision: order.created_at || new Date()
-        } : null}
+        saleData={order ? (() => {
+          const docInfo = extractOrderDocumentInfo(order);
+          const paymentMethod = extractOrderPaymentMethod(order);
+          return {
+            codigo: order.codigo,
+            comprobanteTipo: docInfo.comprobanteTipo,
+            docNumero: docInfo.docNumero,
+            clienteNombre: order.cliente_nombre || order.cliente_resumen || order.clienteNombre || 'Cliente General',
+            clienteTelefono: order.cliente_telefono || telefonoInput || '',
+            clienteCorreo: order.cliente_correo || '',
+            metodoPago: paymentMethod,
+            montoRecibido: Number(order.total || 0),
+            vuelto: 0,
+            items: (order.items || []).map((it) => ({
+              nombre: it.nombre || it.nombre_snapshot || 'Producto de Acero',
+              cantidad: Number(it.cantidad || 1),
+              precio_unitario: Number(it.precio_unitario || it.precio_unitario_snapshot || 0)
+            })),
+            subtotal: Number(order.subtotal || 0),
+            costo_flete: Number(order.costo_flete || 0),
+            igv: Number(order.igv || 0),
+            total: Number(order.total || 0),
+            fechaEmision: order.created_at || new Date()
+          };
+        })() : null}
       />
     </div>
   );

@@ -37,6 +37,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Toast } from '../../components/ui/Toast';
 import { sanitizeOrderCode } from '../../utils/sanitizers';
 import { ReceiptModal } from '../../components/pos/ReceiptModal';
+import { extractOrderPaymentMethod, extractOrderDocumentInfo } from '../../utils/paymentMethod';
 
 const ALLOWED_TRANSITIONS = {
   recojo: {
@@ -1066,13 +1067,15 @@ export function CajeroOrders() {
                       declaredMethod = 'Efectivo';
                     }
 
+                    const confirmedMethod = extractOrderPaymentMethod(selectedOrder);
+
                     return (
                       <div className="pt-2 border-t border-slate-200/80 p-3 bg-white/95 rounded-xl space-y-2.5">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <CreditCard className="w-4 h-4 text-kenpaku-blue shrink-0" />
                             <span className="text-xs font-bold text-slate-800">
-                              Medio de Pago Verificado por Caja:
+                              {isPaymentAlreadyValidated ? 'Medio de Pago Validado y Confirmado:' : 'Medio de Pago Verificado por Caja:'}
                             </span>
                           </div>
                           <div className="text-[11px] text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
@@ -1080,27 +1083,50 @@ export function CajeroOrders() {
                           </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                          <select
-                            value={verifiedMethod}
-                            onChange={(e) => setVerifiedMethod(e.target.value)}
-                            className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white focus:ring-2 focus:ring-kenpaku-blue focus:outline-none flex-1"
-                          >
-                            <option value="yape">Yape</option>
-                            <option value="bcp">Transferencia BCP</option>
-                            <option value="interbank">Transferencia Interbank</option>
-                            <option value="efectivo">Efectivo</option>
-                          </select>
+                        {isPaymentAlreadyValidated ? (
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span className="text-xs font-semibold text-emerald-950">
+                                Pago verificado definitivamente como:
+                              </span>
+                              <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-700 text-white shadow-2xs">
+                                {confirmedMethod}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenReceipt(selectedOrder)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-all shadow-xs cursor-pointer text-xs self-start sm:self-auto"
+                              title="Ver e imprimir comprobante oficial"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>Ver Boleta / Comprobante</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                            <select
+                              value={verifiedMethod}
+                              onChange={(e) => setVerifiedMethod(e.target.value)}
+                              className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white focus:ring-2 focus:ring-kenpaku-blue focus:outline-none flex-1"
+                            >
+                              <option value="yape">Yape</option>
+                              <option value="bcp">Transferencia BCP</option>
+                              <option value="interbank">Transferencia Interbank</option>
+                              <option value="efectivo">Efectivo</option>
+                            </select>
 
-                          <button
-                            type="button"
-                            onClick={handleUpdatePaymentMethodOnly}
-                            disabled={isUpdatingMethod}
-                            className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-colors border border-slate-300 cursor-pointer whitespace-nowrap shadow-2xs"
-                          >
-                            {isUpdatingMethod ? 'Guardando...' : 'Confirmar / Editar Medio'}
-                          </button>
-                        </div>
+                            <button
+                              type="button"
+                              onClick={handleUpdatePaymentMethodOnly}
+                              disabled={isUpdatingMethod}
+                              className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-colors border border-slate-300 cursor-pointer whitespace-nowrap shadow-2xs"
+                            >
+                              {isUpdatingMethod ? 'Guardando...' : 'Confirmar / Editar Medio'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -1306,23 +1332,31 @@ export function CajeroOrders() {
           setIsReceiptModalOpen(false);
           setReceiptOrder(null);
         }}
-        saleData={receiptOrder ? {
-          codigo: receiptOrder.codigo,
-          comprobanteTipo: 'boleta',
-          docNumero: receiptOrder.cliente_dni || receiptOrder.cliente_ruc || receiptOrder.docNumero || '',
-          clienteNombre: receiptOrder.cliente_nombre || receiptOrder.clienteNombre || 'Cliente General',
-          clienteTelefono: receiptOrder.cliente_telefono || receiptOrder.clienteTelefono || '',
-          clienteCorreo: receiptOrder.cliente_correo || receiptOrder.clienteCorreo || '',
-          metodoPago: receiptOrder.metodo_pago || 'transferencia',
-          montoRecibido: Number(receiptOrder.total || 0),
-          vuelto: 0,
-          items: receiptOrder.items || [],
-          subtotal: Number(receiptOrder.subtotal || 0),
-          costo_flete: Number(receiptOrder.costo_flete || 0),
-          igv: Number(receiptOrder.igv || 0),
-          total: Number(receiptOrder.total || 0),
-          fechaEmision: receiptOrder.created_at || new Date()
-        } : null}
+        saleData={receiptOrder ? (() => {
+          const docInfo = extractOrderDocumentInfo(receiptOrder);
+          const paymentMethod = extractOrderPaymentMethod(receiptOrder);
+          return {
+            codigo: receiptOrder.codigo,
+            comprobanteTipo: docInfo.comprobanteTipo,
+            docNumero: docInfo.docNumero,
+            clienteNombre: receiptOrder.cliente_nombre || receiptOrder.clienteNombre || 'Cliente General',
+            clienteTelefono: receiptOrder.cliente_telefono || receiptOrder.clienteTelefono || '',
+            clienteCorreo: receiptOrder.cliente_correo || receiptOrder.clienteCorreo || '',
+            metodoPago: paymentMethod,
+            montoRecibido: Number(receiptOrder.total || 0),
+            vuelto: 0,
+            items: (receiptOrder.items || []).map((it) => ({
+              nombre: it.nombre || it.nombre_snapshot || 'Producto de Acero',
+              cantidad: Number(it.cantidad || 1),
+              precio_unitario: Number(it.precio_unitario || it.precio_unitario_snapshot || 0)
+            })),
+            subtotal: Number(receiptOrder.subtotal || 0),
+            costo_flete: Number(receiptOrder.costo_flete || 0),
+            igv: Number(receiptOrder.igv || 0),
+            total: Number(receiptOrder.total || 0),
+            fechaEmision: receiptOrder.created_at || new Date()
+          };
+        })() : null}
       />
     </div>
   );

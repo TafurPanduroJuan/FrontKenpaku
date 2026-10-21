@@ -28,6 +28,7 @@ import { buildWhatsAppUrl } from '../utils/whatsapp';
 import { getOrderTracking, submitFleteDecision, uploadOrderVoucher } from '../api/orders';
 import { ReceiptModal } from '../components/pos/ReceiptModal';
 import { getVoucherList } from '../utils/voucher';
+import { extractOrderPaymentMethod, extractOrderDocumentInfo } from '../utils/paymentMethod';
 
 const BANK_ACCOUNTS = [
   {
@@ -974,23 +975,31 @@ export function OrderConfirmation() {
       <ReceiptModal
         isOpen={isReceiptModalOpen}
         onClose={() => setIsReceiptModalOpen(false)}
-        saleData={displayOrder ? {
-          codigo: displayOrder.codigo,
-          comprobanteTipo: 'boleta',
-          docNumero: displayOrder.cliente_dni || displayOrder.cliente_ruc || displayOrder.docNumero || '',
-          clienteNombre: displayOrder.cliente_nombre || displayOrder.clienteNombre || 'Cliente General',
-          clienteTelefono: displayOrder.cliente_telefono || displayOrder.clienteTelefono || '',
-          clienteCorreo: displayOrder.cliente_correo || displayOrder.clienteCorreo || '',
-          metodoPago: displayOrder.metodo_pago || 'transferencia',
-          montoRecibido: Number(displayOrder.total || 0),
-          vuelto: 0,
-          items: displayOrder.items || [],
-          subtotal: Number(displayOrder.subtotal || 0),
-          costo_flete: Number(displayOrder.costo_flete || 0),
-          igv: Number(displayOrder.igv || 0),
-          total: Number(displayOrder.total || 0),
-          fechaEmision: displayOrder.created_at || new Date()
-        } : null}
+        saleData={displayOrder ? (() => {
+          const docInfo = extractOrderDocumentInfo(displayOrder);
+          const paymentMethod = extractOrderPaymentMethod(displayOrder);
+          return {
+            codigo: displayOrder.codigo,
+            comprobanteTipo: docInfo.comprobanteTipo,
+            docNumero: docInfo.docNumero,
+            clienteNombre: displayOrder.cliente_nombre || displayOrder.clienteNombre || 'Cliente General',
+            clienteTelefono: displayOrder.cliente_telefono || displayOrder.clienteTelefono || '',
+            clienteCorreo: displayOrder.cliente_correo || displayOrder.clienteCorreo || '',
+            metodoPago: paymentMethod,
+            montoRecibido: Number(displayOrder.total || 0),
+            vuelto: 0,
+            items: (displayOrder.items || []).map((it) => ({
+              nombre: it.nombre || it.nombre_snapshot || 'Producto de Acero',
+              cantidad: Number(it.cantidad || 1),
+              precio_unitario: Number(it.precio_unitario || it.precio_unitario_snapshot || 0)
+            })),
+            subtotal: Number(displayOrder.subtotal || 0),
+            costo_flete: Number(displayOrder.costo_flete || 0),
+            igv: Number(displayOrder.igv || 0),
+            total: Number(displayOrder.total || 0),
+            fechaEmision: displayOrder.created_at || new Date()
+          };
+        })() : null}
       />
     </div>
   );
