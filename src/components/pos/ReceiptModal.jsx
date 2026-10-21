@@ -42,6 +42,10 @@ export function ReceiptModal({ isOpen, onClose, saleData, onNewSale }) {
   } = saleData;
 
   const costoFlete = Number(costo_flete || saleData.costoFlete || 0);
+  const totalNum = Number(total || 0);
+  const totalProductos = costoFlete > 0 ? Math.max(0, totalNum - costoFlete) : totalNum;
+  const opGravadaFinal = Number(subtotal) > 0 ? Number(subtotal) : Number((totalNum / 1.18).toFixed(2));
+  const igvFinal = Number(igv) > 0 ? Number(igv) : Number((totalNum - opGravadaFinal).toFixed(2));
   const docFinal = saleData.numeroDocumento || saleData.docNumero || saleData.cliente_dni || saleData.cliente_ruc || '';
 
   const correlativo = `${comprobanteTipo === 'factura' ? 'F001' : 'B001'}-${String(codigo || '1001').replace(/\D/g, '').slice(-6) || '000001'}`;
@@ -129,10 +133,14 @@ export function ReceiptModal({ isOpen, onClose, saleData, onNewSale }) {
     </tbody>
   </table>
   <div class="divider"></div>
-  <div class="row"><span>Op. Gravada:</span><span>${formatPEN(subtotal)}</span></div>
-  ${costoFlete > 0 ? `<div class="row"><span>Flete / Transporte a Obra:</span><span>${formatPEN(costoFlete)}</span></div>` : ''}
-  <div class="row"><span>I.G.V. (18%):</span><span>${formatPEN(igv)}</span></div>
-  <div class="row font-bold" style="font-size: 13px; margin-top: 3px;"><span>TOTAL:</span><span>${formatPEN(total)}</span></div>
+  ${costoFlete > 0 ? `
+    <div class="row"><span>Total Productos:</span><span>${formatPEN(totalProductos)}</span></div>
+    <div class="row"><span>Flete a Obra:</span><span>${formatPEN(costoFlete)}</span></div>
+    <div class="divider"></div>
+  ` : ''}
+  <div class="row"><span>Op. Gravada:</span><span>${formatPEN(opGravadaFinal)}</span></div>
+  <div class="row"><span>I.G.V. (18%):</span><span>${formatPEN(igvFinal)}</span></div>
+  <div class="row font-bold" style="font-size: 13px; margin-top: 3px;"><span>TOTAL:</span><span>${formatPEN(totalNum)}</span></div>
   <div class="divider"></div>
   <div class="row"><span>Forma de Pago:</span><span class="font-bold" style="text-transform: uppercase;">${metodoPago}</span></div>
   ${metodoPago === 'efectivo' && montoRecibido > 0 ? `
@@ -263,24 +271,29 @@ export function ReceiptModal({ isOpen, onClose, saleData, onNewSale }) {
       doc.line(5, y, 75, y);
       y += 4.5;
 
-      doc.text('Op. Gravada:', 6, y);
-      doc.text(`S/ ${Number(subtotal).toFixed(2)}`, 74, y, { align: 'right' });
-      y += 4;
-
       if (costoFlete > 0) {
-        doc.text('Flete / Transporte:', 6, y);
+        doc.text('Total Productos:', 6, y);
+        doc.text(`S/ ${totalProductos.toFixed(2)}`, 74, y, { align: 'right' });
+        y += 4;
+        doc.text('Flete a Obra:', 6, y);
         doc.text(`S/ ${costoFlete.toFixed(2)}`, 74, y, { align: 'right' });
+        y += 4;
+        doc.line(5, y, 75, y);
         y += 4;
       }
 
+      doc.text('Op. Gravada:', 6, y);
+      doc.text(`S/ ${opGravadaFinal.toFixed(2)}`, 74, y, { align: 'right' });
+      y += 4;
+
       doc.text('I.G.V. (18%):', 6, y);
-      doc.text(`S/ ${Number(igv).toFixed(2)}`, 74, y, { align: 'right' });
+      doc.text(`S/ ${igvFinal.toFixed(2)}`, 74, y, { align: 'right' });
       y += 4.5;
 
       doc.setFont('courier', 'bold');
       doc.setFontSize(9);
       doc.text('TOTAL:', 6, y);
-      doc.text(`S/ ${Number(total).toFixed(2)}`, 74, y, { align: 'right' });
+      doc.text(`S/ ${totalNum.toFixed(2)}`, 74, y, { align: 'right' });
       y += 4;
 
       doc.line(5, y, 75, y);
@@ -446,23 +459,30 @@ export function ReceiptModal({ isOpen, onClose, saleData, onNewSale }) {
 
             {/* Resumen Económico */}
             <div className="py-2.5 border-b border-dashed border-slate-300 space-y-1 text-[11px]">
-              <div className="flex justify-between text-slate-600">
-                <span>Op. Gravada:</span>
-                <span>{formatPEN(subtotal)}</span>
-              </div>
               {costoFlete > 0 && (
-                <div className="flex justify-between text-slate-600">
-                  <span>Flete / Transporte a Obra:</span>
-                  <span>{formatPEN(costoFlete)}</span>
-                </div>
+                <>
+                  <div className="flex justify-between text-slate-600">
+                    <span>Total Productos:</span>
+                    <span>{formatPEN(totalProductos)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600">
+                    <span>Flete / Transporte a Obra:</span>
+                    <span>{formatPEN(costoFlete)}</span>
+                  </div>
+                  <div className="border-t border-slate-100 my-1"></div>
+                </>
               )}
               <div className="flex justify-between text-slate-600">
+                <span>Op. Gravada:</span>
+                <span>{formatPEN(opGravadaFinal)}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
                 <span>I.G.V. (18%):</span>
-                <span>{formatPEN(igv)}</span>
+                <span>{formatPEN(igvFinal)}</span>
               </div>
               <div className="flex justify-between font-extrabold text-sm text-slate-900 pt-1 border-t border-slate-200">
                 <span>TOTAL:</span>
-                <span>{formatPEN(total)}</span>
+                <span>{formatPEN(totalNum)}</span>
               </div>
             </div>
 
