@@ -124,16 +124,16 @@ describe('AdminVentas Component - Reporte de Ventas', () => {
     expect(screen.queryByText('KPK-000003')).not.toBeInTheDocument();
   });
 
-  it('filters sales with quick preset for amounts > S/ 100', async () => {
+  it('filters sales by minimum and maximum amount', async () => {
     render(<AdminVentas />);
 
     await waitFor(() => {
       expect(screen.getByText('KPK-000001')).toBeInTheDocument();
     });
 
-    // Clic en botón preset > S/ 100
-    const btnMayor100 = screen.getByRole('button', { name: /> S\/ 100/i });
-    fireEvent.click(btnMayor100);
+    // Ingresar monto mínimo 100
+    const inputMin = screen.getByLabelText(/Monto mínimo/i);
+    fireEvent.change(inputMin, { target: { value: '100' } });
 
     expect(screen.getByText('KPK-000001')).toBeInTheDocument();
     expect(screen.getByText('KPK-000003')).toBeInTheDocument();

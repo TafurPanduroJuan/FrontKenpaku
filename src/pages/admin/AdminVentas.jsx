@@ -35,10 +35,8 @@ export function AdminVentas() {
   const [canalFilter, setCanalFilter] = useState('todos'); // 'todos', 'web', 'mostrador'
   const [metodoPagoFilter, setMetodoPagoFilter] = useState('todos'); // 'todos', 'efectivo', 'yape_plin', 'transferencia', 'tarjeta'
   const [entregaFilter, setEntregaFilter] = useState('todos'); // 'todos', 'recojo', 'despacho'
-  const [montoPreset, setMontoPreset] = useState('todos'); // 'todos', 'mayor_100', 'mayor_500', 'custom'
   const [montoMin, setMontoMin] = useState('');
   const [montoMax, setMontoMax] = useState('');
-  const [fechaPreset, setFechaPreset] = useState('todos'); // 'todos', 'hoy', '7dias', 'mes', 'custom'
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [comprobanteFilter, setComprobanteFilter] = useState('todos'); // 'todos', 'boleta', 'factura'
@@ -174,54 +172,14 @@ export function AdminVentas() {
     fetchSalesData();
   }, []);
 
-  // Manejo de presets de monto
-  const handleMontoPresetChange = (preset) => {
-    setMontoPreset(preset);
-    if (preset === 'mayor_100') {
-      setMontoMin('100');
-      setMontoMax('');
-    } else if (preset === 'mayor_500') {
-      setMontoMin('500');
-      setMontoMax('');
-    } else if (preset === 'todos') {
-      setMontoMin('');
-      setMontoMax('');
-    }
-  };
-
-  // Manejo de presets de fecha
-  const handleFechaPresetChange = (preset) => {
-    setFechaPreset(preset);
-    const now = new Date();
-    if (preset === 'hoy') {
-      const todayStr = now.toISOString().split('T')[0];
-      setFechaDesde(todayStr);
-      setFechaHasta(todayStr);
-    } else if (preset === '7dias') {
-      const past7 = new Date();
-      past7.setDate(past7.getDate() - 7);
-      setFechaDesde(past7.toISOString().split('T')[0]);
-      setFechaHasta(now.toISOString().split('T')[0]);
-    } else if (preset === 'mes') {
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      setFechaDesde(firstDay.toISOString().split('T')[0]);
-      setFechaHasta(now.toISOString().split('T')[0]);
-    } else if (preset === 'todos') {
-      setFechaDesde('');
-      setFechaHasta('');
-    }
-  };
-
   // Limpiar todos los filtros
   const handleResetFilters = () => {
     setSearchTerm('');
     setCanalFilter('todos');
     setMetodoPagoFilter('todos');
     setEntregaFilter('todos');
-    setMontoPreset('todos');
     setMontoMin('');
     setMontoMax('');
-    setFechaPreset('todos');
     setFechaDesde('');
     setFechaHasta('');
     setComprobanteFilter('todos');
@@ -593,163 +551,100 @@ export function AdminVentas() {
 
         {/* Fila 2: Filtros de Monto + Rango de Fechas + Comprobante */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-2 border-t border-slate-100 text-xs">
-          {/* Segmentación por Monto */}
-          <div className="space-y-1.5">
-            <span className="block text-[11px] font-bold text-slate-600">
+          {/* Filtro por Monto */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">
               Filtro por Monto
-            </span>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <button
-                type="button"
-                onClick={() => handleMontoPresetChange('todos')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  montoPreset === 'todos' && !montoMin
-                    ? 'bg-kenpaku-navy text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Todos
-              </button>
-              <button
-                type="button"
-                id="btn-filter-monto-100"
-                onClick={() => handleMontoPresetChange('mayor_100')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  montoPreset === 'mayor_100'
-                    ? 'bg-kenpaku-orange text-white shadow-xs font-bold'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                &gt; S/ 100
-              </button>
-              <button
-                type="button"
-                onClick={() => handleMontoPresetChange('mayor_500')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  montoPreset === 'mayor_500'
-                    ? 'bg-kenpaku-orange text-white shadow-xs font-bold'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                &gt; S/ 500
-              </button>
-            </div>
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="number"
-                placeholder="Mínimo S/"
-                value={montoMin}
-                onChange={(e) => {
-                  setMontoPreset('custom');
-                  setMontoMin(e.target.value);
-                }}
-                className="w-1/2 px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
-              />
-              <span className="text-slate-400">-</span>
-              <input
-                type="number"
-                placeholder="Máximo S/"
-                value={montoMax}
-                onChange={(e) => {
-                  setMontoPreset('custom');
-                  setMontoMax(e.target.value);
-                }}
-                className="w-1/2 px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
-              />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[10px] text-slate-500 mb-1">
+                  Monto Mínimo (S/)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="Mínimo S/"
+                  value={montoMin}
+                  onChange={(e) => setMontoMin(e.target.value)}
+                  className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-white text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-kenpaku-blue"
+                  aria-label="Monto mínimo"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] text-slate-500 mb-1">
+                  Monto Máximo (S/)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="Máximo S/"
+                  value={montoMax}
+                  onChange={(e) => setMontoMax(e.target.value)}
+                  className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-white text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-kenpaku-blue"
+                  aria-label="Monto máximo"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Segmentación por Fecha */}
-          <div className="space-y-1.5">
-            <span className="block text-[11px] font-bold text-slate-600">
+          {/* Rango de Fechas */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">
               Rango de Fechas
-            </span>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <button
-                type="button"
-                onClick={() => handleFechaPresetChange('todos')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  fechaPreset === 'todos' && !fechaDesde
-                    ? 'bg-kenpaku-navy text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Todo
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFechaPresetChange('hoy')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  fechaPreset === 'hoy'
-                    ? 'bg-kenpaku-blue text-white shadow-xs font-bold'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Hoy
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFechaPresetChange('7dias')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  fechaPreset === '7dias'
-                    ? 'bg-kenpaku-blue text-white shadow-xs font-bold'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                7 días
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFechaPresetChange('mes')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  fechaPreset === 'mes'
-                    ? 'bg-kenpaku-blue text-white shadow-xs font-bold'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Este mes
-              </button>
-            </div>
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="date"
-                value={fechaDesde}
-                onChange={(e) => {
-                  setFechaPreset('custom');
-                  setFechaDesde(e.target.value);
-                }}
-                className="w-1/2 px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
-                title="Fecha Desde"
-              />
-              <span className="text-slate-400">-</span>
-              <input
-                type="date"
-                value={fechaHasta}
-                onChange={(e) => {
-                  setFechaPreset('custom');
-                  setFechaHasta(e.target.value);
-                }}
-                className="w-1/2 px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
-                title="Fecha Hasta"
-              />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[10px] text-slate-500 mb-1">
+                  Fecha de inicio
+                </label>
+                <input
+                  type="date"
+                  value={fechaDesde}
+                  onChange={(e) => setFechaDesde(e.target.value)}
+                  className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-white text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-kenpaku-blue"
+                  aria-label="Fecha de inicio"
+                  title="Fecha de inicio"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] text-slate-500 mb-1">
+                  Fecha de fin
+                </label>
+                <input
+                  type="date"
+                  value={fechaHasta}
+                  onChange={(e) => setFechaHasta(e.target.value)}
+                  className="w-full px-2.5 py-2 rounded-xl border border-slate-300 bg-white text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-kenpaku-blue"
+                  aria-label="Fecha de fin"
+                  title="Fecha de fin"
+                />
+              </div>
             </div>
           </div>
 
           {/* Tipo de Comprobante */}
-          <div className="space-y-1.5">
-            <span className="block text-[11px] font-bold text-slate-600">
+          <div>
+            <label className="block text-[11px] font-bold text-slate-600 mb-1">
               Tipo de Comprobante
-            </span>
-            <select
-              value={comprobanteFilter}
-              onChange={(e) => setComprobanteFilter(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-kenpaku-blue text-xs font-medium"
-            >
-              <option value="todos">Todos los comprobantes</option>
-              <option value="boleta">Boleta de Venta</option>
-              <option value="factura">Factura Electrónica</option>
-            </select>
-            <p className="text-[11px] text-slate-400">
+            </label>
+            <div>
+              <label className="block text-[10px] text-slate-500 mb-1">
+                Comprobante de pago
+              </label>
+              <select
+                value={comprobanteFilter}
+                onChange={(e) => setComprobanteFilter(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-kenpaku-blue text-xs font-medium"
+              >
+                <option value="todos">Todos los comprobantes</option>
+                <option value="boleta">Boleta de Venta</option>
+                <option value="factura">Factura Electrónica</option>
+              </select>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-2">
               Mostrando <strong>{filteredSales.length}</strong> de {sales.length} transacciones registradas.
             </p>
           </div>
