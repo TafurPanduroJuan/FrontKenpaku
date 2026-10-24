@@ -75,8 +75,11 @@ export function ProductDetail() {
   const handleConsultAdvisor = () => {
     // Save product_id in sessionStorage for chat context
     sessionStorage.setItem('kenpaku_chat_product_id', product.id);
+    const isChatPopupOpen = document.querySelector('[role="dialog"][aria-label="Ventana de chat con Asesor IA"]');
     const chatBtn = document.querySelector('button[aria-label="Abrir Asesor Virtual de IA"]');
-    if (chatBtn) chatBtn.click();
+    if (!isChatPopupOpen && chatBtn) {
+      chatBtn.click();
+    }
   };
 
   return (
@@ -173,7 +176,7 @@ export function ProductDetail() {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 variant="primary"
                 size="lg"
@@ -181,6 +184,7 @@ export function ProductDetail() {
                 disabled={isOutOfStock}
                 icon={ShoppingCart}
                 onClick={handleAddToCart}
+                className="px-3 sm:px-4 text-xs sm:text-sm font-bold"
               >
                 {isOutOfStock ? 'Producto Agotado' : 'Agregar al carrito'}
               </Button>
@@ -191,8 +195,9 @@ export function ProductDetail() {
                 fullWidth
                 icon={Bot}
                 onClick={handleConsultAdvisor}
+                className="px-3 sm:px-4 text-xs sm:text-sm font-bold"
               >
-                Consultar al asesor sobre este producto
+                Consultar al asesor
               </Button>
             </div>
           </div>
