@@ -19,11 +19,11 @@ export function ProductChatCard({ product }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm flex items-center gap-3 w-full hover:border-kenpaku-blue/40 transition-all">
+    <div className="flex w-full flex-col items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 transition-colors hover:bg-white sm:flex-row sm:items-center">
       <img
         src={product.imagen_url}
         alt={product.nombre}
-        className="w-14 h-14 rounded-lg object-cover bg-slate-100 border border-slate-200 shrink-0"
+        className="h-14 w-14 shrink-0 rounded-lg border border-slate-200 bg-white object-cover"
       />
       <div className="flex-1 min-w-0">
         <StockBadge status={product.stock_estado} className="mb-1 text-[10px] py-0 px-2" />
@@ -41,12 +41,12 @@ export function ProductChatCard({ product }) {
       <button
         onClick={handleAdd}
         disabled={isOutOfStock}
-        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1 min-h-[36px] ${
+        className={`inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-1 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kenpaku-blue sm:w-auto ${
           added
-            ? 'bg-emerald-600 text-white'
+            ? 'border-slate-300 bg-slate-100 text-slate-700'
             : isOutOfStock
-            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-            : 'bg-kenpaku-orange hover:bg-kenpaku-orangeHover text-white shadow-xs'
+            ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
         }`}
       >
         {added ? (

@@ -8,6 +8,7 @@ import { getProducts } from '../api/products';
 import { useDebounce } from '../hooks/useDebounce';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
+import { SuggestionCard } from '../components/quotes/SuggestionCard';
 
 function normalizedHeader(value) {
   return String(value || '')
@@ -216,12 +217,17 @@ export function QuoteComposer() {
             {analysisQuery.isFetching && <p className="text-xs text-slate-500">Revisando especificaciones...</p>}
             {analysisQuery.isError && <p role="alert" className="text-xs text-red-700">No se pudo analizar la lista. Puedes volver a intentarlo o continuar con los datos ingresados.</p>}
             {analysisItems.map((item, index) => (
-              <div key={`${item.texto_original}-${index}`} className="flex flex-col gap-2 border-t border-slate-100 pt-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-slate-700">{item.texto_original}</p>
-                {item.faltantes?.length ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700"><CircleAlert className="h-4 w-4" /> Falta: {item.faltantes.join(', ')}</span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Completa</span>
+              <div key={`${item.texto_original}-${index}`} className="space-y-1.5 border-t border-slate-100 pt-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-slate-700">{item.texto_original}</p>
+                  {item.faltantes?.length ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700"><CircleAlert className="h-4 w-4" /> Falta: {item.faltantes.join(', ')}</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Completa</span>
+                  )}
+                </div>
+                {(item.sugerencias?.length || item.sugerencia) && (
+                  <SuggestionCard products={item.sugerencias?.length ? item.sugerencias : [item.sugerencia]} />
                 )}
               </div>
             ))}
