@@ -11,6 +11,7 @@ let MOCK_PRICING_SETTINGS = {
   fecha_tipo_cambio: null,
   fuente_tipo_cambio: null,
 };
+let MOCK_MEASUREMENT_EQUIVALENCES = [];
 
 // Helper to check token for mocks
 function checkAuth() {
@@ -224,6 +225,28 @@ export async function updateAdminPricingSettings(payload) {
     return { ...MOCK_PRICING_SETTINGS };
   }
   const { data } = await apiClient.put('/admin/pricing/settings', payload);
+  return data;
+}
+
+export async function getAdminMeasurementEquivalences() {
+  if (USE_MOCKS) {
+    checkAuth();
+    return { items: [...MOCK_MEASUREMENT_EQUIVALENCES] };
+  }
+  const { data } = await apiClient.get('/admin/measurement-equivalences');
+  return data;
+}
+
+export async function updateAdminMeasurementEquivalences(payload) {
+  if (USE_MOCKS) {
+    checkAuth();
+    MOCK_MEASUREMENT_EQUIVALENCES = payload.items.map((item, index) => ({
+      ...item,
+      id: index + 1,
+    }));
+    return { items: [...MOCK_MEASUREMENT_EQUIVALENCES] };
+  }
+  const { data } = await apiClient.put('/admin/measurement-equivalences', payload);
   return data;
 }
 

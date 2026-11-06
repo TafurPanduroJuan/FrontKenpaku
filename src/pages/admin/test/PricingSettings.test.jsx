@@ -6,7 +6,9 @@ import { PricingSettings } from '../PricingSettings';
 import * as adminApi from '../../../api/admin';
 
 vi.mock('../../../api/admin', () => ({
+  getAdminMeasurementEquivalences: vi.fn(),
   getAdminPricingSettings: vi.fn(),
+  updateAdminMeasurementEquivalences: vi.fn(),
   updateAdminPricingSettings: vi.fn(),
 }));
 
@@ -37,6 +39,18 @@ describe('PricingSettings admin', () => {
       fecha_tipo_cambio: '2026-11-04',
       fuente_tipo_cambio: 'manual',
     }));
+    adminApi.getAdminMeasurementEquivalences.mockResolvedValue({
+      items: [{
+        id: 1,
+        tipo_medida: 'dimension',
+        pulgada: '1',
+        mm_minimo: '24',
+        mm_maximo: '26',
+        categoria: null,
+        tolerancia_mm: '1.50',
+      }],
+    });
+    adminApi.updateAdminMeasurementEquivalences.mockImplementation(async ({ items }) => ({ items }));
   });
 
   it('guarda reglas, margen por categoría y tipo de cambio manual', async () => {
@@ -56,5 +70,25 @@ describe('PricingSettings admin', () => {
       margenes_por_categoria: [{ categoria: 'tubos', margen_pct: 27 }],
       tipo_cambio_manual: 3.81,
     }));
+  });
+
+  it('permite editar y guardar equivalencias con tolerancia', async () => {
+    renderPricingSettings();
+
+    fireEvent.change(await screen.findByLabelText('mm mínimo 1'), { target: { value: '23' } });
+    fireEvent.change(screen.getByLabelText('Tolerancia 1'), { target: { value: '1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar equivalencias' }));
+
+    await waitFor(() => expect(adminApi.updateAdminMeasurementEquivalences.mock.calls[0][0]).toEqual({
+      items: [{
+        tipo_medida: 'dimension',
+        pulgada: '1',
+        mm_minimo: 23,
+        mm_maximo: 26,
+        categoria: null,
+        tolerancia_mm: 1,
+      }],
+    }));
+    expect(await screen.findByText('Equivalencias guardadas.')).toBeInTheDocument();
   });
 });
