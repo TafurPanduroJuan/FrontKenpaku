@@ -37,6 +37,11 @@ export async function getAdminDashboard() {
   return data;
 }
 
+export async function getProductFieldRules() {
+  const { data } = await apiClient.get('/admin/products/field-rules');
+  return data;
+}
+
 export async function getAdminActionRequired() {
   if (USE_MOCKS) {
     checkAuth();
@@ -388,4 +393,3 @@ export async function updateOrderPaymentMethod({ orderId, metodo_pago, nota } = 
   });
   return data;
 }
-

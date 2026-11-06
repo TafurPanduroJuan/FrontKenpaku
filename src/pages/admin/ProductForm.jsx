@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Save } from 'lucide-react';
 import { getProductById } from '../../api/products';
-import { createAdminProduct, updateAdminProduct, uploadAdminProductImage } from '../../api/admin';
+import { createAdminProduct, getProductFieldRules, updateAdminProduct, uploadAdminProductImage } from '../../api/admin';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
 import { Select } from '../../components/ui/Select';
@@ -21,21 +21,17 @@ import {
   preventNegativeAndExpKeys
 } from '../../utils/sanitizers';
 
-const productSchema = z.object({
+const commonProductSchema = z.object({
   nombre: z
     .string()
     .min(5, 'El nombre debe tener al menos 5 caracteres')
     .max(120, 'El nombre no puede exceder los 120 caracteres'),
   categoria: z.string().min(1, 'Seleccione la categoría'),
-  acabado: z.string().min(1, 'Seleccione el acabado'),
-  medida: z
-    .string()
-    .min(2, 'Ingrese la medida principal')
-    .max(50, 'La medida no puede exceder los 50 caracteres'),
-  espesor: z
-    .string()
-    .min(1, 'Ingrese el espesor')
-    .max(30, 'El espesor no puede exceder los 30 caracteres'),
+  tipo: z.string().max(100).optional(),
+  forma: z.string().max(50).optional(),
+  acabado: z.string().optional(),
+  medida: z.string().max(50).optional(),
+  espesor: z.string().max(30).optional(),
   precio_unitario: z.coerce
     .number({ invalid_type_error: 'El precio debe ser un número válido' })
     .positive('El precio debe ser un número positivo mayor a 0')
@@ -57,8 +53,8 @@ const productSchema = z.object({
   imagen_url: z.string().optional(),
   descripcion_corta: z
     .string()
-    .min(10, 'Ingrese una descripción corta de al menos 10 caracteres')
-    .max(300, 'La descripción no puede exceder los 300 caracteres'),
+    .max(300, 'La descripción no puede exceder los 300 caracteres')
+    .optional(),
   ficha_tecnica: z
     .string()
     .max(3000, 'La ficha técnica no puede exceder 3000 caracteres')
@@ -79,6 +75,30 @@ export function ProductForm() {
   const queryClient = useQueryClient();
   const isEditing = !!id && id !== 'nuevo';
   const [imageFile, setImageFile] = useState(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const { data: fieldRules = {} } = useQuery({
+    queryKey: ['product-field-rules'],
+    queryFn: getProductFieldRules,
+  });
+  const productSchema = useMemo(() => commonProductSchema.superRefine((values, context) => {
+    const required = fieldRules[values.categoria]?.required || [];
+    for (const field of required) {
+      if (!String(values[field] || '').trim()) {
+        const labels = {
+          tipo: 'Ingrese el tipo',
+          forma: 'Seleccione la forma',
+          medida: 'Ingrese la medida',
+          espesor: 'Ingrese el espesor',
+          acabado: 'Seleccione el acabado',
+        };
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field],
+          message: labels[field] || 'Campo obligatorio',
+        });
+      }
+    }
+  }), [fieldRules]);
 
   // Fetch product data if editing
   const { data: existingProduct, isLoading: loadingProduct } = useQuery({
@@ -91,12 +111,16 @@ export function ProductForm() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm({
     resolver: zodResolver(productSchema),
     defaultValues: {
       nombre: '',
       categoria: 'tubos',
+      tipo: '',
+      forma: '',
       acabado: 'negro',
       medida: '',
       espesor: '',
@@ -110,12 +134,21 @@ export function ProductForm() {
       ficha_tecnica: ''
     }
   });
+  const category = watch('categoria');
+  const categoryRules = fieldRules[category] || { required: [], hidden_by_default: [] };
+  const isRequired = (field) => categoryRules.required?.includes(field);
+  const showField = (field) => (
+    !categoryRules.hidden_by_default?.includes(field) ||
+    (category === 'accesorios' && showAdvanced)
+  );
 
   useEffect(() => {
     if (existingProduct) {
       reset({
         nombre: existingProduct.nombre,
         categoria: existingProduct.categoria,
+        tipo: existingProduct.tipo || '',
+        forma: existingProduct.forma || '',
         acabado: existingProduct.acabado || 'ninguno',
         medida: existingProduct.medida || '',
         espesor: existingProduct.espesor || '',
@@ -159,6 +192,11 @@ export function ProductForm() {
     saveMutation.mutate({
       productData: {
         ...formData,
+        tipo: formData.tipo?.trim() || null,
+        forma: formData.forma?.trim() || null,
+        acabado: formData.acabado || null,
+        medida: formData.medida?.trim() || null,
+        espesor: formData.espesor?.trim() || null,
         imagen_url: formData.imagen_url?.trim() || null,
         ficha_tecnica: formData.ficha_tecnica?.trim() || null,
         sku: formData.sku?.trim() || null,
@@ -170,7 +208,7 @@ export function ProductForm() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto animate-fade-in">
+    <div className="mx-auto max-w-6xl space-y-6 animate-fade-in">
       <div className="flex items-center justify-between border-b border-slate-200 pb-4">
         <div className="flex items-center gap-3">
           <button
@@ -217,12 +255,44 @@ export function ProductForm() {
               { value: 'accesorios', label: 'Accesorios' }
             ]}
             error={errors.categoria?.message}
-            {...register('categoria')}
+            {...register('categoria', {
+              onChange: (event) => {
+                if (event.target.value === 'accesorios') {
+                  for (const field of ['tipo', 'forma', 'acabado', 'medida', 'espesor']) {
+                    setValue(field, '');
+                  }
+                }
+              }
+            })}
           />
 
-          <Select
-            label="Tipo de Acabado *"
+          {showField('forma') && (
+            <Select
+            label={`Forma${isRequired('forma') ? ' *' : ''}`}
             options={[
+              { value: '', label: 'Seleccione una forma' },
+              { value: 'cuadrado', label: 'Cuadrado' },
+              { value: 'rectangular', label: 'Rectangular' },
+              { value: 'redondo', label: 'Redondo' }
+            ]}
+            error={errors.forma?.message}
+            {...register('forma')}
+          />
+          )}
+          {showField('tipo') && (
+            <Input
+              label={`Tipo${isRequired('tipo') ? ' *' : ''}`}
+              placeholder="Ej. ángulo, LAC, corrugado"
+              maxLength={100}
+              error={errors.tipo?.message}
+              {...register('tipo')}
+            />
+          )}
+          {showField('acabado') && (
+          <Select
+            label={`Tipo de Acabado${isRequired('acabado') ? ' *' : ''}`}
+            options={[
+              { value: '', label: 'Seleccione acabado' },
               { value: 'negro', label: 'Acero Negro' },
               { value: 'galvanizado', label: 'Galvanizado' },
               { value: 'ninguno', label: 'Sin acabado' }
@@ -230,6 +300,7 @@ export function ProductForm() {
             error={errors.acabado?.message}
             {...register('acabado')}
           />
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -263,9 +334,16 @@ export function ProductForm() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {category === 'accesorios' && (
+          <button type="button" className="text-sm font-bold text-kenpaku-blue" onClick={() => setShowAdvanced((value) => !value)}>
+            {showAdvanced ? 'Ocultar detalles opcionales' : 'Mostrar más detalles opcionales'}
+          </button>
+        )}
+
+        {(showField('medida') || showField('espesor')) && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {showField('medida') && (
           <Input
-            label="Medida *"
+            label={`Medida o diámetro${isRequired('medida') ? ' *' : ''}`}
             placeholder="Ej. 2 pulgadas (50.8 mm)"
             maxLength={50}
             error={errors.medida?.message}
@@ -275,9 +353,10 @@ export function ProductForm() {
               }
             })}
           />
-
+          )}
+          {showField('espesor') && (
           <Input
-            label="Espesor *"
+            label={`Espesor${isRequired('espesor') ? ' *' : ''}`}
             placeholder="Ej. 2.0 mm"
             maxLength={30}
             error={errors.espesor?.message}
@@ -287,7 +366,9 @@ export function ProductForm() {
               }
             })}
           />
+          )}
         </div>
+        }
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
@@ -340,7 +421,7 @@ export function ProductForm() {
         </label>
 
         <Textarea
-          label="Descripción Corta *"
+          label="Descripción Corta (opcional)"
           placeholder="Resumen del uso y características principales del acero..."
           rows={3}
           maxLength={300}
@@ -366,8 +447,8 @@ export function ProductForm() {
         />
 
         {saveMutation.isError && (
-          <p className="text-xs font-semibold text-red-600">
-            No se pudo guardar el producto. Revisa los datos e inténtalo nuevamente.
+          <p role="alert" className="text-xs font-semibold text-red-600">
+            {saveMutation.error?.response?.data?.detail || 'No se pudo guardar el producto. Revisa los datos e inténtalo nuevamente.'}
           </p>
         )}
 

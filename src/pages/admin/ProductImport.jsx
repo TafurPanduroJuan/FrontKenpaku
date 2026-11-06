@@ -14,6 +14,8 @@ const FIELDS = [
   ['nombre', 'Nombre / descripción'],
   ['precio_usd', 'Precio USD'],
   ['categoria', 'Categoría'],
+  ['tipo', 'Tipo'],
+  ['forma', 'Forma'],
   ['acabado', 'Acabado'],
   ['medida', 'Medida'],
   ['espesor', 'Espesor'],
@@ -23,7 +25,7 @@ const CATEGORIES = ['tubos', 'planchas', 'perfiles', 'fierros', 'accesorios'];
 const STEP_LABELS = ['Fuente', 'Columnas', 'Revisión', 'Confirmar'];
 
 function downloadTemplate() {
-  const content = '\uFEFFSKU,Nombre,Precio USD,Categoria,Acabado,Medida,Espesor,Stock\nKPK-001,Tubo cuadrado negro 40x40x1.5mm,10.00,tubos,negro,40x40,1.5 mm,0\n';
+  const content = '\uFEFFSKU,Nombre,Precio USD,Categoria,Tipo,Forma,Acabado,Medida,Espesor,Stock\nKPK-001,Tubo cuadrado negro 40x40x1.5mm,10.00,tubos,,cuadrado,negro,40x40,1.5 mm,0\n';
   const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
   const link = document.createElement('a');
   link.href = url;
@@ -143,7 +145,7 @@ export function ProductImport() {
   const commitError = commitMutation.error?.response?.data?.detail || commitMutation.error?.message;
 
   return (
-    <div className="max-w-7xl space-y-6 animate-fade-in">
+    <div className="mx-auto max-w-7xl space-y-6 animate-fade-in">
       <header className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <Link to="/admin/productos" className="mb-2 inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900">

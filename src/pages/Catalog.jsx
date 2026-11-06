@@ -62,7 +62,10 @@ export function Catalog() {
         orden,
         page,
         page_size: 12
-      })
+      }),
+    staleTime: 10 * 1000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30 * 1000,
   });
 
   const products = productsData?.items || [];
