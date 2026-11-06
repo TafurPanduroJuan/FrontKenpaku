@@ -20,12 +20,13 @@ const FIELDS = [
   ['medida', 'Medida'],
   ['espesor', 'Espesor'],
   ['stock', 'Stock'],
+  ['imagen_url', 'URL de imagen (opcional)'],
 ];
 const CATEGORIES = ['tubos', 'planchas', 'perfiles', 'fierros', 'accesorios'];
 const STEP_LABELS = ['Fuente', 'Columnas', 'Revisión', 'Confirmar'];
 
 function downloadTemplate() {
-  const content = '\uFEFFSKU,Nombre,Precio USD,Categoria,Tipo,Forma,Acabado,Medida,Espesor,Stock\nKPK-001,Tubo cuadrado negro 40x40x1.5mm,10.00,tubos,,cuadrado,negro,40x40,1.5 mm,0\n';
+  const content = '\uFEFFSKU,Nombre,Precio USD,Categoria,Tipo,Forma,Acabado,Medida,Espesor,Stock,URL imagen\nKPK-001,Tubo cuadrado negro 40x40x1.5mm,10.00,tubos,,cuadrado,negro,40x40,1.5 mm,0,https://placehold.co/400x400.png?text=Tubo\n';
   const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }));
   const link = document.createElement('a');
   link.href = url;
