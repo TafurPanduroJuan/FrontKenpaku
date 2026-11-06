@@ -133,6 +133,17 @@ export async function updateOrderStatus(id, estadoOrData, maybeNota, maybeCostoF
   return data;
 }
 
+export async function setProductActivo(id, activo) {
+  if (USE_MOCKS) {
+    checkAuth();
+    const prod = MOCK_PRODUCTS.find((p) => p.id === id);
+    if (prod) prod.activo = activo;
+    return prod;
+  }
+  const { data } = await apiClient.patch(`/admin/products/${id}/activo`, { activo });
+  return data;
+}
+
 export async function getAdminProductById(id) {
   if (USE_MOCKS) {
     checkAuth();

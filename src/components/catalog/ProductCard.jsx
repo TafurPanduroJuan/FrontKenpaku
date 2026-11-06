@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { StockBadge } from './StockBadge';
+import { ProductImage } from './ProductImage';
 import { formatPEN } from '../../utils/formatPEN';
 import { useCart } from '../../hooks/useCart';
 
@@ -20,13 +21,12 @@ export function ProductCard({ product }) {
   return (
     <div className="group bg-white rounded-2xl border border-slate-200/90 hover:border-[#0284C7]/40 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden h-full">
       {/* Image Container */}
-      <div className="relative aspect-4/3 bg-slate-100 overflow-hidden">
+      <div className="relative aspect-[4/3] w-full bg-white border-b border-slate-100 overflow-hidden">
         <Link to={`/producto/${product.id}`} className="block w-full h-full">
-          <img
+          <ProductImage
             src={product.imagen_url}
             alt={product.nombre}
-            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
+            className="group-hover:scale-105 transition-transform duration-300"
           />
         </Link>
         <div className="absolute top-3 left-3">

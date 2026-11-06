@@ -10,6 +10,7 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { Button } from '../components/ui/Button';
 import { formatPEN } from '../utils/formatPEN';
 import { useCart } from '../hooks/useCart';
+import { ProductImage } from '../components/catalog/ProductImage';
 
 export function ProductDetail() {
   const { id } = useParams();
@@ -96,12 +97,8 @@ export function ProductDetail() {
       {/* Main Detail Grid */}
       <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-soft grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: Product Image */}
-        <div className="lg:col-span-6 relative aspect-4/3 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200">
-          <img
-            src={product.imagen_url}
-            alt={product.nombre}
-            className="w-full h-full object-cover object-center"
-          />
+        <div className="lg:col-span-6 relative aspect-[4/3] bg-white rounded-2xl overflow-hidden border border-slate-200">
+          <ProductImage src={product.imagen_url} alt={product.nombre} padding="p-6" />
           <div className="absolute top-4 left-4">
             <StockBadge status={product.stock_estado} />
           </div>
