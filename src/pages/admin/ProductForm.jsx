@@ -5,8 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Save } from 'lucide-react';
-import { getProductById } from '../../api/products';
-import { createAdminProduct, getProductFieldRules, updateAdminProduct, uploadAdminProductImage } from '../../api/admin';
+import { createAdminProduct, getAdminProductById, getProductFieldRules, updateAdminProduct, uploadAdminProductImage } from '../../api/admin';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
 import { Select } from '../../components/ui/Select';
@@ -103,7 +102,7 @@ export function ProductForm() {
   // Fetch product data if editing
   const { data: existingProduct, isLoading: loadingProduct } = useQuery({
     queryKey: ['admin-product-edit', id],
-    queryFn: () => getProductById(id),
+    queryFn: () => getAdminProductById(id),
     enabled: isEditing
   });
 

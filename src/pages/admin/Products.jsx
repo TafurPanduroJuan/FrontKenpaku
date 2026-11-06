@@ -41,6 +41,10 @@ export function Products() {
       setEditingProduct(null);
       setToastMsg(`Stock y precio actualizados para "${data.nombre}".`);
       setShowToast(true);
+    },
+    onError: (err) => {
+      setToastMsg(errorText(err, 'No se pudo actualizar el stock/precio.'));
+      setShowToast(true);
     }
   });
 
@@ -51,10 +55,22 @@ export function Products() {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       setToastMsg('Producto dado de baja lógicamente.');
       setShowToast(true);
+    },
+    onError: (err) => {
+      setToastMsg(errorText(err, 'No se pudo dar de baja el producto.'));
+      setShowToast(true);
     }
   });
 
   const products = productsData?.items || [];
+
+  const errorText = (err, fallback) => {
+    const d = err?.response?.data?.detail;
+    if (typeof d === 'string') return d;
+    if (d?.detail) return d.detail;
+    if (Array.isArray(d)) return d.map((x) => x.msg).join('; ');
+    return fallback;
+  };
 
   const handleOpenQuickEdit = (product) => {
     setEditingProduct(product);
@@ -156,6 +172,9 @@ export function Products() {
                           </span>
                         )}
                         <span className="font-bold text-slate-900 line-clamp-1 max-w-xs">{p.nombre}</span>
+                        {p.activo === false && (
+                          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-600">Inactivo</span>
+                        )}
                       </div>
                     </td>
                     <td className="py-3.5 px-4 font-semibold uppercase text-slate-500">{p.categoria}</td>
@@ -197,12 +216,13 @@ export function Products() {
                         <Edit className="w-4 h-4" />
                       </Link>
                       <button
+                        disabled={p.activo === false}
                         onClick={() => {
                           if (window.confirm(`¿Confirmar baja lógica del producto "${p.nombre}"?`)) {
                             deleteMutation.mutate(p.id);
                           }
                         }}
-                        className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                        className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         title="Baja lógica"
                       >
                         <Trash2 className="w-4 h-4" />
