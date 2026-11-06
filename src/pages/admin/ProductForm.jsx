@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Save } from 'lucide-react';
 import { getProductById } from '../../api/products';
-import { createAdminProduct, updateAdminProduct } from '../../api/admin';
+import { createAdminProduct, updateAdminProduct, uploadAdminProductImage } from '../../api/admin';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
 import { Select } from '../../components/ui/Select';
@@ -40,6 +40,15 @@ const productSchema = z.object({
     .number({ invalid_type_error: 'El precio debe ser un número válido' })
     .positive('El precio debe ser un número positivo mayor a 0')
     .max(100000, 'El precio no puede exceder S/ 100,000'),
+  sku: z.string().max(100, 'El SKU no puede exceder 100 caracteres').optional(),
+  precio_base_usd: z.preprocess(
+    (value) => value === '' || value == null ? undefined : Number(value),
+    z.number().min(0).optional()
+  ),
+  margen_pct: z.preprocess(
+    (value) => value === '' || value == null ? undefined : Number(value),
+    z.number().min(0).max(500).optional()
+  ),
   stock_disponible: z.coerce
     .number({ invalid_type_error: 'El stock debe ser un número entero' })
     .int('El stock debe ser un número entero')
@@ -66,8 +75,10 @@ function fichaToText(ficha) {
 export function ProductForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const isEditing = !!id && id !== 'nuevo';
+  const [imageFile, setImageFile] = useState(null);
 
   // Fetch product data if editing
   const { data: existingProduct, isLoading: loadingProduct } = useQuery({
@@ -90,6 +101,9 @@ export function ProductForm() {
       medida: '',
       espesor: '',
       precio_unitario: 100,
+      sku: '',
+      precio_base_usd: '',
+      margen_pct: '',
       stock_disponible: 10,
       imagen_url: '',
       descripcion_corta: '',
@@ -106,6 +120,9 @@ export function ProductForm() {
         medida: existingProduct.medida || '',
         espesor: existingProduct.espesor || '',
         precio_unitario: existingProduct.precio_unitario,
+        sku: existingProduct.sku || '',
+        precio_base_usd: existingProduct.precio_base_usd ?? '',
+        margen_pct: existingProduct.margen_pct ?? '',
         stock_disponible: existingProduct.stock_disponible,
         imagen_url: existingProduct.imagen_url || '',
         descripcion_corta: existingProduct.descripcion_corta || '',
@@ -115,20 +132,40 @@ export function ProductForm() {
   }, [existingProduct, reset]);
 
   const saveMutation = useMutation({
-    mutationFn: (data) =>
-      isEditing ? updateAdminProduct(id, data) : createAdminProduct(data),
-    onSuccess: () => {
+    mutationFn: async ({ productData, selectedImage }) => {
+      const saved = isEditing
+        ? await updateAdminProduct(id, productData)
+        : await createAdminProduct(productData);
+      if (!selectedImage) return saved;
+      try {
+        const uploaded = await uploadAdminProductImage(saved.id, selectedImage);
+        return { ...saved, ...uploaded };
+      } catch {
+        return { ...saved, imageUploadFailed: true };
+      }
+    },
+    onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      navigate('/admin/productos');
+      if (saved.imageUploadFailed) {
+        navigate(`/admin/productos/${saved.id}`, { state: { imageUploadFailed: true } });
+      } else {
+        navigate('/admin/productos');
+      }
     }
   });
 
   const onSubmit = (formData) => {
     saveMutation.mutate({
-      ...formData,
-      imagen_url: formData.imagen_url?.trim() || null,
-      ficha_tecnica: formData.ficha_tecnica?.trim() || null
+      productData: {
+        ...formData,
+        imagen_url: formData.imagen_url?.trim() || null,
+        ficha_tecnica: formData.ficha_tecnica?.trim() || null,
+        sku: formData.sku?.trim() || null,
+        precio_base_usd: formData.precio_base_usd ?? null,
+        margen_pct: formData.margen_pct ?? null
+      },
+      selectedImage: imageFile
     });
   };
 
@@ -152,6 +189,11 @@ export function ProductForm() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-soft space-y-6">
+        {location.state?.imageUploadFailed && (
+          <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+            El producto se guardó, pero la imagen no se pudo subir. Configura el almacenamiento o selecciona otra imagen para reintentar.
+          </p>
+        )}
         <Input
           label="Nombre Comercial del Producto *"
           placeholder="Ej. Tubo Negro Estructural 2' x 2.0 mm x 6m"
@@ -187,6 +229,37 @@ export function ProductForm() {
             ]}
             error={errors.acabado?.message}
             {...register('acabado')}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="SKU del proveedor"
+            placeholder="Código opcional"
+            maxLength={100}
+            error={errors.sku?.message}
+            {...register('sku')}
+          />
+          <Input
+            label="Costo base del proveedor (USD)"
+            type="number"
+            min="0"
+            step="0.0001"
+            placeholder="Vacío para precio manual"
+            onKeyDown={preventNegativeAndExpKeys}
+            error={errors.precio_base_usd?.message}
+            {...register('precio_base_usd')}
+          />
+          <Input
+            label="Margen específico del producto (%)"
+            type="number"
+            min="0"
+            max="500"
+            step="0.001"
+            placeholder="Vacío para usar margen de categoría/global"
+            onKeyDown={preventNegativeAndExpKeys}
+            error={errors.margen_pct?.message}
+            {...register('margen_pct')}
           />
         </div>
 
@@ -249,11 +322,22 @@ export function ProductForm() {
         </div>
 
         <Input
-          label="URL de Imagen del Producto"
+          label="URL manual de Imagen del Producto"
           placeholder="https://ejemplo.com/imagen.jpg o dejar en blanco para SVG autogenerado"
           error={errors.imagen_url?.message}
           {...register('imagen_url')}
         />
+
+        <label className="block space-y-1 text-xs font-semibold text-slate-700">
+          <span>O carga una imagen manual (JPG, PNG o WEBP; máximo 5 MB)</span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+            onChange={(event) => setImageFile(event.target.files?.[0] || null)}
+            className="block w-full rounded-md border border-slate-300 bg-white p-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-bold"
+          />
+          {imageFile && <span className="block text-[10px] text-slate-500">Seleccionada: {imageFile.name}</span>}
+        </label>
 
         <Textarea
           label="Descripción Corta *"

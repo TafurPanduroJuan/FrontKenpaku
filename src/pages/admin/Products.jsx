@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Search, Plus, Edit, Trash2, Save, ImageOff } from 'lucide-react';
+import { getAdminProducts, updateQuickStockPrice, deleteAdminProduct } from '../../api/admin';
 import { Link } from 'react-router-dom';
-import { Search, Plus, Edit, Trash2, Save, Package } from 'lucide-react';
-import { getProducts } from '../../api/products';
-import { updateQuickStockPrice, deleteAdminProduct } from '../../api/admin';
 import { formatPEN } from '../../utils/formatPEN';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { StockBadge } from '../../components/catalog/StockBadge';
@@ -20,6 +19,7 @@ import {
 export function Products() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [onlyMissingImages, setOnlyMissingImages] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [quickStock, setQuickStock] = useState('');
   const [quickPrice, setQuickPrice] = useState('');
@@ -28,8 +28,8 @@ export function Products() {
   const [showToast, setShowToast] = useState(false);
 
   const { data: productsData, isLoading } = useQuery({
-    queryKey: ['admin-products', searchTerm],
-    queryFn: () => getProducts({ q: searchTerm, page_size: 50 })
+    queryKey: ['admin-products', searchTerm, onlyMissingImages],
+    queryFn: () => getAdminProducts({ q: searchTerm, page_size: 50, sin_imagen: onlyMissingImages || undefined })
   });
 
   const quickUpdateMutation = useMutation({
@@ -68,7 +68,9 @@ export function Products() {
       quickUpdateMutation.mutate({
         id: editingProduct.id,
         stock_disponible: parseFloat(quickStock),
-        precio_unitario: parseFloat(quickPrice)
+        ...(editingProduct.precio_base_usd == null
+          ? { precio_unitario: parseFloat(quickPrice) }
+          : {})
       });
     }
   };
@@ -84,13 +86,18 @@ export function Products() {
           <p className="text-xs text-slate-500 mt-0.5">Creación, edición rápida de stock/precio y baja lógica de ítems</p>
         </div>
 
-        <Link
-          to="/admin/productos/nuevo"
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-kenpaku-orange hover:bg-kenpaku-orangeHover text-white text-xs font-bold rounded-xl shadow-xs transition-all min-h-[44px]"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nuevo Producto</span>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/admin/productos/importar" className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg min-h-[44px]">
+            Importar lista
+          </Link>
+          <Link
+            to="/admin/productos/nuevo"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-kenpaku-orange hover:bg-kenpaku-orangeHover text-white text-xs font-bold rounded-xl shadow-xs transition-all min-h-[44px]"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nuevo Producto</span>
+          </Link>
+        </div>
       </div>
 
       {/* Search Input */}
@@ -104,6 +111,10 @@ export function Products() {
         />
         <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
       </div>
+      <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
+        <input type="checkbox" checked={onlyMissingImages} onChange={(event) => setOnlyMissingImages(event.target.checked)} />
+        Mostrar solo productos sin imagen
+      </label>
 
       {/* Products Table */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-soft overflow-hidden">
@@ -124,6 +135,7 @@ export function Products() {
                   <th className="py-3.5 px-4">Producto</th>
                   <th className="py-3.5 px-4">Categoría</th>
                   <th className="py-3.5 px-4">Acabado / Medida</th>
+                  <th className="py-3.5 px-4">Costo USD / TC / Margen</th>
                   <th className="py-3.5 px-4">Precio (S/)</th>
                   <th className="py-3.5 px-4">Stock</th>
                   <th className="py-3.5 px-4">Estado</th>
@@ -133,17 +145,36 @@ export function Products() {
               <tbody className="divide-y divide-slate-100">
                 {products.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3.5 px-4 flex items-center gap-3">
-                      <img
-                        src={p.imagen_url}
-                        alt={p.nombre}
-                        className="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0"
-                      />
-                      <span className="font-bold text-slate-900 line-clamp-1 max-w-xs">{p.nombre}</span>
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-3">
+                        {p.imagen_url ? (
+                          <img src={p.imagen_url} alt={p.nombre} className="w-10 h-10 rounded-lg object-cover bg-slate-100 shrink-0" />
+                        ) : (
+                          <span className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-slate-100 text-slate-500" title="Sin imagen">
+                            <ImageOff className="h-4 w-4" />
+                            <span className="text-[7px] font-semibold">Sin imagen</span>
+                          </span>
+                        )}
+                        <span className="font-bold text-slate-900 line-clamp-1 max-w-xs">{p.nombre}</span>
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 font-semibold uppercase text-slate-500">{p.categoria}</td>
                     <td className="py-3.5 px-4">
                       <span>{p.acabado}</span> • <span className="text-slate-500">{p.medida}</span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      {p.precio_base_usd == null ? (
+                        <span className="text-slate-400">Precio manual</span>
+                      ) : (
+                        <div className="space-y-0.5">
+                          <div className="font-semibold text-slate-800">
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 4 }).format(Number(p.precio_base_usd))}
+                          </div>
+                          <div className="text-[10px] text-slate-500">
+                            TC {p.tipo_cambio_usado ?? 'sin dato'} · Margen {p.margen_aplicado_pct ?? p.margen_pct ?? '—'}%
+                          </div>
+                        </div>
+                      )}
                     </td>
                     <td className="py-3.5 px-4 font-bold text-kenpaku-navy">{formatPEN(p.precio_unitario)}</td>
                     <td className="py-3.5 px-4 font-bold text-slate-900">{p.stock_disponible} und.</td>
@@ -200,11 +231,15 @@ export function Products() {
                 min="0.01"
                 step="0.10"
                 value={quickPrice}
+                readOnly={editingProduct.precio_base_usd != null}
                 onKeyDown={preventNegativeAndExpKeys}
                 onChange={(e) => setQuickPrice(sanitizePositiveDecimal(e.target.value))}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold"
                 required
               />
+              {editingProduct.precio_base_usd != null && (
+                <p className="mt-1 text-[10px] text-slate-500">Calculado desde el costo USD y los márgenes de configuración.</p>
+              )}
             </div>
 
             <div>
