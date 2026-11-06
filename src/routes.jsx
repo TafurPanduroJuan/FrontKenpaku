@@ -18,11 +18,15 @@ import { NotFound } from './pages/NotFound';
 import { Login } from './pages/admin/Login';
 import { Dashboard } from './pages/admin/Dashboard';
 import { Products } from './pages/admin/Products';
+import { ProductImport } from './pages/admin/ProductImport';
 import { ProductForm } from './pages/admin/ProductForm';
 import { Knowledge } from './pages/admin/Knowledge';
 import { ChatLogs } from './pages/admin/ChatLogs';
 import { ClaimsAdmin } from './pages/admin/ClaimsAdmin';
 import { AdminVentas } from './pages/admin/AdminVentas';
+import { PricingSettings } from './pages/admin/PricingSettings';
+import { QuoteComposer } from './pages/QuoteComposer';
+import { QuotePage } from './pages/QuotePage';
 import { CajeroLayout } from './components/layout/CajeroLayout';
 import { PosView } from './pages/cajero/PosView';
 import { CajeroMisVentas } from './pages/cajero/CajeroMisVentas';
@@ -42,6 +46,8 @@ const router = createBrowserRouter([
       { path: 'checkout', element: <Checkout /> },
       { path: 'pedido/:codigo', element: <OrderConfirmation /> },
       { path: 'seguimiento', element: <TrackingPage /> },
+      { path: 'cotizador', element: <QuoteComposer /> },
+      { path: 'proforma/:codigo', element: <QuotePage /> },
       { path: 'libro-de-reclamaciones', element: <Claims /> },
       { path: 'politica-de-privacidad', element: <Privacy /> },
       { path: 'terminos', element: <Terms /> },
@@ -59,7 +65,9 @@ const router = createBrowserRouter([
       { index: true, element: <Dashboard /> },
       { path: 'productos', element: <Products /> },
       { path: 'productos/nuevo', element: <ProductForm /> },
+      { path: 'productos/importar', element: <ProductImport /> },
       { path: 'productos/:id', element: <ProductForm /> },
+      { path: 'precios', element: <PricingSettings /> },
       { path: 'ventas', element: <AdminVentas /> },
       { path: 'conocimiento', element: <Knowledge /> },
       { path: 'chat', element: <ChatLogs /> },

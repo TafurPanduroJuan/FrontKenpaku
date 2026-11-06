@@ -51,6 +51,7 @@ export async function sendChatMessage({ conversation_id, message, product_id }) 
       handoff,
       whatsapp_url,
       generated_by_ai: true,
+      quote: null,
     };
   }
 

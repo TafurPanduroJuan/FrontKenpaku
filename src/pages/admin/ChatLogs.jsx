@@ -1,13 +1,22 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { MessageSquare, ExternalLink, Bot, CheckCircle } from 'lucide-react';
+import { MessageSquare, ExternalLink, Bot, CheckCircle, ShieldOff, Filter } from 'lucide-react';
 import { getAdminChatLogs } from '../../api/admin';
 import { Skeleton } from '../../components/ui/Skeleton';
 
 export function ChatLogs() {
+  const [offtopicFilter, setOfftopicFilter] = useState('all'); // 'all' | 'offtopic' | 'inscope'
+
+  const queryParams = useMemo(() => {
+    const params = {};
+    if (offtopicFilter === 'offtopic') params.fuera_de_alcance = true;
+    else if (offtopicFilter === 'inscope') params.fuera_de_alcance = false;
+    return params;
+  }, [offtopicFilter]);
+
   const { data: chatData, isLoading } = useQuery({
-    queryKey: ['admin-chat-logs'],
-    queryFn: getAdminChatLogs
+    queryKey: ['admin-chat-logs', queryParams],
+    queryFn: () => getAdminChatLogs(queryParams)
   });
 
   // El backend responde { items, total, page, page_size } con UN registro por mensaje
@@ -40,12 +49,14 @@ export function ChatLogs() {
           (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
         );
         const firstUser = ordered.find((x) => x.rol === 'user') || ordered[0];
+        const hasOfftopic = ordered.some((x) => x.fuera_de_alcance === true);
         return {
           id: g.id,
           fecha: ordered[0].timestamp,
           mensajes_count: ordered.length,
           resumen: firstUser?.mensaje_texto || '',
           handoff: null, // el backend no persiste este dato
+          fuera_de_alcance: hasOfftopic,
         };
       })
       .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
@@ -61,6 +72,46 @@ export function ChatLogs() {
         <p className="text-xs text-slate-500 mt-0.5">
           Registro de consultas recibidas por el Asesor Virtual e interacciones derivadas (Handoff)
         </p>
+        {/* Filtro fuera de alcance */}
+        <div className="flex items-center gap-2 mt-3">
+          <Filter className="w-4 h-4 text-slate-400" />
+          <span className="text-xs text-slate-500 font-medium">Filtrar:</span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setOfftopicFilter('all')}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-colors ${
+                offtopicFilter === 'all'
+                  ? 'bg-kenpaku-navy text-white border-kenpaku-navy'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              Todas
+            </button>
+            <button
+              onClick={() => setOfftopicFilter('inscope')}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-colors ${
+                offtopicFilter === 'inscope'
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              En alcance
+            </button>
+            <button
+              onClick={() => setOfftopicFilter('offtopic')}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold border transition-colors ${
+                offtopicFilter === 'offtopic'
+                  ? 'bg-red-600 text-white border-red-600'
+                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <span className="inline-flex items-center gap-1">
+                <ShieldOff className="w-3 h-3" />
+                Fuera de alcance
+              </span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-soft overflow-hidden">
@@ -82,6 +133,7 @@ export function ChatLogs() {
                   <th className="py-3.5 px-4">Fecha y Hora</th>
                   <th className="py-3.5 px-4">Mensajes</th>
                   <th className="py-3.5 px-4">Resumen de Consulta</th>
+                  <th className="py-3.5 px-4">Alcance</th>
                   <th className="py-3.5 px-4">Estado Handoff</th>
                 </tr>
               </thead>
@@ -94,6 +146,19 @@ export function ChatLogs() {
                     </td>
                     <td className="py-3.5 px-4 font-bold text-slate-900">{log.mensajes_count} msgs</td>
                     <td className="py-3.5 px-4 max-w-sm">{log.resumen}</td>
+                    <td className="py-3.5 px-4">
+                      {log.fuera_de_alcance ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-800 border border-red-200">
+                          <ShieldOff className="w-3 h-3" />
+                          <span>Fuera de alcance</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          <CheckCircle className="w-3 h-3" />
+                          <span>En alcance</span>
+                        </span>
+                      )}
+                    </td>
                     <td className="py-3.5 px-4">
                       {log.handoff === null || log.handoff === undefined ? (
                         <span className="text-slate-400">—</span>

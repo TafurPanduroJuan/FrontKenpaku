@@ -2,6 +2,15 @@ import { apiClient } from './client';
 import { MOCK_ORDERS, MOCK_PRODUCTS, MOCK_CLAIMS, MOCK_CHAT_LOGS } from './mockData';
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true';
+let MOCK_PRICING_SETTINGS = {
+  margen_global_pct: 20,
+  costo_incluye_igv: false,
+  redondeo: 5,
+  margenes_por_categoria: [],
+  tipo_cambio_actual: null,
+  fecha_tipo_cambio: null,
+  fuente_tipo_cambio: null,
+};
 
 // Helper to check token for mocks
 function checkAuth() {
@@ -128,6 +137,91 @@ export async function getAdminProducts(params = {}) {
   return data;
 }
 
+export async function previewProductImport({ file, pastedText, mapping, categoryOverrides, updateMode = 'todo' }) {
+  if (USE_MOCKS) {
+    checkAuth();
+    return { headers: [], suggested_mapping: {}, mapping: mapping || {}, rows: [], tipo_cambio: null };
+  }
+  const form = new FormData();
+  if (file) form.append('file', file);
+  if (pastedText) form.append('pasted_text', pastedText);
+  if (mapping) form.append('mapping', JSON.stringify(mapping));
+  if (categoryOverrides) form.append('category_overrides', JSON.stringify(categoryOverrides));
+  form.append('update_mode', updateMode);
+  const { data } = await apiClient.post('/admin/products/import/preview', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function commitProductImport({
+  file,
+  pastedText,
+  mapping,
+  categoryOverrides,
+  excludedRows = [],
+  updateMode = 'todo',
+  newProductsActive = false,
+}) {
+  if (USE_MOCKS) {
+    checkAuth();
+    return {
+      import_id: Date.now(),
+      nuevos: 0,
+      actualizados: 0,
+      errores: 0,
+      indexing_status: 'completed',
+      indexing_total: 0,
+    };
+  }
+  const form = new FormData();
+  if (file) form.append('file', file);
+  if (pastedText) form.append('pasted_text', pastedText);
+  if (mapping) form.append('mapping', JSON.stringify(mapping));
+  if (categoryOverrides) form.append('category_overrides', JSON.stringify(categoryOverrides));
+  form.append('excluded_rows', JSON.stringify(excludedRows));
+  form.append('update_mode', updateMode);
+  form.append('new_products_active', String(newProductsActive));
+  const { data } = await apiClient.post('/admin/products/import/commit', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+export async function getProductImportHistory() {
+  if (USE_MOCKS) {
+    checkAuth();
+    return { items: [] };
+  }
+  const { data } = await apiClient.get('/admin/products/import/history');
+  return data;
+}
+
+export async function getAdminPricingSettings() {
+  if (USE_MOCKS) {
+    checkAuth();
+    return { ...MOCK_PRICING_SETTINGS };
+  }
+  const { data } = await apiClient.get('/admin/pricing/settings');
+  return data;
+}
+
+export async function updateAdminPricingSettings(payload) {
+  if (USE_MOCKS) {
+    checkAuth();
+    MOCK_PRICING_SETTINGS = {
+      ...MOCK_PRICING_SETTINGS,
+      ...payload,
+      tipo_cambio_actual: payload.tipo_cambio_manual ?? MOCK_PRICING_SETTINGS.tipo_cambio_actual,
+      fuente_tipo_cambio: payload.tipo_cambio_manual ? 'manual' : MOCK_PRICING_SETTINGS.fuente_tipo_cambio,
+      fecha_tipo_cambio: payload.tipo_cambio_manual ? new Date().toISOString().slice(0, 10) : MOCK_PRICING_SETTINGS.fecha_tipo_cambio,
+    };
+    return { ...MOCK_PRICING_SETTINGS };
+  }
+  const { data } = await apiClient.put('/admin/pricing/settings', payload);
+  return data;
+}
+
 export async function createAdminProduct(productData) {
   if (USE_MOCKS) {
     checkAuth();
@@ -161,6 +255,22 @@ export async function updateAdminProduct(id, productData) {
     throw { response: { status: 404, data: { detail: 'Producto no encontrado' } } };
   }
   const { data } = await apiClient.put(`/admin/products/${id}`, productData);
+  return data;
+}
+
+export async function uploadAdminProductImage(id, imageFile) {
+  if (USE_MOCKS) {
+    checkAuth();
+    const product = MOCK_PRODUCTS.find((item) => item.id === id);
+    if (!product) throw new Error('Producto no encontrado');
+    product.imagen_url = URL.createObjectURL(imageFile);
+    return { id, imagen_url: product.imagen_url };
+  }
+  const form = new FormData();
+  form.append('image', imageFile);
+  const { data } = await apiClient.post(`/admin/products/${id}/image`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return data;
 }
 
