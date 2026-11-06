@@ -3,6 +3,7 @@ import { ShoppingCart, Check } from 'lucide-react';
 import { StockBadge } from '../catalog/StockBadge';
 import { formatPEN } from '../../utils/formatPEN';
 import { useCart } from '../../hooks/useCart';
+import { ProductImage } from '../catalog/ProductImage';
 
 export function ProductChatCard({ product }) {
   const { addToCart } = useCart();
@@ -20,11 +21,9 @@ export function ProductChatCard({ product }) {
 
   return (
     <div className="flex w-full flex-col items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 transition-colors hover:bg-white sm:flex-row sm:items-center">
-      <img
-        src={product.imagen_url}
-        alt={product.nombre}
-        className="h-14 w-14 shrink-0 rounded-lg border border-slate-200 bg-white object-cover"
-      />
+      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <ProductImage src={product.imagen_url} alt={product.nombre} padding="p-1" />
+      </div>
       <div className="flex-1 min-w-0">
         <StockBadge status={product.stock_estado} className="mb-1 text-[10px] py-0 px-2" />
         <h4 className="text-xs font-bold text-kenpaku-navy line-clamp-1 leading-snug">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Plus, Edit, Trash2, Save, ImageOff } from 'lucide-react';
-import { getAdminProducts, updateQuickStockPrice, deleteAdminProduct } from '../../api/admin';
+import { Search, Plus, Edit, Trash2, Save, ImageOff, RotateCcw } from 'lucide-react';
+import { getAdminProducts, updateQuickStockPrice, deleteAdminProduct, setProductActivo } from '../../api/admin';
 import { Link } from 'react-router-dom';
 import { formatPEN } from '../../utils/formatPEN';
 import { Skeleton } from '../../components/ui/Skeleton';
@@ -20,6 +20,7 @@ export function Products() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [onlyMissingImages, setOnlyMissingImages] = useState(false);
+  const [estadoFiltro, setEstadoFiltro] = useState('activos');
   const [editingProduct, setEditingProduct] = useState(null);
   const [quickStock, setQuickStock] = useState('');
   const [quickPrice, setQuickPrice] = useState('');
@@ -28,8 +29,8 @@ export function Products() {
   const [showToast, setShowToast] = useState(false);
 
   const { data: productsData, isLoading } = useQuery({
-    queryKey: ['admin-products', searchTerm, onlyMissingImages],
-    queryFn: () => getAdminProducts({ q: searchTerm, page_size: 50, sin_imagen: onlyMissingImages || undefined })
+    queryKey: ['admin-products', searchTerm, onlyMissingImages, estadoFiltro],
+    queryFn: () => getAdminProducts({ q: searchTerm, page_size: 50, estado: estadoFiltro, sin_imagen: onlyMissingImages || undefined })
   });
 
   const quickUpdateMutation = useMutation({
@@ -58,6 +59,20 @@ export function Products() {
     },
     onError: (err) => {
       setToastMsg(errorText(err, 'No se pudo dar de baja el producto.'));
+      setShowToast(true);
+    }
+  });
+
+  const reactivateMutation = useMutation({
+    mutationFn: (id) => setProductActivo(id, true),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setToastMsg(`Producto "${data.nombre}" reactivado.`);
+      setShowToast(true);
+    },
+    onError: (err) => {
+      setToastMsg(errorText(err, 'No se pudo reactivar el producto.'));
       setShowToast(true);
     }
   });
@@ -127,10 +142,24 @@ export function Products() {
         />
         <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
       </div>
+      <div className="flex flex-wrap items-center gap-4">
+      <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
+        Mostrar:
+        <select
+          value={estadoFiltro}
+          onChange={(e) => setEstadoFiltro(e.target.value)}
+          className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs"
+        >
+          <option value="activos">Activos</option>
+          <option value="inactivos">Dados de baja</option>
+          <option value="todos">Todos</option>
+        </select>
+      </label>
       <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
         <input type="checkbox" checked={onlyMissingImages} onChange={(event) => setOnlyMissingImages(event.target.checked)} />
         Mostrar solo productos sin imagen
       </label>
+      </div>
 
       {/* Products Table */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-soft overflow-hidden">
@@ -215,18 +244,27 @@ export function Products() {
                       >
                         <Edit className="w-4 h-4" />
                       </Link>
-                      <button
-                        disabled={p.activo === false}
-                        onClick={() => {
-                          if (window.confirm(`¿Confirmar baja lógica del producto "${p.nombre}"?`)) {
-                            deleteMutation.mutate(p.id);
-                          }
-                        }}
-                        className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        title="Baja lógica"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {p.activo === false ? (
+                        <button
+                          onClick={() => reactivateMutation.mutate(p.id)}
+                          className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition-colors"
+                          title="Reactivar producto"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`¿Dar de baja el producto "${p.nombre}"? Dejará de verse en el catálogo y podrás reactivarlo desde "Dados de baja".`)) {
+                              deleteMutation.mutate(p.id);
+                            }
+                          }}
+                          className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                          title="Dar de baja"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

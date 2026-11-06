@@ -4,6 +4,7 @@ import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 import { formatPEN } from '../../utils/formatPEN';
 import { Button } from '../ui/Button';
+import { ProductImage } from '../catalog/ProductImage';
 
 export function CartDrawer() {
   const { isCartOpen, closeCart, items, updateQuantity, removeFromCart, subtotal, igv, total } = useCart();
@@ -77,11 +78,9 @@ export function CartDrawer() {
             ) : (
               items.map(({ product, cantidad }) => (
                 <div key={product.id} className="py-4 flex gap-3.5 items-start">
-                  <img
-                    src={product.imagen_url}
-                    alt={product.nombre}
-                    className="w-16 h-16 rounded-lg object-cover bg-slate-100 border border-slate-200 shrink-0"
-                  />
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border border-slate-200 shrink-0">
+                    <ProductImage src={product.imagen_url} alt={product.nombre} padding="p-1" />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug mb-1">
                       {product.nombre}
