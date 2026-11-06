@@ -2,6 +2,8 @@ import React from 'react';
 import { Bot, User } from 'lucide-react';
 import { ProductChatCard } from './ProductChatCard';
 import { HandoffCard } from './HandoffCard';
+import { Link } from 'react-router-dom';
+import { FileText } from 'lucide-react';
 
 export function MessageBubble({ message }) {
   const isUser = message.sender === 'user';
@@ -44,6 +46,16 @@ export function MessageBubble({ message }) {
         {/* Handoff Card */}
         {message.handoff && (
           <HandoffCard whatsappUrl={message.whatsappUrl} />
+        )}
+
+        {message.quote && (
+          <Link
+            to={`/proforma/${encodeURIComponent(message.quote.codigo)}`}
+            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-kenpaku-orange px-3 py-2 text-xs font-bold text-white hover:bg-kenpaku-orangeHover"
+          >
+            <FileText className="h-4 w-4" />
+            Ver / descargar proforma {message.quote.codigo}
+          </Link>
         )}
       </div>
     </div>

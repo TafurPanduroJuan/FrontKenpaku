@@ -90,7 +90,8 @@ export function ChatWidget() {
         text: response.reply,
         products: response.products || [],
         handoff: response.handoff || false,
-        whatsappUrl: response.whatsapp_url || null
+        whatsappUrl: response.whatsapp_url || null,
+        quote: response.quote || null
       };
 
       setMessages((prev) => [...prev, botMsgObj]);
