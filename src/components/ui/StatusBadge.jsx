@@ -4,7 +4,7 @@ const STATUS_STYLES = {
   con_precio: 'bg-emerald-100 text-emerald-800',
   sin_stock: 'bg-amber-100 text-amber-800',
   no_se_vende: 'bg-slate-100 text-slate-700',
-  sugerido: 'bg-blue-100 text-blue-800',
+  sugerido: 'bg-slate-100 text-slate-600',
   vigente: 'bg-emerald-100 text-emerald-800',
   vencida: 'bg-red-100 text-red-800',
   subio: 'bg-red-100 text-red-800',

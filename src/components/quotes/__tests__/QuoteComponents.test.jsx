@@ -31,12 +31,29 @@ describe('Componentes reutilizables de proforma', () => {
     expect(screen.getByText(label)).toBeInTheDocument();
   });
 
-  it('muestra la tarjeta de sugerencia y ejecuta la aceptación', () => {
+  it('muestra una sugerencia compacta, neutral y ejecuta la aceptación', () => {
     const onAccept = vi.fn();
-    render(<SuggestionCard product={{ nombre: 'Tubo cuadrado', medida: '40x40', precio_unitario: '25.00' }} onAccept={onAccept} />);
+    const { container } = render(<SuggestionCard product={{ nombre: 'Tubo cuadrado', medida: '40x40', precio_unitario: '25.00' }} onAccept={onAccept} />);
     expect(screen.getByText('Sugerido')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Agregar a la cotización/ }));
+    expect(container.querySelector('.bg-blue-50, .border-blue-200, .bg-kenpaku-orange')).not.toBeInTheDocument();
+    expect(screen.getByText(/Alternativa disponible: Tubo cuadrado · 40x40/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar' }));
     expect(onAccept).toHaveBeenCalledOnce();
+  });
+
+  it('mantiene una opción visible y despliega las demás cuando se solicita', () => {
+    render(<SuggestionCard products={[
+      { product_id: 'p1', nombre: 'Tubo negro', medida: '40x40', precio_unitario: '25.00' },
+      { product_id: 'p2', nombre: 'Tubo galvanizado', medida: '40x40', precio_unitario: '28.00' },
+      { product_id: 'p3', nombre: 'Tubo rectangular', medida: '40x20', precio_unitario: '30.00' },
+    ]} onAccept={vi.fn()} />);
+
+    expect(screen.getByText(/Tubo negro/)).toBeInTheDocument();
+    expect(screen.queryByText(/Tubo galvanizado/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver más opciones' }));
+    expect(screen.getByText(/Tubo galvanizado/)).toBeInTheDocument();
+    expect(screen.getByText(/Tubo rectangular/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ver menos opciones' })).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('muestra la etiqueta de estado', () => {

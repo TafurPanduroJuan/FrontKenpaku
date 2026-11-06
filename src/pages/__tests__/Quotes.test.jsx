@@ -39,6 +39,7 @@ const quote = {
       texto_original: '2 tubos cuadrados 2x2',
       nombre_snapshot: 'Tubo cuadrado negro 2x2',
       medida_snapshot: '2x2',
+      equivalencia_nota: 'Medida equivalente: 2" x 2" = 50x50 mm',
       cantidad: '2',
       unidad: 'unidad',
       cantidad_asumida: false,
@@ -103,6 +104,35 @@ describe('Flujo de proformas', () => {
     expect(quoteApi.createQuote).toHaveBeenCalledWith({ texto: '10 tubos cuadrados 2x2 de 1.5mm' });
   });
 
+  it('muestra la alternativa del análisis con el estilo compacto del cotizador', async () => {
+    quoteApi.analyzeQuote.mockResolvedValue({
+      items: [{
+        texto_original: '1 plancha especial',
+        cantidad: '1',
+        atributos: {},
+        faltantes: [],
+        estado_linea: 'no_se_vende',
+        sugerencia: {
+          product_id: 'p-lac',
+          nombre: 'Plancha LAC',
+          medida: '1.20x2.40',
+          precio_unitario: '80.00',
+          stock_disponible: 10,
+        },
+      }],
+    });
+    renderWithRouter(
+      <Routes><Route path="/cotizador" element={<QuoteComposer />} /></Routes>,
+      '/cotizador'
+    );
+
+    fireEvent.change(screen.getByLabelText('Lista de materiales'), {
+      target: { value: '1 plancha especial' },
+    });
+    expect(await screen.findByText(/Alternativa disponible: Plancha LAC · 1.20x2.40/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Agregar' })).not.toBeInTheDocument();
+  });
+
   it('muestra la proforma, exige resolver ambigüedad y no ofrece confirmar compra', async () => {
     quoteApi.getQuote.mockResolvedValue(quote);
     quoteApi.chooseQuoteItem.mockResolvedValue({ ...quote, items: quote.items.map((item) => item.id === 'line-1' ? { ...item, estado_linea: 'con_precio', opciones: [] } : item) });
@@ -112,6 +142,7 @@ describe('Flujo de proformas', () => {
     );
 
     expect(await screen.findByText('VIGENTE')).toBeInTheDocument();
+    expect(screen.getAllByText('Medida equivalente: 2" x 2" = 50x50 mm').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Sin stock').length).toBeGreaterThan(0);
     expect(screen.getByText(/Válida solo hasta el 04\/11\/2026/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /confirmar/i })).not.toBeInTheDocument();
@@ -120,6 +151,76 @@ describe('Flujo de proformas', () => {
       target: { value: 'p-1' },
     });
     await waitFor(() => expect(quoteApi.chooseQuoteItem).toHaveBeenCalledWith(quote.codigo, 'line-1', 'p-1'));
+  });
+
+  it('acepta una sugerencia, actualiza totales y confirma la alternativa agregada', async () => {
+    const withSuggestion = {
+      ...quote,
+      items: quote.items.map((item) => item.id === 'line-2' ? {
+        ...item,
+        estado_linea: 'no_se_vende',
+        opciones: [
+          { product_id: 'p-2', nombre: 'Perfil alternativo', medida: '40x40', precio_unitario: '50.00', stock_disponible: 10 },
+          { product_id: 'p-3', nombre: 'Otro perfil', medida: '40x40', precio_unitario: '55.00', stock_disponible: 5 },
+        ],
+      } : item),
+    };
+    const updatedQuote = {
+      ...withSuggestion,
+      subtotal: '250.00',
+      igv: '45.00',
+      total: '295.00',
+      items_sin_cotizar: 0,
+      items: withSuggestion.items.map((item) => item.id === 'line-2' ? {
+        ...item,
+        estado_linea: 'con_precio',
+        nombre_snapshot: 'Perfil alternativo',
+        precio_unitario_snapshot: '50.00',
+        subtotal_linea: '150.00',
+        opciones: [],
+      } : item),
+    };
+    quoteApi.getQuote.mockResolvedValue(withSuggestion);
+    quoteApi.chooseQuoteItem.mockResolvedValue(updatedQuote);
+    renderWithRouter(
+      <Routes><Route path="/proforma/:codigo" element={<QuotePage />} /></Routes>,
+      `/proforma/${quote.codigo}`
+    );
+
+    expect(await screen.findByRole('button', { name: 'Agregar' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar' }));
+
+    await waitFor(() => expect(quoteApi.chooseQuoteItem).toHaveBeenCalledWith(quote.codigo, 'line-2', 'p-2'));
+    expect((await screen.findAllByText('Alternativa agregada')).length).toBeGreaterThan(0);
+    expect(screen.getByText('S/ 295.00')).toBeInTheDocument();
+  });
+
+  it('pliega sugerencias globalmente cuando hay más de dos productos', async () => {
+    const withManySuggestions = {
+      ...quote,
+      items: quote.items.map((item) => ({
+        ...item,
+        estado_linea: 'no_se_vende',
+        precio_unitario_snapshot: null,
+        opciones: [{ product_id: `${item.id}-option`, nombre: `Alternativa ${item.id}`, medida: '40x40', precio_unitario: '25.00', stock_disponible: 10 }],
+      })).concat([{
+        ...quote.items[1],
+        id: 'line-3',
+        estado_linea: 'no_se_vende',
+        precio_unitario_snapshot: null,
+        opciones: [{ product_id: 'p-4', nombre: 'Alternativa 3', medida: '40x40', precio_unitario: '30.00', stock_disponible: 10 }],
+      }]),
+    };
+    quoteApi.getQuote.mockResolvedValue(withManySuggestions);
+    renderWithRouter(
+      <Routes><Route path="/proforma/:codigo" element={<QuotePage />} /></Routes>,
+      `/proforma/${quote.codigo}`
+    );
+
+    const expand = await screen.findByRole('button', { name: '3 productos tienen alternativas' });
+    expect(screen.queryByRole('button', { name: 'Agregar' })).not.toBeInTheDocument();
+    fireEvent.click(expand);
+    expect(await screen.findByText(/Alternativa disponible: Alternativa line-1/)).toBeInTheDocument();
   });
 
   it('carga el catálogo paginado y conserva el artículo accesorio al cambiar cantidad', async () => {
