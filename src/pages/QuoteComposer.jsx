@@ -222,6 +222,11 @@ export function QuoteComposer() {
                   <p className="text-xs text-slate-700">{item.texto_original}</p>
                   {item.faltantes?.length ? (
                     <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700"><CircleAlert className="h-4 w-4" /> Falta: {item.faltantes.join(', ')}</span>
+                  ) : ['no_se_vende', 'sin_stock'].includes(item.estado_linea) ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-500">
+                      <CircleAlert className="h-4 w-4" />
+                      {item.estado_linea === 'sin_stock' || item.sugerencia || item.sugerencias?.length ? 'Sin stock' : 'No disponible'}
+                    </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Completa</span>
                   )}

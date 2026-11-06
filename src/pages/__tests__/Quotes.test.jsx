@@ -133,6 +133,26 @@ describe('Flujo de proformas', () => {
     expect(screen.queryByRole('button', { name: 'Agregar' })).not.toBeInTheDocument();
   });
 
+  it('no marca como completa una línea que no existe en el catálogo', async () => {
+    quoteApi.analyzeQuote.mockResolvedValue({
+      items: [
+        { texto_original: '3 helicopteros', cantidad: '3', atributos: {}, faltantes: [], estado_linea: 'no_se_vende', sugerencia: null },
+        { texto_original: '2 guinchas de 8 m', cantidad: '2', atributos: {}, faltantes: [], estado_linea: 'con_precio', sugerencia: null },
+      ],
+    });
+    renderWithRouter(
+      <Routes><Route path="/cotizador" element={<QuoteComposer />} /></Routes>,
+      '/cotizador'
+    );
+
+    fireEvent.change(screen.getByLabelText('Lista de materiales'), {
+      target: { value: '3 helicopteros\n2 guinchas de 8 m' },
+    });
+
+    expect(await screen.findByText('No disponible')).toBeInTheDocument();
+    expect(screen.getAllByText('Completa')).toHaveLength(1);
+  });
+
   it('muestra la proforma, exige resolver ambigüedad y no ofrece confirmar compra', async () => {
     quoteApi.getQuote.mockResolvedValue(quote);
     quoteApi.chooseQuoteItem.mockResolvedValue({ ...quote, items: quote.items.map((item) => item.id === 'line-1' ? { ...item, estado_linea: 'con_precio', opciones: [] } : item) });
