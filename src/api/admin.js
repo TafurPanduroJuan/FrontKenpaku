@@ -133,6 +133,17 @@ export async function updateOrderStatus(id, estadoOrData, maybeNota, maybeCostoF
   return data;
 }
 
+export async function getAdminProductById(id) {
+  if (USE_MOCKS) {
+    checkAuth();
+    const prod = MOCK_PRODUCTS.find((p) => p.id === id);
+    if (!prod) throw { response: { status: 404, data: { detail: 'Producto no encontrado' } } };
+    return prod;
+  }
+  const { data } = await apiClient.get(`/admin/products/${id}`);
+  return data;
+}
+
 export async function getAdminProducts(params = {}) {
   if (USE_MOCKS) {
     checkAuth();
