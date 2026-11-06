@@ -75,7 +75,7 @@ export function PricingSettings() {
   }
 
   return (
-    <div className="max-w-4xl space-y-6 animate-fade-in">
+    <div className="mx-auto max-w-6xl space-y-6 animate-fade-in">
       <header className="border-b border-slate-200 pb-4">
         <h2 className="flex items-center gap-2 text-xl font-extrabold text-kenpaku-navy">
           <SlidersHorizontal className="h-5 w-5 text-kenpaku-blue" />

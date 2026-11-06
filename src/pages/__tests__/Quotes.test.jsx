@@ -8,11 +8,19 @@ import { QuotePage } from '../QuotePage';
 import * as quoteApi from '../../api/quotes';
 
 vi.mock('../../api/quotes', () => ({
+  analyzeQuote: vi.fn(),
   createQuote: vi.fn(),
   getQuote: vi.fn(),
+  getQuoteFieldRules: vi.fn(),
   chooseQuoteItem: vi.fn(),
   recalculateQuote: vi.fn(),
 }));
+
+vi.mock('../../api/products', () => ({
+  getProducts: vi.fn(),
+}));
+
+import * as productsApi from '../../api/products';
 
 const quote = {
   id: 'quote-id',
@@ -69,6 +77,11 @@ function renderWithRouter(element, path = '/') {
 describe('Flujo de proformas', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    quoteApi.analyzeQuote.mockResolvedValue({ items: [] });
+    quoteApi.getQuoteFieldRules.mockResolvedValue({
+      tubos: { required: ['forma', 'medida', 'espesor', 'acabado'] },
+      accesorios: { required: [] },
+    });
   });
 
   it('envía una lista del cotizador y navega a la proforma', async () => {
@@ -99,7 +112,7 @@ describe('Flujo de proformas', () => {
     );
 
     expect(await screen.findByText('VIGENTE')).toBeInTheDocument();
-    expect(screen.getByText('No disponible / no se vende')).toBeInTheDocument();
+    expect(screen.getAllByText('Sin stock').length).toBeGreaterThan(0);
     expect(screen.getByText(/Válida solo hasta el 04\/11\/2026/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /confirmar/i })).not.toBeInTheDocument();
 
@@ -107,5 +120,41 @@ describe('Flujo de proformas', () => {
       target: { value: 'p-1' },
     });
     await waitFor(() => expect(quoteApi.chooseQuoteItem).toHaveBeenCalledWith(quote.codigo, 'line-1', 'p-1'));
+  });
+
+  it('carga el catálogo paginado y conserva el artículo accesorio al cambiar cantidad', async () => {
+    const accessory = {
+      id: 'accessory-id',
+      nombre: 'Careta de soldar',
+      categoria: 'accesorios',
+      precio_unitario: '25.00',
+      stock_disponible: 4,
+    };
+    productsApi.getProducts.mockImplementation(({ page }) => Promise.resolve({
+      items: page === 1 ? [] : [accessory],
+      total: 101,
+      page,
+      page_size: 100,
+    }));
+    quoteApi.createQuote.mockResolvedValue(quote);
+    renderWithRouter(
+      <Routes>
+        <Route path="/cotizador" element={<QuoteComposer />} />
+        <Route path="/proforma/:codigo" element={<p>Proforma abierta</p>} />
+      </Routes>,
+      '/cotizador'
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Armar mi lista' }));
+    await screen.findByRole('option', { name: 'Accesorios' });
+    fireEvent.change(screen.getByLabelText('Producto'), { target: { value: 'accesorios' } });
+    fireEvent.change(await screen.findByLabelText('Artículo'), { target: { value: 'accessory-id' } });
+    fireEvent.change(screen.getByLabelText('Cantidad'), { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('button', { name: /Cotizar/ }));
+
+    await waitFor(() => expect(quoteApi.createQuote).toHaveBeenCalledWith({
+      items: [{ texto_original: '3 Careta de soldar', cantidad: '3', product_id: 'accessory-id' }],
+    }));
+    expect(productsApi.getProducts).toHaveBeenCalledWith({ page: 2, page_size: 100 });
   });
 });

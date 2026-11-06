@@ -7,7 +7,7 @@ const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true';
 /**
  * POST /chat
  */
-export async function sendChatMessage({ conversation_id, message, product_id }) {
+export async function sendChatMessage({ conversation_id, message, product_id, pending_quote_text }) {
   if (USE_MOCKS) {
     await new Promise((res) => setTimeout(res, 600));
 
@@ -56,7 +56,7 @@ export async function sendChatMessage({ conversation_id, message, product_id }) 
   }
 
   try {
-    const { data } = await apiClient.post('/chat', { conversation_id, message, product_id });
+    const { data } = await apiClient.post('/chat', { conversation_id, message, product_id, pending_quote_text });
     return data;
   } catch (err) {
     throw err;

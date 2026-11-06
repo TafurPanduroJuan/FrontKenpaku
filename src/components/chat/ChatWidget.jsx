@@ -7,7 +7,7 @@ import { QuickReplies } from './QuickReplies';
 import { TypingIndicator } from './TypingIndicator';
 import { buildWhatsAppUrl } from '../../utils/whatsapp';
 
-const MAX_CHARS = 500;
+const MAX_CHARS = 1500;
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,6 +16,9 @@ export function ChatWidget() {
   const [networkError, setNetworkError] = useState(false);
   const [hasUserSentMessage, setHasUserSentMessage] = useState(false);
   const [lastUserMessage, setLastUserMessage] = useState('');
+  const [pendingQuoteText, setPendingQuoteText] = useState(
+    () => sessionStorage.getItem('kenpaku_pending_quote') || ''
+  );
 
   // Read conversation_id from sessionStorage or initialize
   const [conversationId, setConversationId] = useState(() => {
@@ -76,7 +79,8 @@ export function ChatWidget() {
       const response = await sendChatMessage({
         conversation_id: conversationId,
         message: text,
-        product_id: productId
+        product_id: productId,
+        pending_quote_text: pendingQuoteText || null,
       });
 
       if (response.conversation_id) {
@@ -91,8 +95,17 @@ export function ChatWidget() {
         products: response.products || [],
         handoff: response.handoff || false,
         whatsappUrl: response.whatsapp_url || null,
-        quote: response.quote || null
+        quote: response.quote || null,
+        pendingQuoteText: response.pending_quote_text || '',
+        quoteMissingFields: response.quote_missing_fields || [],
       };
+      if (response.pending_quote_text) {
+        setPendingQuoteText(response.pending_quote_text);
+        sessionStorage.setItem('kenpaku_pending_quote', response.pending_quote_text);
+      } else if (response.quote || pendingQuoteText) {
+        setPendingQuoteText('');
+        sessionStorage.removeItem('kenpaku_pending_quote');
+      }
 
       setMessages((prev) => [...prev, botMsgObj]);
     } catch (err) {
@@ -164,7 +177,24 @@ export function ChatWidget() {
           {/* Messages Body */}
           <div className="flex-1 p-4 overflow-y-auto bg-slate-50/50">
             {messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
+              <React.Fragment key={msg.id}>
+                <MessageBubble message={msg} />
+                {msg.pendingQuoteText && (
+                  <div className="mb-4 ml-9 flex flex-wrap gap-1.5" aria-label="Respuestas rápidas para completar la cotización">
+                    {(msg.quoteMissingFields || []).flatMap((field) => ({
+                      forma: ['Cuadrado', 'Rectangular', 'Redondo'],
+                      tipo: ['Corrugado', 'Liso', 'LAC', 'LAF'],
+                      medida: ['1/2 pulgada', '1 pulgada', '2 pulgadas'],
+                      espesor: ['1.5 mm', '2 mm', '3 mm'],
+                      acabado: ['Negro', 'Galvanizado'],
+                    }[field] || [])).map((reply) => (
+                      <button key={`${msg.id}-${reply}`} type="button" disabled={isLoading} onClick={() => handleSendMessage(reply)} className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-[11px] font-bold text-kenpaku-blue hover:bg-blue-50 disabled:opacity-50">
+                        {reply}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </React.Fragment>
             ))}
 
             {/* Typing Indicator */}
@@ -204,7 +234,7 @@ export function ChatWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Fixed Footer with 500 Char Counter & Legal Disclaimer */}
+          {/* Fixed Footer with character counter and legal disclaimer */}
           <div className="p-3.5 bg-white border-t border-slate-200 space-y-2 shrink-0">
             <a
               href={latestWhatsappUrl}
@@ -222,14 +252,23 @@ export function ChatWidget() {
             </p>
 
             <div className="relative flex items-center">
-              <input
-                type="text"
+              <textarea
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value.slice(0, MAX_CHARS))}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                rows={1}
                 disabled={isLoading}
-                placeholder="Escribe tu consulta sobre acero..."
-                className="w-full pl-3.5 pr-20 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-kenpaku-blue focus:ring-2 focus:ring-kenpaku-blue/20 disabled:bg-slate-100"
+                placeholder="Escribe tu consulta o lista de materiales..."
+                className="max-h-36 min-h-11 w-full resize-none overflow-y-auto rounded-xl border border-slate-300 py-3 pl-3.5 pr-20 text-xs text-slate-900 placeholder-slate-400 focus:border-kenpaku-blue focus:outline-none focus:ring-2 focus:ring-kenpaku-blue/20 disabled:bg-slate-100"
+                onInput={(event) => {
+                  event.currentTarget.style.height = 'auto';
+                  event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 144)}px`;
+                }}
               />
 
               <div className="absolute right-2 flex items-center gap-1.5">

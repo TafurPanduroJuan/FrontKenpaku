@@ -1,7 +1,17 @@
 import { apiClient } from './client';
 
+export async function getQuoteFieldRules() {
+  const { data } = await apiClient.get('/products/field-rules');
+  return data;
+}
+
 export async function createQuote(payload) {
   const { data } = await apiClient.post('/quotes', payload);
+  return data;
+}
+
+export async function analyzeQuote(payload) {
+  const { data } = await apiClient.post('/quotes/analyze', payload);
   return data;
 }
 
