@@ -9,14 +9,17 @@ export function QuickReplies({ onSelectOption }) {
   ];
 
   return (
-    <div className="space-y-1.5 pt-2 animate-fade-in">
-      <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Sugerencias rápidas:</p>
-      <div className="flex flex-col gap-1.5">
+    <div className="space-y-2 pt-2 animate-fade-in">
+      <p className="text-micro font-extrabold tracking-widest text-steel-500 uppercase">
+        Sugerencias rápidas:
+      </p>
+      <div className="flex flex-wrap gap-2">
         {chips.map((chip, idx) => (
           <button
             key={idx}
+            type="button"
             onClick={() => onSelectOption(chip)}
-            className="text-left text-xs bg-white hover:bg-blue-50 text-kenpaku-blue font-medium border border-slate-200 hover:border-kenpaku-blue/40 px-3.5 py-2.5 rounded-xl transition-all shadow-2xs leading-snug active:scale-[0.98]"
+            className="min-h-10 rounded-full border border-brand-500/30 bg-white hover:bg-brand-50 px-3.5 py-2 text-left text-xs font-semibold text-brand-700 transition-colors shadow-2xs active:scale-95 cursor-pointer leading-snug"
           >
             {chip}
           </button>

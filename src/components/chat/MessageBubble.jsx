@@ -9,24 +9,24 @@ export function MessageBubble({ message }) {
   const isUser = message.sender === 'user';
 
   return (
-    <div className={`flex items-start gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-4 animate-fade-in`}>
+    <div className={`flex items-start gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-3.5 animate-fade-in`}>
       {/* Avatar */}
       <div
-        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
-          isUser ? 'bg-kenpaku-navy text-white' : 'bg-kenpaku-blue text-white'
+        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-2xs ${
+          isUser ? 'bg-navy-900 text-white' : 'bg-brand-600 text-white'
         }`}
       >
         {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
       </div>
 
-      <div className={`max-w-[85%] space-y-2.5 ${isUser ? 'items-end text-right' : 'items-start text-left'}`}>
+      <div className={`max-w-[85%] space-y-2 ${isUser ? 'items-end text-right' : 'items-start text-left'}`}>
         {/* Main Text Bubble - Rendered strictly as PLAIN TEXT */}
         {message.text && (
           <div
-            className={`rounded-2xl px-4 py-2.5 text-xs leading-relaxed shadow-xs ${
+            className={`rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed ${
               isUser
-                ? 'bg-kenpaku-blue text-white rounded-tr-none font-medium'
-                : 'bg-white text-slate-800 border border-slate-200/90 rounded-tl-none'
+                ? 'bg-brand-600 text-white rounded-tr-none font-medium shadow-xs'
+                : 'bg-white text-navy-900 border border-steel-200 rounded-tl-none shadow-2xs'
             }`}
           >
             {/* Safe plain text rendering - NO dangerouslySetInnerHTML */}
@@ -51,10 +51,10 @@ export function MessageBubble({ message }) {
         {message.quote && (
           <Link
             to={`/proforma/${encodeURIComponent(message.quote.codigo)}`}
-            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-kenpaku-orange px-3 py-2 text-xs font-bold text-white hover:bg-kenpaku-orangeHover"
+            className="inline-flex min-h-11 items-center gap-2 rounded-btn bg-accent-600 hover:bg-accent-700 px-4 py-2.5 text-xs font-bold text-white shadow-cta transition-colors"
           >
             <FileText className="h-4 w-4" />
-            Ver / descargar proforma {message.quote.codigo}
+            <span>Ver / descargar proforma <strong className="font-mono num">{message.quote.codigo}</strong></span>
           </Link>
         )}
       </div>
