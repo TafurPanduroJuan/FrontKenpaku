@@ -6,7 +6,7 @@ import { EmptyState } from '../ui/EmptyState';
 export function ProductGrid({ products = [], isLoading = false, onAskAdvisor }) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {Array.from({ length: 8 }).map((_, idx) => (
           <ProductCardSkeleton key={idx} />
         ))}
@@ -16,7 +16,7 @@ export function ProductGrid({ products = [], isLoading = false, onAskAdvisor }) 
 
   if (products.length === 0) {
     return (
-      <div className="py-8">
+      <div className="py-10 bg-white rounded-card border border-steel-200 shadow-card">
         <EmptyState
           title="No encontramos resultados"
           description="Prueba ajustando los filtros de precio, categoría o acabado. También puedes consultar directamente con nuestro Asesor IA."
@@ -29,7 +29,7 @@ export function ProductGrid({ products = [], isLoading = false, onAskAdvisor }) 
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}
