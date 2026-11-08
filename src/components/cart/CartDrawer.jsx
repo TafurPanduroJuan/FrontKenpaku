@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck } from 'lucide-react';
+import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
 import { formatPEN } from '../../utils/formatPEN';
 import { Button } from '../ui/Button';
@@ -35,23 +35,25 @@ export function CartDrawer() {
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden animate-fade-in" role="dialog" aria-modal="true">
-      {/* Backdrop */}
+      {/* Backdrop con blur estilo figma */}
       <div
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+        className="absolute inset-0 bg-navy-950/60 backdrop-blur-sm transition-opacity"
         onClick={closeCart}
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col">
-          {/* Header */}
-          <div className="p-4 sm:p-6 bg-kenpaku-navy text-white flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="w-5 h-5 text-kenpaku-orange" />
-              <h2 className="text-lg font-bold">Tu Carrito de Compra</h2>
+        <aside className="slide-in-right w-screen max-w-md bg-white shadow-lift flex flex-col border-l border-steel-200">
+          {/* Header con steel-texture sobre navy-900 */}
+          <div className="steel-texture p-4 sm:p-5 bg-navy-900 text-white flex items-center justify-between border-b border-navy-800">
+            <div className="flex items-center gap-2.5">
+              <ShoppingBag className="w-5 h-5 text-accent-400" />
+              <h2 className="font-display text-base sm:text-lg font-bold text-white tracking-tight">
+                Tu Carrito de Compra
+              </h2>
             </div>
             <button
               onClick={closeCart}
-              className="p-2 text-slate-300 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+              className="p-1.5 text-steel-400 hover:text-white rounded-btn hover:bg-white/10 transition-colors cursor-pointer"
               aria-label="Cerrar carrito"
             >
               <X className="w-5 h-5" />
@@ -59,63 +61,82 @@ export function CartDrawer() {
           </div>
 
           {/* Cart Content */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 divide-y divide-slate-100">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 divide-y divide-steel-100 bg-white">
             {items.length === 0 ? (
-              <div className="text-center py-16">
-                <ShoppingBag className="w-16 h-16 text-slate-300 mx-auto mb-3" />
-                <h3 className="text-base font-bold text-slate-700 mb-1">Tu carrito está vacío</h3>
-                <p className="text-xs text-slate-500 mb-6">Explora nuestro catálogo y agrega tubos, perfiles, planchas o fierros.</p>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    closeCart();
-                    navigate('/catalogo');
-                  }}
-                >
-                  Ver catálogo
-                </Button>
+              <div className="text-center py-16 space-y-3">
+                <div className="w-16 h-16 rounded-full bg-steel-100 text-steel-500 flex items-center justify-center mx-auto mb-2">
+                  <ShoppingBag className="w-8 h-8" />
+                </div>
+                <h3 className="font-display text-base font-bold text-navy-900">Tu carrito está vacío</h3>
+                <p className="text-xs text-steel-500 max-w-xs mx-auto leading-relaxed">
+                  Explora nuestro catálogo y agrega tubos, perfiles, planchas o fierros.
+                </p>
+                <div className="pt-3">
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      closeCart();
+                      navigate('/catalogo');
+                    }}
+                  >
+                    Ver catálogo
+                  </Button>
+                </div>
               </div>
             ) : (
               items.map(({ product, cantidad }) => (
                 <div key={product.id} className="py-4 flex gap-3.5 items-start">
-                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border border-slate-200 shrink-0">
-                    <ProductImage src={product.imagen_url} alt={product.nombre} padding="p-1" />
+                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-white border border-steel-200 shrink-0 shadow-xs">
+                    <ProductImage
+                      src={product.imagen_url}
+                      alt={product.nombre}
+                      categoria={product.categoria}
+                      finish={product.acabado || 'Negro'}
+                      padding="p-1"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug mb-1">
+                    <h4 className="font-display text-xs font-bold text-navy-900 line-clamp-2 leading-snug mb-1">
                       {product.nombre}
                     </h4>
-                    <p className="text-[11px] text-slate-500 mb-2">Medida: {product.medida}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white">
+                    {product.medida && (
+                      <p className="text-micro text-brand-600 font-semibold mb-2">
+                        {product.medida}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between gap-2">
+                      {/* Qty Selector con bordes steel */}
+                      <div className="flex items-center border border-steel-200 rounded-btn overflow-hidden bg-white shadow-inset">
                         <button
                           onClick={() => updateQuantity(product.id, cantidad - 1)}
-                          className="px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100 min-h-[36px]"
+                          className="px-2.5 py-1 text-xs font-bold text-navy-900 hover:bg-steel-100 min-h-[32px] transition-colors"
+                          aria-label="Disminuir cantidad"
                         >
                           -
                         </button>
-                        <span className="px-3 text-xs font-semibold text-slate-800">{cantidad}</span>
+                        <span className="num px-3 text-xs font-bold text-navy-900">{cantidad}</span>
                         <button
                           onClick={() => updateQuantity(product.id, cantidad + 1)}
-                          className="px-2.5 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100 min-h-[36px]"
+                          className="px-2.5 py-1 text-xs font-bold text-navy-900 hover:bg-steel-100 min-h-[32px] disabled:opacity-40 transition-colors"
                           disabled={cantidad >= product.stock_disponible}
+                          aria-label="Aumentar cantidad"
                         >
                           +
                         </button>
                       </div>
 
                       <div className="text-right">
-                        <span className="text-xs font-bold text-kenpaku-navy block">
+                        <span className="num text-xs font-extrabold text-navy-900 block leading-tight">
                           {formatPEN(product.precio_unitario * cantidad)}
                         </span>
-                        <span className="text-[10px] text-slate-400">IGV incl.</span>
+                        <span className="text-micro text-steel-500 font-medium">IGV incl.</span>
                       </div>
                     </div>
                   </div>
 
                   <button
                     onClick={() => removeFromCart(product.id)}
-                    className="p-1.5 text-slate-400 hover:text-red-600 rounded-md transition-colors"
+                    className="p-1.5 text-steel-400 hover:text-red-600 hover:bg-red-50 rounded-btn transition-colors cursor-pointer"
                     aria-label="Eliminar producto"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -127,39 +148,45 @@ export function CartDrawer() {
 
           {/* Footer Summary */}
           {items.length > 0 && (
-            <div className="p-4 sm:p-6 bg-slate-50 border-t border-slate-200 space-y-3">
-              <div className="space-y-1.5 text-xs text-slate-600">
+            <div className="p-4 sm:p-5 bg-steel-50 border-t border-steel-200 space-y-3.5">
+              <div className="space-y-1.5 text-xs text-steel-600">
                 <div className="flex justify-between">
                   <span>Subtotal (sin IGV):</span>
-                  <span>{formatPEN(subtotal)}</span>
+                  <span className="num font-semibold text-navy-900">{formatPEN(subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>IGV (18 %):</span>
-                  <span>{formatPEN(igv)}</span>
+                  <span className="num font-semibold text-navy-900">{formatPEN(igv)}</span>
                 </div>
-                <div className="flex justify-between text-sm font-extrabold text-kenpaku-navy pt-2 border-t border-slate-200">
+                <div className="flex justify-between text-sm font-extrabold text-navy-900 pt-2 border-t border-steel-200">
                   <span>Total Referencial:</span>
-                  <span className="text-kenpaku-orange">{formatPEN(total)}</span>
+                  <span className="num text-base font-extrabold text-accent-600">{formatPEN(total)}</span>
                 </div>
+              </div>
+
+              {/* Aviso flete post-orden acorde a Figma */}
+              <div className="p-2.5 rounded-xl bg-orange-50 border border-accent-500/30 text-accent-700 text-micro font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-accent-600" />
+                <span>El costo de flete se cotiza después según la dirección de entrega.</span>
               </div>
 
               <Button
                 variant="primary"
                 fullWidth
                 size="lg"
-                icon={ArrowRight}
+                iconRight={ArrowRight}
                 onClick={handleCheckoutClick}
               >
                 Continuar con el pedido
               </Button>
 
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 pt-1">
+              <div className="flex items-center justify-center gap-1.5 text-micro text-steel-500 font-medium pt-0.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Tus datos están protegidos</span>
+                <span>Tus datos están protegidos · Sin pago online requerido</span>
               </div>
             </div>
           )}
-        </div>
+        </aside>
       </div>
     </div>
   );

@@ -8,7 +8,6 @@ import {
   Clock,
   QrCode,
   Building2,
-  CreditCard,
   Copy,
   Check,
   UploadCloud,
@@ -19,7 +18,6 @@ import {
   ThumbsDown,
   RefreshCw,
   Store,
-  MapPin,
   ExternalLink
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
@@ -99,7 +97,6 @@ export function OrderConfirmation() {
   const [voucherError, setVoucherError] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Sincronizar estado local y actualizar el historial de sesión del navegador para recargas (F5)
   const updateOrderData = (data) => {
     setOrderData(data);
     try {
@@ -115,7 +112,6 @@ export function OrderConfirmation() {
     }
   };
 
-  // Función para refrescar datos del pedido en vivo
   const fetchLatestOrder = async () => {
     try {
       const data = await getOrderTracking({
@@ -134,11 +130,10 @@ export function OrderConfirmation() {
         }
       }
     } catch {
-      // Ignorar fallas temporales de sondeo en segundo plano
+      // Ignorar fallas temporales de sondeo
     }
   };
 
-  // Carga inmediata al montar la pantalla para reflejar el estado actual de la BD sin demora
   useEffect(() => {
     if (!orderData && tokenFromUrl) {
       setIsLoading(true);
@@ -148,7 +143,6 @@ export function OrderConfirmation() {
     }
   }, [activeToken, codigo, tokenFromUrl]);
 
-  // Sondeo en vivo cada 3.5 segundos para detectar cotización de flete o aprobación de voucher
   useEffect(() => {
     if (!orderData) return;
     const isTerminal = ['entregado', 'cancelado'].includes(orderData.estado);
@@ -161,19 +155,17 @@ export function OrderConfirmation() {
     return () => clearInterval(interval);
   }, [orderData?.estado, activeToken, codigo]);
 
-  // Copiar al portapapeles
   const handleCopy = (text, fieldName) => {
     navigator.clipboard?.writeText(text);
     setCopiedField(fieldName);
     setTimeout(() => setCopiedField(null), 2500);
   };
 
-  // Manejo de Decisión de Flete (Aceptar / Rechazar)
   const handleFleteDecision = async (decision) => {
     setIsSubmittingFlete(true);
     setFleteFeedback(null);
     try {
-      const res = await submitFleteDecision({
+      await submitFleteDecision({
         token: activeToken || undefined,
         codigo: orderData?.codigo || codigo,
         decision
@@ -184,7 +176,6 @@ export function OrderConfirmation() {
           ? '¡Flete aceptado con éxito! Ya puedes proceder a realizar el pago.'
           : 'Has rechazado la cotización de flete. Puedes coordinar un cambio por WhatsApp.'
       });
-      // Actualizar estado local e historial del navegador inmediatamente
       const updated = {
         ...(orderData || {}),
         estado_flete: decision === 'aceptar' ? 'aceptado' : 'rechazado'
@@ -199,7 +190,6 @@ export function OrderConfirmation() {
     }
   };
 
-  // Manejo de Selección de Archivos de Voucher (Máx 2, imágenes o PDF)
   const handleFileChange = (e) => {
     setVoucherError(null);
     const selected = Array.from(e.target.files || []);
@@ -238,7 +228,6 @@ export function OrderConfirmation() {
     setVoucherError(null);
   };
 
-  // Enviar Vouchers
   const handleUploadVouchers = async () => {
     if (!voucherFiles.length) {
       setVoucherError('Selecciona al menos 1 comprobante de pago para enviar.');
@@ -271,8 +260,8 @@ export function OrderConfirmation() {
   if (isLoading) {
     return (
       <div className="max-w-3xl mx-auto py-16 text-center space-y-4">
-        <div className="w-12 h-12 border-3 border-kenpaku-blue border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-slate-600 text-sm font-semibold">Cargando el estado en vivo de tu pedido...</p>
+        <div className="w-12 h-12 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-steel-600 text-sm font-semibold">Cargando el estado en vivo de tu pedido...</p>
       </div>
     );
   }
@@ -281,12 +270,12 @@ export function OrderConfirmation() {
 
   if (!displayOrder) {
     return (
-      <div className="max-w-2xl mx-auto py-12 px-4 text-center space-y-6 animate-fade-in bg-white rounded-3xl border border-slate-200 p-8 shadow-soft">
+      <div className="max-w-2xl mx-auto py-12 px-4 text-center space-y-6 animate-fade-in bg-white rounded-card border border-steel-200 p-8 shadow-card">
         <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
           <Clock className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-kenpaku-navy">No se pudieron recuperar los datos de tu pedido</h2>
-        <p className="text-slate-500 text-sm max-w-md mx-auto">
+        <h2 className="font-display text-xl font-bold text-navy-900">No se pudieron recuperar los datos de tu pedido</h2>
+        <p className="text-steel-500 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
           Si acabas de realizar una compra o recargaste la página, usa tu código de pedido para consultar el estado en vivo.
         </p>
         <Link to={codigo ? `/seguimiento?codigo=${encodeURIComponent(codigo)}` : '/seguimiento'}>
@@ -328,7 +317,6 @@ export function OrderConfirmation() {
       activeStepIndex = 1;
     }
   } else {
-    // Despacho con flete a obra
     if (isTerminalDelivered) {
       activeStepIndex = 5;
     } else if (displayOrder.estado === 'despachado') {
@@ -344,12 +332,7 @@ export function OrderConfirmation() {
 
   const stepperSteps = isRecojo
     ? [
-        {
-          key: 'registrado',
-          fase: 'Fase 1',
-          label: 'Registrado',
-          sub: 'Registrado con éxito'
-        },
+        { key: 'registrado', fase: 'Fase 1', label: 'Registrado', sub: 'Registrado con éxito' },
         {
           key: 'pago',
           fase: 'Fase 2',
@@ -360,32 +343,12 @@ export function OrderConfirmation() {
             ? 'Voucher en revisión'
             : 'Pendiente abono'
         },
-        {
-          key: 'preparacion',
-          fase: 'Fase 3',
-          label: 'En Preparación',
-          sub: 'Alistando en patio'
-        },
-        {
-          key: 'listo',
-          fase: 'Fase 4',
-          label: 'Listo para Entrega',
-          sub: 'Almacén Puente Piedra'
-        },
-        {
-          key: 'entregado',
-          fase: 'Fase 5',
-          label: 'Entregado Conforme',
-          sub: 'Retiro en almacén'
-        }
+        { key: 'preparacion', fase: 'Fase 3', label: 'En Preparación', sub: 'Alistando en patio' },
+        { key: 'listo', fase: 'Fase 4', label: 'Listo para Entrega', sub: 'Almacén Puente Piedra' },
+        { key: 'entregado', fase: 'Fase 5', label: 'Entregado Conforme', sub: 'Retiro en almacén' }
       ]
     : [
-        {
-          key: 'registrado',
-          fase: 'Fase 1',
-          label: 'Registrado',
-          sub: 'Registrado con éxito'
-        },
+        { key: 'registrado', fase: 'Fase 1', label: 'Registrado', sub: 'Registrado con éxito' },
         {
           key: 'cotizacion',
           fase: 'Fase 2',
@@ -408,24 +371,9 @@ export function OrderConfirmation() {
             ? 'Abono habilitado'
             : 'Espera flete'
         },
-        {
-          key: 'preparacion',
-          fase: 'Fase 4',
-          label: 'En Preparación',
-          sub: 'Alistando en patio'
-        },
-        {
-          key: 'camino',
-          fase: 'Fase 5',
-          label: 'Pedido en Camino',
-          sub: 'Camión en ruta a obra'
-        },
-        {
-          key: 'entregado',
-          fase: 'Fase 6',
-          label: 'Entregado Conforme',
-          sub: 'Descargado en obra'
-        }
+        { key: 'preparacion', fase: 'Fase 4', label: 'En Preparación', sub: 'Alistando en patio' },
+        { key: 'camino', fase: 'Fase 5', label: 'Pedido en Camino', sub: 'Camión en ruta a obra' },
+        { key: 'entregado', fase: 'Fase 6', label: 'Entregado Conforme', sub: 'Descargado en obra' }
       ];
 
   const whatsappLink = displayOrder.whatsapp_url || buildWhatsAppUrl(
@@ -435,59 +383,63 @@ export function OrderConfirmation() {
   return (
     <div className="max-w-4xl mx-auto py-6 sm:py-8 space-y-6 sm:space-y-8 animate-fade-in px-3 sm:px-0">
       
-      {/* 1. HERO CARD: ¡Pedido Registrado con Éxito! */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 text-center shadow-soft space-y-4">
+      {/* 1. HERO CONFIRMATION CARD */}
+      <div className="bg-white rounded-panel border border-steel-200 p-6 sm:p-8 text-center shadow-card space-y-4">
+        {/* Checkmark icon con clase .pop */}
         <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
-          <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10" />
+          <CheckCircle2 className="pop w-8 h-8 sm:w-10 sm:h-10" />
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
           {displayOrder.estado === 'pendiente' ? (
             <>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold border border-emerald-300 shadow-2xs">
+              <span className="cut inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-800 text-micro font-bold border border-emerald-300">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                 REGISTRADO
               </span>
               {!isRecojo && !fleteCotizado && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-300 shadow-2xs">
-                  <Clock className="w-3.5 h-3.5 text-sky-600 animate-pulse" />
+                <span className="cut inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 text-brand-700 text-micro font-bold border border-brand-500/30">
+                  <Clock className="w-3.5 h-3.5 text-brand-600 animate-pulse" />
                   FASE 2: COTIZACIÓN DE FLETE
                 </span>
               )}
               {isRecojo && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-300 shadow-2xs">
-                  <Clock className="w-3.5 h-3.5 text-sky-600" />
+                <span className="cut inline-flex items-center gap-1.5 px-3 py-1 bg-brand-50 text-brand-700 text-micro font-bold border border-brand-500/30">
+                  <Clock className="w-3.5 h-3.5 text-brand-600" />
                   FASE 2: PAGO Y VOUCHER
                 </span>
               )}
             </>
           ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200">
+            <span className="cut inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-800 text-micro font-bold border border-amber-200">
               <Clock className="w-3.5 h-3.5" />
               {displayOrder.estado?.replace(/_/g, ' ')?.toUpperCase() || 'REGISTRADO'}
             </span>
           )}
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+          <span className={`cut inline-flex items-center gap-1.5 px-3 py-1 text-micro font-bold border ${
             isRecojo
-              ? 'bg-sky-100 text-sky-800 border-sky-200'
-              : 'bg-indigo-100 text-indigo-800 border-indigo-200'
+              ? 'bg-steel-100 text-navy-900 border-steel-200'
+              : 'bg-orange-50 text-accent-700 border-orange-200'
           }`}>
             {isRecojo ? <Store className="w-3.5 h-3.5" /> : <Truck className="w-3.5 h-3.5" />}
             {isRecojo ? 'Recojo en Almacén Puente Piedra' : 'Despacho con Flete a Obra'}
           </span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-kenpaku-navy">
+        <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
           ¡Pedido Registrado con Éxito!
         </h1>
 
-        <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl inline-block">
-          <span className="text-[11px] text-slate-500 block uppercase font-bold tracking-wider">Código de Pedido</span>
-          <span className="text-2xl sm:text-3xl font-black text-kenpaku-orange tracking-tight">{displayOrder.codigo}</span>
+        {/* Código con .cut y .num sobre navy-900 */}
+        <div className="p-3 bg-steel-50 border border-steel-200 rounded-card inline-block">
+          <span className="text-micro text-steel-500 block uppercase font-bold tracking-wider">Código de Pedido</span>
+          <div className="cut num mt-1 bg-navy-900 px-6 py-2.5 text-2xl sm:text-3xl font-extrabold text-white shadow-lift">
+            {displayOrder.codigo}
+          </div>
         </div>
 
-        {/* Fases Visuales del Pedido (Stepper Sincronizado: Verde=Completado, Azul=Actual, Amarillo=Siguiente) */}
-        <div className="pt-4 border-t border-slate-100">
+        {/* Fases Visuales del Pedido (Stepper Sincronizado) */}
+        <div className="pt-4 border-t border-steel-100">
           <div className={`grid grid-cols-2 ${isRecojo ? 'sm:grid-cols-5' : 'sm:grid-cols-3 lg:grid-cols-6'} gap-2 text-left`}>
             {stepperSteps.map((step, idx) => {
               const isPassed = isTerminalDelivered ? true : idx < activeStepIndex;
@@ -497,18 +449,18 @@ export function OrderConfirmation() {
               return (
                 <div
                   key={step.key}
-                  className={`p-3 rounded-2xl border transition-all ${
+                  className={`p-3 rounded-btn border transition-all ${
                     isPassed
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-2xs'
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-xs'
                       : isCurrent
-                      ? 'bg-sky-50 border-kenpaku-blue ring-2 ring-sky-500/25 text-sky-950 shadow-xs'
+                      ? 'bg-orange-50 border-accent-500 ring-2 ring-accent-500/20 text-accent-900 shadow-xs'
                       : isNext
-                      ? 'bg-amber-50/90 border-amber-300 border-dashed text-amber-950'
-                      : 'bg-slate-50 border-slate-200 text-slate-400 opacity-60'
+                      ? 'bg-amber-50/80 border-amber-300 border-dashed text-amber-950'
+                      : 'bg-steel-50 border-steel-200 text-steel-400 opacity-60'
                   }`}
                 >
-                  <span className={`text-[10px] font-extrabold block uppercase tracking-wider ${
-                    isPassed ? 'text-emerald-700' : isCurrent ? 'text-sky-700' : isNext ? 'text-amber-700' : 'text-slate-400'
+                  <span className={`text-micro font-bold block uppercase tracking-wider ${
+                    isPassed ? 'text-emerald-700' : isCurrent ? 'text-accent-700' : isNext ? 'text-amber-700' : 'text-steel-400'
                   }`}>
                     {step.fase}
                   </span>
@@ -516,16 +468,16 @@ export function OrderConfirmation() {
                     {isPassed ? (
                       <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     ) : isCurrent ? (
-                      <Clock className="w-3.5 h-3.5 text-kenpaku-blue shrink-0 animate-pulse" />
+                      <Clock className="w-3.5 h-3.5 text-accent-600 shrink-0 animate-pulse" />
                     ) : isNext ? (
                       <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-500 shrink-0" />
                     ) : (
-                      <div className="w-2 h-2 rounded-full bg-slate-300 shrink-0" />
+                      <div className="w-2 h-2 rounded-full bg-steel-300 shrink-0" />
                     )}
                     <span className="truncate">{step.label}</span>
                   </span>
-                  <span className={`text-[10px] block truncate mt-0.5 ${
-                    isPassed ? 'text-emerald-700' : isCurrent ? 'text-sky-800 font-bold' : isNext ? 'text-amber-800' : 'text-slate-400'
+                  <span className={`text-micro block truncate mt-0.5 ${
+                    isPassed ? 'text-emerald-700' : isCurrent ? 'text-accent-800 font-bold' : isNext ? 'text-amber-800' : 'text-steel-400'
                   }`}>
                     {step.sub}
                   </span>
@@ -536,32 +488,29 @@ export function OrderConfirmation() {
         </div>
       </div>
 
-      {/* 2. GESTIÓN DE FLETE PARA DESPACHO A OBRA:
-          Solo se muestra mientras se esté cotizando o esperando la decisión del cliente en Fase 2,
-          y se retira automáticamente una vez aceptado o cuando el pago ya está confirmado */}
+      {/* 2. GESTIÓN DE FLETE PARA DESPACHO A OBRA */}
       {!isRecojo && !fleteAceptado && !isPaymentConfirmed && (
-        <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-soft space-y-4">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
+        <div className="bg-white rounded-panel border border-steel-200 p-6 sm:p-8 shadow-card space-y-4">
+          <div className="flex items-center gap-3 border-b border-steel-200 pb-3">
+            <div className="w-10 h-10 rounded-btn bg-brand-50 text-brand-600 flex items-center justify-center font-bold shrink-0">
               <Truck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-kenpaku-navy">
+              <h2 className="font-display text-base sm:text-lg font-bold text-navy-900">
                 Cotización de Flete de Transporte
               </h2>
-              <p className="text-xs text-slate-500">
-                Destino de obra: <strong className="text-slate-800">{displayOrder.direccion || 'Dirección registrada'}</strong>
+              <p className="text-xs text-steel-500">
+                Destino de obra: <strong className="text-navy-900">{displayOrder.direccion || 'Dirección registrada'}</strong>
               </p>
             </div>
           </div>
 
-          {/* Subcaso 1: Esperando cotización del cajero */}
           {!fleteCotizado && (
-            <div className="p-5 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-900 space-y-3">
+            <div className="p-5 rounded-card bg-amber-50/80 border border-amber-200 text-amber-900 space-y-3">
               <div className="flex items-center gap-3">
                 <RefreshCw className="w-5 h-5 text-amber-600 animate-spin shrink-0" />
                 <div>
-                  <h3 className="font-extrabold text-sm text-amber-950">
+                  <h3 className="font-display font-bold text-sm text-amber-950">
                     Un asesor / cajero está cotizando el costo del flete para tu dirección
                   </h3>
                   <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
@@ -569,25 +518,24 @@ export function OrderConfirmation() {
                   </p>
                 </div>
               </div>
-              <div className="text-[11px] text-amber-700 bg-amber-100/60 p-2.5 rounded-xl">
+              <div className="text-micro text-amber-800 bg-amber-100/70 p-2.5 rounded-btn font-medium">
                 💡 <strong>Nota:</strong> Los métodos de pago y la subida de comprobantes se habilitarán de inmediato una vez confirmado el monto del transporte.
               </div>
             </div>
           )}
 
-          {/* Subcaso 2: Flete cotizado esperando decisión del cliente */}
           {fleteCotizado && !fleteAceptado && (
-            <div className="p-5 rounded-2xl bg-purple-50/90 border border-purple-200 space-y-4">
+            <div className="p-5 rounded-card bg-orange-50/90 border border-orange-200 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <span className="text-[11px] font-extrabold text-purple-700 uppercase tracking-wider block">
+                  <span className="text-micro font-bold text-accent-700 uppercase tracking-wider block">
                     Costo de Transporte Calculado
                   </span>
-                  <div className="text-2xl font-black text-purple-900 mt-0.5">
+                  <div className="num text-2xl font-black text-navy-900 mt-0.5">
                     {formatPEN(costoFleteNum)}
                   </div>
-                  <p className="text-xs text-purple-800 mt-1">
-                    Cálculo para camión plataforma hasta la dirección registrada. Total con flete: <strong className="text-slate-900">{formatPEN(displayOrder.total)}</strong>
+                  <p className="text-xs text-steel-600 mt-1">
+                    Cálculo para camión plataforma hasta la dirección registrada. Total con flete: <strong className="num text-navy-900 font-bold">{formatPEN(displayOrder.total)}</strong>
                   </p>
                 </div>
 
@@ -598,7 +546,6 @@ export function OrderConfirmation() {
                     icon={ThumbsUp}
                     disabled={isSubmittingFlete}
                     onClick={() => handleFleteDecision('aceptar')}
-                    className="shadow-sm"
                   >
                     {isSubmittingFlete ? 'Procesando...' : 'Aceptar Flete y Proceder al Pago'}
                   </Button>
@@ -616,7 +563,7 @@ export function OrderConfirmation() {
               </div>
 
               {fleteFeedback && (
-                <div className={`p-3 rounded-xl text-xs font-bold ${
+                <div className={`p-3 rounded-btn text-xs font-bold ${
                   fleteFeedback.type === 'success'
                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                     : 'bg-red-100 text-red-800 border border-red-200'
@@ -631,326 +578,324 @@ export function OrderConfirmation() {
 
       {/* 3. ESTADO CONFIRMADO CON BOTÓN OBLIGATORIO DE BOLETA DE VENTA */}
       {isPaymentConfirmed ? (
-        <div className="bg-white rounded-3xl border border-emerald-200 p-6 sm:p-8 shadow-soft text-center space-y-5 animate-fade-in">
+        <div className="bg-white rounded-panel border border-emerald-200 p-6 sm:p-8 shadow-card text-center space-y-5 animate-fade-in">
           <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
-            <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10" />
+            <CheckCircle2 className="pop w-8 h-8 sm:w-10 sm:h-10" />
           </div>
-          <span className="inline-block px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-600 text-white shadow-2xs">
+          <span className="cut inline-block px-3.5 py-1 text-micro font-bold uppercase tracking-wider bg-emerald-600 text-white shadow-xs">
             ¡Pago Validado y Confirmado por Caja!
           </span>
-          <h2 className="text-xl sm:text-2xl font-black text-emerald-950">
+          <h2 className="font-display text-xl sm:text-2xl font-extrabold text-navy-900">
             Tu abono ha sido verificado con éxito
           </h2>
-          <p className="text-xs sm:text-sm text-emerald-800 max-w-xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-sm text-steel-600 max-w-xl mx-auto leading-relaxed font-medium">
             Tus materiales han sido reservados y se encuentran en preparación en nuestro patio de materiales. El proceso de pago está 100% verificado y no requieres subir más comprobantes.
           </p>
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-xs text-emerald-900 font-bold">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 shadow-2xs">
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-xs text-navy-900 font-bold">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-btn bg-emerald-50 border border-emerald-200">
               <Check className="w-4 h-4 text-emerald-600" />
-              Monto Total Liquidado: {formatPEN(displayOrder.total)}
+              <span className="num">Monto Total Liquidado: {formatPEN(displayOrder.total)}</span>
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-btn bg-emerald-50 border border-emerald-200">
               <Store className="w-4 h-4 text-emerald-600" />
-              Estado: {displayOrder.estado === 'despachado' ? 'En Camino a Obra' : displayOrder.estado === 'entregado' ? 'Entregado Conforme' : 'Materiales en Preparación'}
+              <span>Estado: {displayOrder.estado === 'despachado' ? 'En Camino a Obra' : displayOrder.estado === 'entregado' ? 'Entregado Conforme' : 'Materiales en Preparación'}</span>
             </span>
           </div>
 
-          {/* Botón Obligatorio para Descargar / Imprimir Boleta de Venta */}
           <div className="pt-2">
             <button
               type="button"
               onClick={() => setIsReceiptModalOpen(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-kenpaku-navy hover:bg-slate-800 text-white text-xs sm:text-sm font-extrabold shadow-md hover:shadow-lg transition-all cursor-pointer active:scale-95"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-btn bg-navy-900 hover:bg-navy-800 text-white text-xs sm:text-sm font-bold shadow-lift transition-all cursor-pointer active:scale-95"
             >
-              <FileText className="w-4 h-4 text-amber-400" />
+              <FileText className="w-4 h-4 text-accent-400" />
               <span>Descargar o Imprimir Boleta de Venta</span>
             </button>
           </div>
         </div>
       ) : canPay ? (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              {/* Cuentas Bancarias & Billeteras */}
-              <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-soft space-y-5">
-                <div className="border-b border-slate-100 pb-3">
-                  <h2 className="text-base sm:text-lg font-bold text-kenpaku-navy">
-                    Opciones y Cuentas de Pago
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Realiza el depósito o transferencia por el monto exacto: <strong className="text-kenpaku-orange text-sm">{formatPEN(displayOrder.total)}</strong>
-                  </p>
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Cuentas Bancarias & Billeteras */}
+            <div className="lg:col-span-7 bg-white rounded-panel border border-steel-200 p-6 sm:p-8 shadow-card space-y-5">
+              <div className="border-b border-steel-200 pb-3">
+                <h2 className="font-display text-base sm:text-lg font-bold text-navy-900">
+                  Opciones y Cuentas de Pago
+                </h2>
+                <p className="text-xs text-steel-500 mt-0.5">
+                  Realiza el depósito o transferencia por el monto exacto: <strong className="num text-accent-600 font-extrabold text-sm">{formatPEN(displayOrder.total)}</strong>
+                </p>
+              </div>
 
-                {/* Selector de Bancos */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {BANK_ACCOUNTS.map((bank) => {
-                    const Icon = bank.icon;
-                    const isSelected = activeBankTab === bank.id;
-                    return (
-                      <button
-                        key={bank.id}
-                        type="button"
-                        onClick={() => setActiveBankTab(bank.id)}
-                        className={`p-3 rounded-2xl border text-center transition-all ${
-                          isSelected
-                            ? 'border-kenpaku-blue bg-blue-50/60 shadow-xs'
-                            : 'border-slate-200 bg-white hover:bg-slate-50'
-                        }`}
-                      >
-                        <Icon className={`w-5 h-5 mx-auto mb-1 ${isSelected ? 'text-kenpaku-blue' : 'text-slate-400'}`} />
-                        <span className={`text-xs font-extrabold block ${isSelected ? 'text-kenpaku-blue' : 'text-slate-700'}`}>
-                          {bank.name}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Detalle de Cuenta Seleccionada */}
-                {(() => {
-                  const currentBank = BANK_ACCOUNTS.find((b) => b.id === activeBankTab) || BANK_ACCOUNTS[0];
+              {/* Selector de Bancos */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {BANK_ACCOUNTS.map((bank) => {
+                  const Icon = bank.icon;
+                  const isSelected = activeBankTab === bank.id;
                   return (
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Titular de la Cuenta</span>
-                          <span className="text-xs font-black text-kenpaku-navy">{currentBank.holder}</span>
-                        </div>
-                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
-                          {currentBank.badge}
-                        </span>
-                      </div>
+                    <button
+                      key={bank.id}
+                      type="button"
+                      onClick={() => setActiveBankTab(bank.id)}
+                      className={`p-3 rounded-card border text-center transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-brand-500 bg-brand-50/60 shadow-xs'
+                          : 'border-steel-200 bg-white hover:bg-steel-50'
+                      }`}
+                    >
+                      <Icon className={`w-5 h-5 mx-auto mb-1 ${isSelected ? 'text-brand-600' : 'text-steel-400'}`} />
+                      <span className={`text-xs font-bold block ${isSelected ? 'text-brand-700' : 'text-steel-600'}`}>
+                        {bank.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-                      <div className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between">
+              {/* Detalle de Cuenta Seleccionada */}
+              {(() => {
+                const currentBank = BANK_ACCOUNTS.find((b) => b.id === activeBankTab) || BANK_ACCOUNTS[0];
+                return (
+                  <div className="p-4 rounded-card bg-steel-50 border border-steel-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-micro font-bold text-steel-500 uppercase tracking-wider block">Titular de la Cuenta</span>
+                        <span className="text-xs font-bold text-navy-900">{currentBank.holder}</span>
+                      </div>
+                      <span className="cut text-micro font-bold px-2.5 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        {currentBank.badge}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-white rounded-btn border border-steel-200 flex items-center justify-between shadow-inset">
+                      <div>
+                        <span className="text-micro text-steel-500 block font-bold">
+                          {currentBank.id === 'yape' ? 'Número Yape / Plin:' : 'Número de Cuenta Soles:'}
+                        </span>
+                        <span className="num text-sm font-extrabold text-navy-900 tracking-wide">{currentBank.number}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(currentBank.number, 'acc')}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-btn text-xs font-semibold bg-steel-100 hover:bg-steel-200 text-navy-900 transition-colors cursor-pointer"
+                        title="Copiar número"
+                      >
+                        {copiedField === 'acc' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedField === 'acc' ? 'Copiado' : 'Copiar'}</span>
+                      </button>
+                    </div>
+
+                    {currentBank.cci && (
+                      <div className="p-3 bg-white rounded-btn border border-steel-200 flex items-center justify-between shadow-inset">
                         <div>
-                          <span className="text-[10px] text-slate-400 block font-bold">
-                            {currentBank.id === 'yape' ? 'Número Yape / Plin:' : 'Número de Cuenta Soles:'}
-                          </span>
-                          <span className="text-sm font-black text-slate-900 tracking-wide">{currentBank.number}</span>
+                          <span className="text-micro text-steel-500 block font-bold">Código Interbancario (CCI):</span>
+                          <span className="num text-xs font-mono font-bold text-navy-900 tracking-wide">{currentBank.cci}</span>
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleCopy(currentBank.number, 'acc')}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                          title="Copiar número"
+                          onClick={() => handleCopy(currentBank.cci, 'cci')}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-btn text-xs font-semibold bg-steel-100 hover:bg-steel-200 text-navy-900 transition-colors cursor-pointer"
+                          title="Copiar CCI"
                         >
-                          {copiedField === 'acc' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                          <span>{copiedField === 'acc' ? 'Copiado' : 'Copiar'}</span>
+                          {copiedField === 'cci' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedField === 'cci' ? 'Copiado' : 'Copiar'}</span>
                         </button>
                       </div>
+                    )}
 
-                      {currentBank.cci && (
-                        <div className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between">
-                          <div>
-                            <span className="text-[10px] text-slate-400 block font-bold">Código Interbancario (CCI):</span>
-                            <span className="text-xs font-mono font-bold text-slate-800 tracking-wide">{currentBank.cci}</span>
+                    <p className="text-micro text-steel-500 italic leading-relaxed pt-1">
+                      {currentBank.note}
+                    </p>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Subida o Estado del Comprobante */}
+            <div className="lg:col-span-5 bg-white rounded-panel border border-steel-200 p-6 sm:p-8 shadow-card space-y-4">
+              <div className="border-b border-steel-200 pb-3">
+                <h2 className="font-display text-base sm:text-lg font-bold text-navy-900">
+                  Comprobante de Pago
+                </h2>
+                <p className="text-xs text-steel-500 mt-0.5">
+                  {hasUploadedVoucher ? 'Estado del comprobante enviado' : 'Sube tu voucher (máximo 2 archivos: imagen o PDF).'}
+                </p>
+              </div>
+
+              {hasUploadedVoucher ? (
+                <div className="p-6 rounded-card bg-brand-50/70 border-2 border-brand-500/30 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mx-auto shadow-inner">
+                    <Clock className="w-6 h-6 animate-pulse" />
+                  </div>
+                  <span className="cut inline-block px-3 py-0.5 text-micro font-bold uppercase tracking-wider bg-brand-600 text-white shadow-xs">
+                    Comprobante en Revisión por Caja
+                  </span>
+                  <h4 className="font-display font-bold text-sm text-navy-900">
+                    ¡Comprobante de Pago Recibido!
+                  </h4>
+                  <p className="text-xs text-steel-600 leading-relaxed font-medium">
+                    Nuestro cajero se encuentra verificando la transferencia en el sistema bancario. Esta pantalla se actualizará de forma instantánea al confirmarse.
+                  </p>
+                  <div className="p-3 bg-white rounded-btn border border-steel-200 text-xs text-navy-900 font-semibold space-y-2">
+                    <p className="flex items-center justify-center gap-1.5 text-emerald-700">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <span>Comprobante registrado en el pedido</span>
+                    </p>
+                    {(() => {
+                      const vList = getVoucherList(
+                        displayOrder.voucher_referencia,
+                        displayOrder.events || displayOrder.order_events
+                      );
+                      if (!vList.length) return null;
+                      return (
+                        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                          {vList.map((v, i) => (
+                            <a
+                              key={v.url || i}
+                              href={v.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded-btn bg-steel-100 hover:bg-steel-200 text-navy-900 border border-steel-200 text-micro font-bold transition-colors"
+                            >
+                              <ExternalLink className="w-3 h-3 text-brand-600" />
+                              <span>{v.label || `Comprobante #${i + 1}`}</span>
+                            </a>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                    <p className="text-micro text-steel-500 font-normal">
+                      🔒 No necesitas volver a adjuntar archivos ni subir duplicados.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Drop zone */}
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-steel-300 hover:border-brand-500 bg-steel-50 hover:bg-brand-50/30 rounded-card p-5 text-center cursor-pointer transition-all space-y-2"
+                  >
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept="image/png,image/jpeg,image/webp,application/pdf"
+                      multiple
+                      className="hidden"
+                    />
+                    <UploadCloud className="w-8 h-8 text-steel-400 mx-auto" />
+                    <div>
+                      <span className="text-xs font-bold text-navy-900 block">
+                        Haz clic para seleccionar tu(s) comprobante(s)
+                      </span>
+                      <span className="text-micro text-steel-500 block mt-0.5">
+                        JPG, PNG, WEBP o PDF (máx. 2 archivos, hasta 8 MB c/u)
+                      </span>
+                    </div>
+                  </div>
+
+                  {voucherFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="text-micro font-bold text-steel-500 uppercase tracking-wider block">
+                        Archivos listos para enviar ({voucherFiles.length}/2):
+                      </span>
+                      {voucherFiles.map((f, i) => (
+                        <div
+                          key={i}
+                          className="p-2.5 rounded-btn bg-steel-100 border border-steel-200 flex items-center justify-between text-xs"
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <FileText className="w-4 h-4 text-brand-600 shrink-0" />
+                            <span className="font-semibold text-navy-900 truncate">{f.name}</span>
+                            <span className="num text-micro text-steel-500 shrink-0">
+                              ({(f.size / 1024).toFixed(0)} KB)
+                            </span>
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleCopy(currentBank.cci, 'cci')}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                            title="Copiar CCI"
+                            onClick={() => handleRemoveFile(i)}
+                            className="p-1 rounded-btn hover:bg-steel-200 text-steel-500 hover:text-red-600 transition-colors cursor-pointer"
                           >
-                            {copiedField === 'cci' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                            <span>{copiedField === 'cci' ? 'Copiado' : 'Copiar'}</span>
+                            <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                      )}
-
-                      <p className="text-[11px] text-slate-500 italic leading-relaxed pt-1">
-                        {currentBank.note}
-                      </p>
+                      ))}
                     </div>
-                  );
-                })()}
-              </div>
+                  )}
 
-              {/* Subida o Estado del Comprobante */}
-              <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-soft space-y-4">
-                <div className="border-b border-slate-100 pb-3">
-                  <h2 className="text-base sm:text-lg font-bold text-kenpaku-navy">
-                    Comprobante de Pago
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {hasUploadedVoucher ? 'Estado del comprobante enviado' : 'Sube tu voucher (máximo 2 archivos: imagen o PDF).'}
-                  </p>
+                  {voucherError && (
+                    <div className="p-3 rounded-btn bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{voucherError}</span>
+                    </div>
+                  )}
+
+                  <Button
+                    variant="primary"
+                    size="md"
+                    fullWidth
+                    disabled={isUploadingVouchers || voucherFiles.length === 0}
+                    onClick={handleUploadVouchers}
+                    icon={UploadCloud}
+                  >
+                    {isUploadingVouchers ? 'Enviando comprobante(s)...' : 'Subir Comprobante(s) de Pago'}
+                  </Button>
                 </div>
-
-                {hasUploadedVoucher ? (
-                  <div className="p-6 rounded-2xl bg-sky-50 border-2 border-sky-300 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center mx-auto shadow-inner">
-                      <Clock className="w-6 h-6 animate-pulse" />
-                    </div>
-                    <span className="inline-block px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-600 text-white shadow-2xs">
-                      Comprobante en Revisión por Caja
-                    </span>
-                    <h4 className="font-extrabold text-sm text-sky-950">
-                      ¡Comprobante de Pago Recibido!
-                    </h4>
-                    <p className="text-xs text-sky-800 leading-relaxed">
-                      Nuestro cajero se encuentra verificando la transferencia en el sistema bancario. Esta pantalla se actualizará de forma instantánea al confirmarse.
-                    </p>
-                    <div className="p-3 bg-white/90 rounded-2xl border border-sky-200 text-xs text-sky-900 font-semibold space-y-2">
-                      <p className="flex items-center justify-center gap-1.5 text-emerald-700">
-                        <Check className="w-4 h-4 text-emerald-600" />
-                        Comprobante registrado en el pedido
-                      </p>
-                      {(() => {
-                        const vList = getVoucherList(
-                          displayOrder.voucher_referencia,
-                          displayOrder.events || displayOrder.order_events
-                        );
-                        if (!vList.length) return null;
-                        return (
-                          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                            {vList.map((v, i) => (
-                              <a
-                                key={v.url || i}
-                                href={v.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-[11px] font-bold transition-colors"
-                              >
-                                <ExternalLink className="w-3 h-3 text-sky-600" />
-                                <span>{v.label || `Comprobante #${i + 1}`}</span>
-                              </a>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                      <p className="text-[11px] text-slate-500 font-normal">
-                        🔒 No necesitas volver a adjuntar archivos ni subir duplicados.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {/* Zona de Drop / Carga de Archivos */}
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-slate-300 hover:border-kenpaku-blue bg-slate-50 hover:bg-sky-50/40 rounded-2xl p-5 text-center cursor-pointer transition-all space-y-2"
-                    >
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        accept="image/png,image/jpeg,image/webp,application/pdf"
-                        multiple
-                        className="hidden"
-                      />
-                      <UploadCloud className="w-8 h-8 text-slate-400 mx-auto" />
-                      <div>
-                        <span className="text-xs font-extrabold text-kenpaku-navy block">
-                          Haz clic para seleccionar tu(s) comprobante(s)
-                        </span>
-                        <span className="text-[11px] text-slate-400 block mt-0.5">
-                          JPG, PNG, WEBP o PDF (máx. 2 archivos, hasta 8 MB c/u)
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Lista de Archivos Seleccionados */}
-                    {voucherFiles.length > 0 && (
-                      <div className="space-y-2">
-                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                          Archivos listos para enviar ({voucherFiles.length}/2):
-                        </span>
-                        {voucherFiles.map((f, i) => (
-                          <div
-                            key={i}
-                            className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-between text-xs"
-                          >
-                            <div className="flex items-center gap-2 truncate">
-                              <FileText className="w-4 h-4 text-sky-600 shrink-0" />
-                              <span className="font-medium text-slate-800 truncate">{f.name}</span>
-                              <span className="text-[10px] text-slate-400 shrink-0">
-                                ({(f.size / 1024).toFixed(0)} KB)
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveFile(i)}
-                              className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-red-600 transition-colors"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {voucherError && (
-                      <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 shrink-0" />
-                        <span>{voucherError}</span>
-                      </div>
-                    )}
-
-                    <Button
-                      variant="primary"
-                      size="md"
-                      fullWidth
-                      disabled={isUploadingVouchers || voucherFiles.length === 0}
-                      onClick={handleUploadVouchers}
-                      icon={UploadCloud}
-                    >
-                      {isUploadingVouchers ? 'Enviando comprobante(s)...' : 'Subir Comprobante(s) de Pago'}
-                    </Button>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
-        ) : null}
+        </div>
+      ) : null}
 
       {/* 4. RESUMEN DE PRODUCTOS & DETALLES DEL PEDIDO (SIEMPRE VISIBLE) */}
       {displayOrder.items && displayOrder.items.length > 0 && (
-        <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-soft space-y-4">
-          <div className="border-b border-slate-100 pb-3">
-            <h2 className="text-base font-bold text-kenpaku-navy">
+        <div className="bg-white rounded-panel border border-steel-200 p-6 sm:p-8 shadow-card space-y-4">
+          <div className="border-b border-steel-200 pb-3">
+            <h2 className="font-display text-base font-bold text-navy-900">
               Detalle del Registro de Pedido
             </h2>
           </div>
 
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-steel-100">
             {displayOrder.items.map((item, idx) => (
               <div key={idx} className="py-3 flex items-center justify-between text-xs">
                 <div>
-                  <span className="font-bold text-slate-900 block">{item.nombre}</span>
-                  <span className="text-slate-500">
+                  <span className="font-bold text-navy-900 block">{item.nombre}</span>
+                  <span className="text-micro text-steel-500">
                     Cantidad: {item.cantidad} x {formatPEN(item.precio_unitario)}
                   </span>
                 </div>
-                <span className="font-bold text-kenpaku-navy">
+                <span className="num font-bold text-navy-900">
                   {formatPEN(item.cantidad * item.precio_unitario)}
                 </span>
               </div>
             ))}
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs text-slate-700">
-            <div className="flex justify-between">
+          <div className="p-4 rounded-btn bg-steel-50 border border-steel-200 space-y-1.5 text-xs text-navy-900">
+            <div className="flex justify-between text-steel-600">
               <span>Subtotal:</span>
-              <span>{formatPEN(displayOrder.subtotal)}</span>
+              <span className="num font-semibold text-navy-900">{formatPEN(displayOrder.subtotal)}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between text-steel-600">
               <span>IGV (18 %):</span>
-              <span>{formatPEN(displayOrder.igv)}</span>
+              <span className="num font-semibold text-navy-900">{formatPEN(displayOrder.igv)}</span>
             </div>
             {costoFleteNum > 0 && (
-              <div className="flex justify-between font-semibold text-purple-700">
+              <div className="flex justify-between font-semibold text-accent-700">
                 <span>Flete de Transporte:</span>
-                <span>{formatPEN(costoFleteNum)}</span>
+                <span className="num">{formatPEN(costoFleteNum)}</span>
               </div>
             )}
-            <div className="flex justify-between font-extrabold text-sm text-kenpaku-navy pt-2 border-t border-slate-200">
+            <div className="flex justify-between font-extrabold text-sm text-navy-900 pt-2 border-t border-steel-200">
               <span>Total Liquidado:</span>
-              <span className="text-kenpaku-orange text-base">{formatPEN(displayOrder.total)}</span>
+              <span className="num text-accent-600 text-base font-black">{formatPEN(displayOrder.total)}</span>
             </div>
           </div>
 
           {/* Action Buttons: WhatsApp + Seguir comprando */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4 border-t border-steel-200">
             <a
               href={whatsappLink}
               target="_blank"
@@ -971,7 +916,7 @@ export function OrderConfirmation() {
         </div>
       )}
 
-      {/* Modal de Boleta de Venta Oficial (Imprimir 80mm o Descargar PDF) */}
+      {/* Modal de Boleta de Venta Oficial (ReceiptModal) */}
       <ReceiptModal
         isOpen={isReceiptModalOpen}
         onClose={() => setIsReceiptModalOpen(false)}
