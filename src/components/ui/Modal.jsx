@@ -36,7 +36,7 @@ export function Modal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-950/30 backdrop-blur-sm animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-navy-950/60 backdrop-blur-sm animate-fade-in overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -46,11 +46,11 @@ export function Modal({
     >
       <div
         ref={modalRef}
-        className={`w-full ${maxWidth} bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200/90 my-auto flex flex-col max-h-[88vh] animate-fade-in`}
+        className={`w-full ${maxWidth} bg-white rounded-panel shadow-lift overflow-hidden border border-steel-200 my-auto flex flex-col max-h-[88vh] animate-fade-in`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white/95 shrink-0 sticky top-0 z-10">
-          <h3 id="modal-title" className="text-base sm:text-lg font-bold text-kenpaku-navy">
+        <div className="flex items-center justify-between px-6 py-4.5 border-b border-steel-200 bg-white/95 shrink-0 sticky top-0 z-10">
+          <h3 id="modal-title" className="text-base sm:text-lg font-bold font-display text-navy-900">
             {title}
           </h3>
           {showCloseButton && (
@@ -58,7 +58,7 @@ export function Modal({
               type="button"
               data-testid="modal-close-button"
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              className="p-1.5 text-steel-500 hover:text-navy-900 rounded-btn hover:bg-steel-100 transition-colors cursor-pointer"
               aria-label="Cerrar modal"
             >
               <X className="w-5 h-5" />
@@ -67,7 +67,7 @@ export function Modal({
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-6 overflow-y-auto flex-1 text-navy-900">
           {children}
         </div>
       </div>

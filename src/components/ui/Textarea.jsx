@@ -15,7 +15,7 @@ export const Textarea = React.forwardRef(({
   return (
     <div className={`${fullWidth ? 'w-full' : ''} text-left`}>
       {label && (
-        <label htmlFor={textareaId} className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider">
+        <label htmlFor={textareaId} className="block text-xs font-bold text-steel-600 mb-1.5 uppercase tracking-wide">
           {label}
         </label>
       )}
@@ -24,20 +24,20 @@ export const Textarea = React.forwardRef(({
         id={textareaId}
         rows={rows}
         className={`
-          block w-full rounded-lg border text-sm text-slate-900 bg-white p-3.5
-          transition-colors duration-150 placeholder-slate-400
-          ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-slate-300 focus:border-kenpaku-blue focus:ring-kenpaku-blue'}
-          focus:outline-none focus:ring-2 focus:ring-opacity-20
-          disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed
+          block w-full rounded-btn border text-sm text-navy-900 bg-white p-3.5 shadow-inset
+          transition-all duration-150 placeholder-steel-500
+          ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-steel-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15'}
+          focus:outline-none focus:ring-opacity-20
+          disabled:bg-steel-50 disabled:text-steel-500 disabled:cursor-not-allowed
           ${className}
         `}
         {...props}
       />
       {error && (
-        <p className="mt-1 text-xs text-red-600 font-medium">{error}</p>
+        <p className="mt-1.5 text-xs text-red-600 font-medium">{error}</p>
       )}
       {helperText && !error && (
-        <p className="mt-1 text-xs text-slate-500">{helperText}</p>
+        <p className="mt-1.5 text-xs text-steel-500">{helperText}</p>
       )}
     </div>
   );

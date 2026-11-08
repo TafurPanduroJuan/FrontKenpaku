@@ -38,10 +38,10 @@ export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
   };
 
   return (
-    <nav className="bg-white text-slate-800 border-b border-slate-200 shadow-2xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="bg-white text-navy-900 border-b border-steel-200">
+      <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8">
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center justify-center py-2.5">
+        <div className="hidden md:flex items-center justify-center py-2">
           <div className="flex items-center justify-center space-x-6 lg:space-x-8">
             {navLinks.map((link) => {
               const active = isActiveLink(link);
@@ -51,14 +51,26 @@ export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
                 <NavLink
                   key={link.to}
                   to={link.to}
-                  className={`text-sm sm:text-base font-bold transition-all flex items-center gap-2 py-1 relative ${
+                  className={`group text-sm font-semibold transition-all flex items-center gap-2 py-2 relative select-none ${
                     active
-                      ? 'text-[#0284C7] border-b-3 border-[#0284C7]'
-                      : 'text-slate-700 hover:text-[#0284C7]'
+                      ? 'text-navy-900'
+                      : 'text-steel-600 hover:text-navy-900'
                   }`}
                 >
-                  {Icon && <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#0284C7]" />}
+                  {Icon && (
+                    <Icon
+                      className={`w-4 h-4 transition-colors ${
+                        active ? 'text-accent-600' : 'text-brand-500 group-hover:text-brand-600'
+                      }`}
+                    />
+                  )}
                   <span>{link.label}</span>
+                  {/* Underline animado acento Figma */}
+                  <span
+                    className={`absolute bottom-0 left-0 right-0 h-0.5 bg-accent-500 rounded-full transition-transform duration-200 ${
+                      active ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100 opacity-80'
+                    }`}
+                  />
                 </NavLink>
               );
             })}
@@ -67,7 +79,7 @@ export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
 
         {/* Mobile Navigation Menu Dropdown */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-3 space-y-1.5 border-t border-slate-100 animate-fade-in">
+          <div className="md:hidden py-3 space-y-1 border-t border-steel-200 animate-fade-in">
             {navLinks.map((link) => {
               const active = isActiveLink(link);
               const Icon = link.icon;
@@ -77,14 +89,20 @@ export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
                   key={link.to}
                   to={link.to}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors flex items-center justify-between ${
+                  className={`px-4 py-2.5 rounded-btn text-sm font-semibold transition-all flex items-center justify-between ${
                     active
-                      ? 'bg-sky-50 text-[#0284C7]'
-                      : 'text-slate-700 hover:bg-slate-50'
+                      ? 'bg-orange-50 text-accent-700 font-bold border border-accent-500/30'
+                      : 'text-steel-600 hover:text-navy-900 hover:bg-steel-100'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    {Icon && <Icon className="w-5 h-5 text-[#0284C7]" />}
+                    {Icon && (
+                      <Icon
+                        className={`w-4 h-4 ${
+                          active ? 'text-accent-600' : 'text-brand-500'
+                        }`}
+                      />
+                    )}
                     <span>{link.label}</span>
                   </div>
                 </NavLink>
