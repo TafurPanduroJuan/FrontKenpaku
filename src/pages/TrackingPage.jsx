@@ -381,33 +381,33 @@ export function TrackingPage() {
       : (order.estado === 'flete_cotizado' || order.estado_flete === 'aceptado'));
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8 animate-fade-in font-sans">
+    <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in font-sans">
       <Breadcrumb items={[{ label: 'Inicio', to: '/' }, { label: 'Seguimiento de Pedido' }]} />
 
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider">
-          <Truck className="w-3.5 h-3.5 text-kenpaku-orange" />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-btn bg-brand-50 text-brand-700 border border-brand-200/60 text-micro font-bold uppercase tracking-wider">
+          <Truck className="w-3.5 h-3.5 text-accent-500" />
           <span>Localizador de Pedidos y Flete</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-kenpaku-navy">
+        <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-navy-900 tracking-tight">
           Consulta el Estado de tu Pedido
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 max-w-lg mx-auto">
+        <p className="text-xs sm:text-sm text-steel-500 max-w-lg mx-auto">
           Consulta en tiempo real la cotización de flete, abona tu pedido y revisa la preparación de tus materiales de acero.
         </p>
       </div>
 
       {/* Search Box */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-soft">
+      <div className="bg-white p-6 sm:p-8 rounded-panel border border-steel-200 shadow-card">
         <form onSubmit={onSubmitForm} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="codigo-input" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label htmlFor="codigo-input" className="block text-micro font-extrabold text-steel-700 uppercase tracking-wider mb-1.5">
                 Código de Pedido
               </label>
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-4 h-4 text-steel-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   id="codigo-input"
                   type="text"
@@ -415,13 +415,13 @@ export function TrackingPage() {
                   onChange={(e) => setCodigoInput(sanitizeOrderCode(e.target.value))}
                   placeholder="Ej. KPK-123456"
                   maxLength={20}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-hidden focus:border-[#0284C7] focus:ring-3 focus:ring-[#0284C7]/10 text-xs font-mono uppercase font-bold text-slate-900 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-btn border border-steel-300 focus:outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 shadow-inset text-xs font-mono num uppercase font-bold text-navy-900 transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="telefono-input" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label htmlFor="telefono-input" className="block text-micro font-extrabold text-steel-700 uppercase tracking-wider mb-1.5">
                 Teléfono Celular Registrado
               </label>
               <input
@@ -431,13 +431,13 @@ export function TrackingPage() {
                 onChange={(e) => setTelefonoInput(sanitizeDigits(e.target.value, 9))}
                 placeholder="Ej. 987654321"
                 maxLength={9}
-                className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-hidden focus:border-[#0284C7] focus:ring-3 focus:ring-[#0284C7]/10 text-xs font-semibold text-slate-900 transition-all"
+                className="w-full px-4 py-2.5 rounded-btn border border-steel-300 focus:outline-hidden focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 shadow-inset text-xs font-mono num font-semibold text-navy-900 transition-all"
               />
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-            <span className="text-[11px] text-slate-400">
+            <span className="text-micro text-steel-400">
               * Si compraste con enlace directo, tu código y token se cargan automáticamente.
             </span>
             <Button
@@ -455,7 +455,7 @@ export function TrackingPage() {
 
         {/* Error Message */}
         {errorMsg && (
-          <div className="mt-4 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2.5 animate-shake">
+          <div className="mt-4 p-4 rounded-card bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2.5 animate-shake">
             <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold block">No pudimos localizar el pedido</span>
@@ -466,8 +466,8 @@ export function TrackingPage() {
 
         {/* Recent Orders Chips */}
         {recentOrders.length > 0 && !order && (
-          <div className="mt-6 pt-4 border-t border-slate-100">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+          <div className="mt-6 pt-4 border-t border-steel-100">
+            <span className="text-micro font-extrabold text-steel-500 uppercase tracking-wider block mb-2">
               Tus Pedidos Recientes en este Dispositivo:
             </span>
             <div className="flex flex-wrap gap-2">
@@ -476,11 +476,11 @@ export function TrackingPage() {
                   key={idx}
                   type="button"
                   onClick={() => handleSelectRecent(rec)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-kenpaku-navy flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded-btn bg-steel-50 hover:bg-steel-100 border border-steel-200 text-xs font-mono num font-bold text-navy-900 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                 >
-                  <Package className="w-3.5 h-3.5 text-kenpaku-orange" />
+                  <Package className="w-3.5 h-3.5 text-accent-500" />
                   <span>{rec.codigo}</span>
-                  <span className="text-[10px] text-slate-400 font-sans">({formatPEN(rec.total)})</span>
+                  <span className="text-[10px] text-steel-500 font-sans num">({formatPEN(rec.total)})</span>
                 </button>
               ))}
             </div>
@@ -492,19 +492,19 @@ export function TrackingPage() {
       {order && (
         <div className="space-y-6 animate-slide-up">
           {/* Main Status & Stepper Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-soft space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="bg-white p-6 sm:p-8 rounded-panel border border-steel-200 shadow-card space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-steel-100 pb-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xl font-extrabold font-mono text-kenpaku-navy">
+                  <span className="text-xl font-display font-extrabold font-mono num text-navy-900">
                     {order.codigo}
                   </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase border ${statusInfo.badge}`}>
+                  <span className={`cut px-2.5 py-0.5 text-micro font-extrabold uppercase border ${statusInfo.badge}`}>
                     {statusInfo.label}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Cliente: <strong className="text-slate-800">{order.cliente_resumen || 'Cliente'}</strong> • Registrado el{' '}
+                <p className="text-xs text-steel-500 mt-1">
+                  Cliente: <strong className="text-navy-900">{order.cliente_resumen || 'Cliente'}</strong> • Registrado el{' '}
                   {new Date(order.created_at).toLocaleDateString('es-PE', { dateStyle: 'long' })}
                 </p>
               </div>
@@ -523,24 +523,24 @@ export function TrackingPage() {
             </div>
 
             {/* Status Highlight Banner */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="p-4 sm:p-5 rounded-card bg-navy-950 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-card">
               <div className="space-y-0.5">
-                <span className="text-xs uppercase font-bold text-slate-400 block tracking-wider">Estado Actual</span>
-                <h3 className="text-base font-extrabold text-kenpaku-navy">{statusInfo.title}</h3>
-                <p className="text-xs text-slate-600 max-w-xl">{statusInfo.description}</p>
+                <span className="text-micro uppercase font-bold text-accent-400 block tracking-wider">Estado Actual</span>
+                <h3 className="text-base sm:text-lg font-display font-extrabold text-white">{statusInfo.title}</h3>
+                <p className="text-xs text-steel-200 max-w-xl">{statusInfo.description}</p>
               </div>
 
-              <div className="text-right sm:text-right shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Modalidad</span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-kenpaku-navy">
+              <div className="text-left sm:text-right shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-navy-800">
+                <span className="text-micro uppercase font-bold text-steel-400 block tracking-wider">Modalidad</span>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white mt-0.5">
                   {order.recojo_en_tienda ? (
                     <>
-                      <Building2 className="w-3.5 h-3.5 text-teal-600" />
+                      <Building2 className="w-3.5 h-3.5 text-teal-400" />
                       <span>Recojo en Almacén</span>
                     </>
                   ) : (
                     <>
-                      <Truck className="w-3.5 h-3.5 text-indigo-600" />
+                      <Truck className="w-3.5 h-3.5 text-accent-400" />
                       <span>Despacho a Obra</span>
                     </>
                   )}
@@ -550,19 +550,19 @@ export function TrackingPage() {
 
             {/* Stock Reservation 48h Deadline Notice (Fase 5) */}
             {!isTerminalCancelled && ['pendiente', 'flete_cotizado'].includes(order.estado) && (
-              <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/80 flex items-start gap-3">
-                <div className="p-2 rounded-xl bg-amber-100 text-amber-800 shrink-0 mt-0.5">
+              <div className="p-4 rounded-card bg-amber-50/90 border border-amber-200 flex items-start gap-3">
+                <div className="p-2 rounded-btn bg-amber-100 text-amber-800 shrink-0 mt-0.5">
                   <Clock className="w-4 h-4 text-amber-700" />
                 </div>
                 <div className="text-xs text-amber-900 space-y-0.5">
                   <div className="font-extrabold text-amber-950 flex items-center gap-1.5">
                     <span>Reserva de Stock Garantizada por 48 Horas</span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-200 text-amber-900 font-bold">Activa</span>
+                    <span className="cut px-2 py-0.5 text-micro bg-amber-200 text-amber-900 font-bold">Activa</span>
                   </div>
                   <p className="text-[11px] text-amber-800 leading-relaxed">
                     Tus perfiles y planchas de acero se encuentran temporalmente apartados en almacén.
                     {order.fecha_limite_pago ? (
-                      <> Plazo límite para validar abono: <strong className="text-amber-950">{new Date(order.fecha_limite_pago).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</strong>. </>
+                      <> Plazo límite para validar abono: <strong className="text-amber-950 num">{new Date(order.fecha_limite_pago).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</strong>. </>
                     ) : (
                       <> Cuentas con 48 horas desde la emisión del pedido para completar la confirmación. </>
                     )}
@@ -584,32 +584,32 @@ export function TrackingPage() {
                   return (
                     <div
                       key={idx}
-                      className={`p-3.5 rounded-2xl border text-left transition-all ${
+                      className={`p-3.5 rounded-card border text-left transition-all ${
                         isPassed
-                          ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-2xs'
+                          ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950 shadow-2xs'
                           : isCurrent
-                          ? 'bg-sky-50 border-[#0284C7] ring-2 ring-[#0284C7]/25 text-sky-950 shadow-xs'
+                          ? 'bg-brand-50 border-brand-500 ring-2 ring-brand-500/20 text-brand-950 shadow-xs'
                           : isNext
-                          ? 'bg-amber-50/90 border-amber-300 border-dashed text-amber-950'
-                          : 'bg-slate-50 border-slate-200 text-slate-400 opacity-60'
+                          ? 'bg-amber-50/80 border-amber-300 border-dashed text-amber-950'
+                          : 'bg-steel-50 border-steel-200 text-steel-400 opacity-60'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono num font-bold ${
                             isPassed
                               ? 'bg-emerald-600 text-white'
                               : isCurrent
-                              ? 'bg-[#0284C7] text-white'
+                              ? 'bg-brand-600 text-white'
                               : isNext
                               ? 'bg-amber-500 text-white'
-                              : 'bg-slate-200 text-slate-600'
+                              : 'bg-steel-200 text-steel-600'
                           }`}
                         >
                           {isPassed ? '✓' : stepNumber}
                         </span>
                         {isCurrent && (
-                          <span className="w-2 h-2 rounded-full bg-[#0284C7] animate-ping" />
+                          <span className="w-2 h-2 rounded-full bg-brand-600 animate-ping" />
                         )}
                         {isNext && (
                           <span className="w-2 h-2 rounded-full bg-amber-400" />
@@ -617,28 +617,28 @@ export function TrackingPage() {
                       </div>
                       <div>
                         <span
-                          className={`text-[10px] font-extrabold uppercase block tracking-wider ${
+                          className={`text-micro font-extrabold uppercase block tracking-wider ${
                             isPassed
                               ? 'text-emerald-700'
                               : isCurrent
-                              ? 'text-sky-700'
+                              ? 'text-brand-700'
                               : isNext
                               ? 'text-amber-700'
-                              : 'text-slate-400'
+                              : 'text-steel-400'
                           }`}
                         >
                           {st.fase}
                         </span>
-                        <span className="font-bold text-xs text-slate-900 block truncate mt-0.5">{st.label}</span>
+                        <span className="font-bold text-xs text-navy-900 block truncate mt-0.5">{st.label}</span>
                         <span
                           className={`text-[11px] block truncate mt-0.5 ${
                             isPassed
                               ? 'text-emerald-700'
                               : isCurrent
-                              ? 'text-sky-800 font-semibold'
+                              ? 'text-brand-800 font-semibold'
                               : isNext
                               ? 'text-amber-800'
-                              : 'text-slate-500'
+                              : 'text-steel-500'
                           }`}
                         >
                           {st.desc}
@@ -649,7 +649,7 @@ export function TrackingPage() {
                 })}
               </div>
             ) : (
-              <div className="p-4 rounded-2xl bg-red-50 border border-red-200 flex items-start gap-3">
+              <div className="p-4 rounded-card bg-red-50 border border-red-200 flex items-start gap-3">
                 <XCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
                 <div>
                   <h3 className="text-sm font-extrabold text-red-900">Pedido Anulado</h3>
@@ -662,12 +662,12 @@ export function TrackingPage() {
 
             {/* Events Timeline Log */}
             {order.events && order.events.length > 0 && (
-              <div className="pt-4 border-t border-slate-100 space-y-3">
+              <div className="pt-4 border-t border-steel-100 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+                  <span className="text-micro font-extrabold uppercase tracking-wider text-steel-500 block">
                     Línea de Tiempo del Pedido
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">
+                  <span className="text-[10px] text-steel-400 font-medium">
                     (Más reciente primero)
                   </span>
                 </div>
@@ -677,29 +677,29 @@ export function TrackingPage() {
                     return (
                       <div
                         key={idx}
-                        className={`p-3 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 transition-all ${
+                        className={`p-3 rounded-card border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 transition-all ${
                           isLatest
-                            ? 'bg-sky-50/80 border-[#0284C7]/40 ring-1 ring-[#0284C7]/20 shadow-2xs'
-                            : 'bg-slate-50 border-slate-200 opacity-85'
+                            ? 'bg-brand-50/70 border-brand-300 ring-1 ring-brand-500/20 shadow-2xs'
+                            : 'bg-steel-50/80 border-steel-200 opacity-90'
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLatest ? 'text-[#0284C7]' : 'text-emerald-600'}`} />
-                          <span className="font-extrabold text-kenpaku-navy capitalize">
+                          <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLatest ? 'text-brand-600' : 'text-emerald-600'}`} />
+                          <span className="font-extrabold text-navy-900 capitalize">
                             {ev.estado_nuevo.replace(/_/g, ' ')}
                           </span>
                           {isLatest && (
-                            <span className="px-1.5 py-0.5 rounded-md bg-[#0284C7] text-white text-[9px] font-extrabold uppercase">
+                            <span className="cut px-1.5 py-0.5 bg-brand-600 text-white text-[9px] font-extrabold uppercase">
                               Estado Actual
                             </span>
                           )}
                           {ev.nota && (
-                            <span className="text-slate-600 italic">
+                            <span className="text-steel-600 italic">
                               — {ev.nota}
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] text-slate-400 font-mono shrink-0">
+                        <span className="text-[10px] text-steel-400 font-mono num shrink-0">
                           {new Date(ev.created_at).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}
                         </span>
                       </div>
@@ -712,69 +712,69 @@ export function TrackingPage() {
 
           {/* FASE 4: TARJETA DE DECISIÓN DE FLETE */}
           {showFleteCard && (
-            <div className="bg-gradient-to-br from-purple-50 via-white to-indigo-50/50 p-6 sm:p-8 rounded-3xl border-2 border-purple-200 shadow-soft space-y-4 animate-scale-in">
+            <div className="bg-gradient-to-br from-brand-50/60 via-white to-steel-50/50 p-6 sm:p-8 rounded-panel border-2 border-brand-200 shadow-card space-y-4 animate-scale-in">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                  <div className="w-10 h-10 rounded-btn bg-brand-600 text-white flex items-center justify-center shrink-0 shadow-md">
                     <Truck className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-purple-700 block">
+                    <span className="text-micro uppercase font-extrabold tracking-wider text-brand-700 block">
                       Acción Requerida para Despacho
                     </span>
-                    <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+                    <h3 className="text-base sm:text-lg font-display font-extrabold text-navy-900">
                       Aprobación de Cotización de Flete a Obra
                     </h3>
                   </div>
                 </div>
 
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase ${
+                <span className={`cut px-3 py-1 text-micro font-extrabold uppercase border ${
                   order.estado_flete === 'aceptado'
-                    ? 'bg-emerald-100 text-emerald-800'
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                     : order.estado_flete === 'rechazado'
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-purple-100 text-purple-800'
+                    ? 'bg-red-100 text-red-800 border-red-300'
+                    : 'bg-brand-100 text-brand-800 border-brand-300'
                 }`}>
                   {order.estado_flete}
                 </span>
               </div>
 
-              <p className="text-xs sm:text-sm text-slate-600">
+              <p className="text-xs sm:text-sm text-steel-600">
                 Nuestro departamento de logística ha cubicado el peso y la distancia hacia su obra. El costo de transporte ha sido estimado en:
               </p>
 
               {/* Freight Figures Breakdown */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-white border border-purple-100 shadow-2xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-card bg-white border border-brand-200/80 shadow-2xs">
                 <div>
-                  <span className="text-[11px] text-slate-400 block">Materiales (con IGV)</span>
-                  <span className="text-sm font-bold text-slate-800">{formatPEN(Number(order.subtotal) + Number(order.igv))}</span>
+                  <span className="text-micro text-steel-400 block font-bold uppercase">Materiales (con IGV)</span>
+                  <span className="text-sm font-mono num font-bold text-navy-900">{formatPEN(Number(order.subtotal) + Number(order.igv))}</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-purple-600 font-bold block">Costo de Flete</span>
-                  <span className="text-base font-extrabold text-purple-700">{formatPEN(order.costo_flete)}</span>
+                  <span className="text-micro text-brand-600 font-extrabold uppercase block">Costo de Flete</span>
+                  <span className="text-base font-mono num font-extrabold text-brand-700">{formatPEN(order.costo_flete)}</span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400 block">Total Final a Pagar</span>
-                  <span className="text-base font-extrabold text-kenpaku-orange">{formatPEN(order.total)}</span>
+                  <span className="text-micro text-steel-400 block font-bold uppercase">Total Final a Pagar</span>
+                  <span className="text-base font-display font-extrabold text-accent-600 num">{formatPEN(order.total)}</span>
                 </div>
               </div>
 
               {/* Nota o condiciones de transporte ingresadas por el asesor comercial */}
               {fleteQuoteNote && (
-                <div className="p-4 rounded-2xl bg-purple-100/70 border border-purple-200 text-xs text-purple-950 flex items-start gap-3 shadow-2xs">
-                  <FileText className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
+                <div className="p-4 rounded-card bg-brand-50 border border-brand-200 text-xs text-brand-950 flex items-start gap-3 shadow-2xs">
+                  <FileText className="w-4 h-4 text-brand-700 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <span className="font-extrabold uppercase text-[10px] tracking-wider text-purple-800 block">
+                    <span className="font-extrabold uppercase text-micro tracking-wider text-brand-800 block">
                       Condiciones y Detalle de Cotización (Asesor Comercial):
                     </span>
-                    <p className="text-purple-900 leading-relaxed font-medium">{fleteQuoteNote}</p>
+                    <p className="text-brand-900 leading-relaxed font-medium">{fleteQuoteNote}</p>
                   </div>
                 </div>
               )}
 
               {/* Action Feedback Message */}
               {fleteActionMsg && (
-                <div className={`p-3.5 rounded-2xl text-xs flex items-center gap-2 ${
+                <div className={`p-3.5 rounded-card text-xs flex items-center gap-2 ${
                   fleteActionMsg.type === 'success'
                     ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
                     : fleteActionMsg.type === 'warning'
@@ -795,7 +795,7 @@ export function TrackingPage() {
                       data-testid="flete-accept-btn"
                       disabled={isSubmittingFlete}
                       onClick={() => handleFleteDecision('aceptar')}
-                      className="flex-1 py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                      className="flex-1 py-3 px-4 rounded-btn bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
                     >
                       <ThumbsUp className="w-4 h-4" />
                       <span>Aceptar Flete y Proceder al Pago</span>
@@ -806,16 +806,16 @@ export function TrackingPage() {
                       data-testid="flete-reject-btn"
                       disabled={isSubmittingFlete}
                       onClick={() => setShowRejectInput(!showRejectInput)}
-                      className="py-3 px-4 rounded-2xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      className="py-3 px-4 rounded-btn bg-white hover:bg-steel-50 border border-steel-300 text-steel-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
-                      <ThumbsDown className="w-4 h-4 text-slate-400" />
+                      <ThumbsDown className="w-4 h-4 text-steel-400" />
                       <span>Rechazar o Coordinar Flete</span>
                     </button>
                   </div>
 
                   {showRejectInput && (
-                    <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-3 animate-fade-in">
-                      <label className="block text-xs font-bold text-slate-700">
+                    <div className="p-4 rounded-card bg-white border border-steel-200 space-y-3 animate-fade-in">
+                      <label className="block text-xs font-bold text-navy-900">
                         Motivo del rechazo o consulta sobre el flete (opcional):
                       </label>
                       <textarea
@@ -823,7 +823,7 @@ export function TrackingPage() {
                         value={rejectReason}
                         onChange={(e) => setRejectReason(e.target.value)}
                         placeholder="Ej. El flete supera mi presupuesto, prefiero coordinar recojo o consultar descuento..."
-                        className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-hidden focus:border-red-400"
+                        className="w-full p-3 rounded-btn border border-steel-300 text-xs text-navy-900 focus:outline-hidden focus:border-red-400 shadow-inset"
                       />
                       <div className="flex justify-end gap-2">
                         <Button
@@ -851,17 +851,17 @@ export function TrackingPage() {
 
           {/* FASE 4: BANNER DE PAGO CONFIRMADO Y EN PREPARACIÓN */}
           {isPaymentConfirmed && (
-            <div className="bg-gradient-to-br from-emerald-50 via-teal-50/60 to-white p-6 sm:p-7 rounded-3xl border border-emerald-200 shadow-soft space-y-4">
+            <div className="bg-gradient-to-br from-emerald-50 via-teal-50/50 to-white p-6 sm:p-7 rounded-panel border border-emerald-200 shadow-card space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                  <div className="w-10 h-10 rounded-btn bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
                     <CheckCircle2 className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-700 block">
+                    <span className="text-micro uppercase font-extrabold tracking-wider text-emerald-700 block">
                       Abono Verificado y Validado
                     </span>
-                    <h3 className="text-base sm:text-lg font-extrabold text-emerald-950">
+                    <h3 className="text-base sm:text-lg font-display font-extrabold text-emerald-950">
                       Pago Validado por Caja — Pedido en Preparación
                     </h3>
                     <p className="text-xs text-emerald-800 mt-1 max-w-xl">
@@ -880,7 +880,7 @@ export function TrackingPage() {
                           href={v.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-4 py-2.5 rounded-xl bg-white hover:bg-emerald-100/50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2 shadow-2xs transition-colors shrink-0"
+                          className="px-4 py-2.5 rounded-btn bg-white hover:bg-emerald-100/50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2 shadow-2xs transition-colors shrink-0"
                         >
                           <ExternalLink className="w-4 h-4 text-emerald-600" />
                           <span>
@@ -899,23 +899,23 @@ export function TrackingPage() {
 
           {/* AVISO INFORMATIVO: DESPACHO A OBRA PENDIENTE DE COTIZACIÓN DE FLETE */}
           {order && !order.recojo_en_tienda && order.estado === 'pendiente' && !isTerminalCancelled && (
-            <div className="bg-amber-50/80 border border-amber-200 p-6 sm:p-7 rounded-3xl shadow-soft space-y-4">
+            <div className="bg-amber-50/80 border border-amber-200 p-6 sm:p-7 rounded-panel shadow-card space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/60 pb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                  <div className="w-10 h-10 rounded-btn bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
                     <Clock className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-amber-700 block">
+                    <span className="text-micro uppercase font-extrabold tracking-wider text-amber-700 block">
                       Paso Siguiente: Cotización de Flete a Obra
                     </span>
-                    <h3 className="text-base sm:text-lg font-extrabold text-amber-950">
+                    <h3 className="text-base sm:text-lg font-display font-extrabold text-amber-950">
                       Cálculo de Transporte en Proceso
                     </h3>
                   </div>
                 </div>
 
-                <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold self-start sm:self-auto">
+                <span className="cut px-3 py-1 bg-amber-100 text-amber-900 border border-amber-300 text-micro font-bold uppercase self-start sm:self-auto">
                   Esperando Cotización del Administrador
                 </span>
               </div>
@@ -938,31 +938,31 @@ export function TrackingPage() {
 
           {/* FASE 4: MÉTODOS DE PAGO Y CARGA DE VOUCHER (SOLO MIENTRAS ESPERA ABONO) */}
           {isAwaitingPayment && (
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-soft space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div className="bg-white p-6 sm:p-8 rounded-panel border border-steel-200 shadow-card space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-steel-100 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                  <div className="w-10 h-10 rounded-btn bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
                     <CreditCard className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-700 block">
+                    <span className="text-micro uppercase font-extrabold tracking-wider text-emerald-700 block">
                       Pago Manual Sin Comisión
                     </span>
-                    <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+                    <h3 className="text-base sm:text-lg font-display font-extrabold text-navy-900">
                       Cuentas de Abono y Subida de Comprobante
                     </h3>
                   </div>
                 </div>
 
                 <div className="text-left sm:text-right">
-                  <span className="text-[11px] text-slate-400 block">Total a Transferir</span>
-                  <span className="text-lg font-extrabold text-emerald-600">{formatPEN(order.total)}</span>
+                  <span className="text-micro uppercase font-bold text-steel-400 block tracking-wider">Total a Transferir</span>
+                  <span className="text-xl font-display font-extrabold text-emerald-600 num">{formatPEN(order.total)}</span>
                 </div>
               </div>
 
               {/* Sub-Sección 1: Datos Bancarios Oficiales */}
               <div className="space-y-3">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                <span className="text-micro font-extrabold text-steel-500 uppercase tracking-wider block">
                   1. Cuentas Oficiales de Comercial Kenpaku S.A.C.:
                 </span>
 
@@ -976,17 +976,17 @@ export function TrackingPage() {
                         key={bank.id}
                         type="button"
                         onClick={() => setActiveBankTab(bank.id)}
-                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
+                        className={`p-3 rounded-card border text-center transition-all cursor-pointer ${
                           isActive
                             ? 'bg-emerald-50 border-emerald-400 shadow-xs'
-                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200'
+                            : 'bg-steel-50 hover:bg-steel-100 border-steel-200'
                         }`}
                       >
-                        <IconComp className={`w-4 h-4 mx-auto mb-1 ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
-                        <span className={`text-xs font-bold block ${isActive ? 'text-emerald-900' : 'text-slate-700'}`}>
+                        <IconComp className={`w-4 h-4 mx-auto mb-1 ${isActive ? 'text-emerald-600' : 'text-steel-400'}`} />
+                        <span className={`text-xs font-bold block ${isActive ? 'text-emerald-900' : 'text-steel-700'}`}>
                           {bank.name}
                         </span>
-                        <span className="text-[10px] text-slate-400 block">{bank.badge}</span>
+                        <span className="text-micro text-steel-400 block">{bank.badge}</span>
                       </button>
                     );
                   })}
@@ -996,26 +996,26 @@ export function TrackingPage() {
                 {(() => {
                   const currentBank = BANK_ACCOUNTS.find((b) => b.id === activeBankTab) || BANK_ACCOUNTS[0];
                   return (
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+                    <div className="p-4 rounded-card bg-steel-50 border border-steel-200 space-y-2 text-xs">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                        <span className="font-bold text-slate-500">Titular de Cuenta:</span>
-                        <span className="font-extrabold text-slate-900">{currentBank.holder}</span>
+                        <span className="font-bold text-steel-500">Titular de Cuenta:</span>
+                        <span className="font-extrabold text-navy-900">{currentBank.holder}</span>
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                        <span className="font-bold text-slate-500">Número de Cuenta / Celular:</span>
-                        <span className="font-mono font-extrabold text-sm text-kenpaku-navy select-all bg-white px-2.5 py-0.5 rounded-lg border border-slate-200">
+                        <span className="font-bold text-steel-500">Número de Cuenta / Celular:</span>
+                        <span className="font-mono num font-extrabold text-sm text-navy-900 select-all bg-white px-2.5 py-0.5 rounded-btn border border-steel-200">
                           {currentBank.number}
                         </span>
                       </div>
                       {currentBank.cci && (
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                          <span className="font-bold text-slate-500">Código Interbancario (CCI):</span>
-                          <span className="font-mono text-xs text-slate-700 select-all bg-white px-2 py-0.5 rounded-lg border border-slate-200">
+                          <span className="font-bold text-steel-500">Código Interbancario (CCI):</span>
+                          <span className="font-mono num text-xs text-steel-700 select-all bg-white px-2 py-0.5 rounded-btn border border-steel-200">
                             {currentBank.cci}
                           </span>
                         </div>
                       )}
-                      <p className="text-[11px] text-slate-500 italic pt-1 border-t border-slate-200/80">
+                      <p className="text-[11px] text-steel-500 italic pt-1 border-t border-steel-200/80">
                         {currentBank.note}
                       </p>
                     </div>
@@ -1024,8 +1024,8 @@ export function TrackingPage() {
               </div>
 
               {/* Sub-Sección 2: Carga del Comprobante (Voucher) */}
-              <div className="space-y-3 pt-2 border-t border-slate-100">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+              <div className="space-y-3 pt-2 border-t border-steel-100">
+                <span className="text-micro font-extrabold text-steel-500 uppercase tracking-wider block">
                   2. Carga del Comprobante de Pago (Voucher):
                 </span>
 
@@ -1033,7 +1033,7 @@ export function TrackingPage() {
                 {order.voucher_referencia && (() => {
                   const vList = getVoucherList(order.voucher_referencia, order.events || order.order_events);
                   return (
-                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="p-4 rounded-card bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                         <div>
@@ -1061,7 +1061,7 @@ export function TrackingPage() {
                             href={v.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-100/50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors shrink-0"
+                            className="px-3 py-1.5 rounded-btn bg-white hover:bg-emerald-100/50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors shrink-0"
                           >
                             <ExternalLink className="w-3.5 h-3.5 text-emerald-600" />
                             <span>
@@ -1077,7 +1077,7 @@ export function TrackingPage() {
                 })()}
 
                 {/* Selector de Archivo / Drag & Drop */}
-                <div className="p-4 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-300 space-y-3 text-center">
+                <div className="p-6 rounded-card bg-steel-50/70 border-2 border-dashed border-steel-300 hover:border-brand-400 space-y-3 text-center transition-colors">
                   <input
                     type="file"
                     id="voucher-input"
@@ -1090,11 +1090,11 @@ export function TrackingPage() {
                     htmlFor="voucher-input"
                     className="cursor-pointer block space-y-2 py-2"
                   >
-                    <UploadCloud className="w-8 h-8 text-slate-400 mx-auto" />
-                    <span className="text-xs font-bold text-slate-800 block">
+                    <UploadCloud className="w-8 h-8 text-brand-500 mx-auto" />
+                    <span className="text-xs font-bold text-navy-900 block">
                       {voucherFile ? voucherFile.name : 'Haz clic aquí para seleccionar o arrastrar tu voucher'}
                     </span>
-                    <span className="text-[11px] text-slate-500 block">
+                    <span className="text-micro text-steel-500 block">
                       Formatos permitidos: JPG, PNG, WEBP o PDF (Máximo 5 MB)
                     </span>
                   </label>
@@ -1105,14 +1105,14 @@ export function TrackingPage() {
                       <img
                         src={voucherPreview}
                         alt="Vista previa del comprobante"
-                        className="max-h-40 mx-auto rounded-xl border border-slate-200 shadow-xs"
+                        className="max-h-40 mx-auto rounded-card border border-steel-200 shadow-xs"
                       />
                     </div>
                   )}
 
                   {/* Feedback Message */}
                   {voucherMsg && (
-                    <div className={`p-3 rounded-xl text-xs flex items-center gap-2 text-left ${
+                    <div className={`p-3 rounded-btn text-xs flex items-center gap-2 text-left ${
                       voucherMsg.type === 'success'
                         ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
                         : 'bg-red-100 text-red-900 border border-red-200'
@@ -1144,33 +1144,33 @@ export function TrackingPage() {
           )}
 
           {/* Products & Totals Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-soft space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-kenpaku-navy">
+          <div className="bg-white p-6 sm:p-8 rounded-panel border border-steel-200 shadow-card space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-steel-100 pb-3">
+              <h3 className="text-base font-display font-extrabold text-navy-900">
                 Materiales Incluidos en este Pedido
               </h3>
               {isPaymentConfirmed && (
                 <button
                   type="button"
                   onClick={() => setIsReceiptModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-kenpaku-navy hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-btn bg-navy-900 hover:bg-navy-950 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer self-start sm:self-auto"
                 >
-                  <FileText className="w-3.5 h-3.5 text-amber-400" />
+                  <FileText className="w-3.5 h-3.5 text-accent-400" />
                   <span>Descargar o Imprimir Boleta</span>
                 </button>
               )}
             </div>
 
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-steel-100">
               {order.items?.map((item, idx) => (
                 <div key={idx} className="py-3 flex items-center justify-between text-xs">
                   <div>
-                    <span className="font-bold text-slate-900 block">{item.nombre}</span>
-                    <span className="text-slate-500">
+                    <span className="font-bold text-navy-900 block">{item.nombre}</span>
+                    <span className="text-steel-500 font-mono num">
                       Cantidad: {item.cantidad} x {formatPEN(item.precio_unitario)}
                     </span>
                   </div>
-                  <span className="font-bold text-kenpaku-navy">
+                  <span className="font-mono num font-bold text-navy-900">
                     {formatPEN(item.cantidad * item.precio_unitario)}
                   </span>
                 </div>
@@ -1178,24 +1178,24 @@ export function TrackingPage() {
             </div>
 
             {/* Financial Totals */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5 text-xs text-slate-700">
+            <div className="p-4 rounded-card bg-steel-50 border border-steel-200 space-y-2 text-xs text-steel-700">
               <div className="flex justify-between">
                 <span>Subtotal (sin IGV):</span>
-                <span>{formatPEN(order.subtotal)}</span>
+                <span className="font-mono num font-semibold text-navy-900">{formatPEN(order.subtotal)}</span>
               </div>
               <div className="flex justify-between">
                 <span>IGV (18 %):</span>
-                <span>{formatPEN(order.igv)}</span>
+                <span className="font-mono num font-semibold text-navy-900">{formatPEN(order.igv)}</span>
               </div>
               {Number(order.costo_flete) > 0 && (
-                <div className="flex justify-between font-semibold text-indigo-700">
+                <div className="flex justify-between font-semibold text-brand-700">
                   <span>Flete de Transporte:</span>
-                  <span>{formatPEN(order.costo_flete)}</span>
+                  <span className="font-mono num font-bold">{formatPEN(order.costo_flete)}</span>
                 </div>
               )}
-              <div className="flex justify-between font-extrabold text-sm text-kenpaku-navy pt-2 border-t border-slate-200">
-                <span>Total General:</span>
-                <span className="text-kenpaku-orange">{formatPEN(order.total)}</span>
+              <div className="flex justify-between items-center font-extrabold text-sm text-navy-900 pt-2 border-t border-steel-200">
+                <span className="font-display font-extrabold">Total General:</span>
+                <span className="text-price font-display font-extrabold text-navy-900 num">{formatPEN(order.total)}</span>
               </div>
             </div>
 
