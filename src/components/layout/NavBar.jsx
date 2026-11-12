@@ -41,7 +41,7 @@ export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
     <nav className="bg-white text-navy-900 border-b border-steel-200">
       <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8">
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center justify-center py-2">
+        <div className="hidden lg:flex items-center justify-center py-2">
           <div className="flex items-center justify-center space-x-6 lg:space-x-8">
             {navLinks.map((link) => {
               const active = isActiveLink(link);
@@ -51,7 +51,7 @@ export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
                 <NavLink
                   key={link.to}
                   to={link.to}
-                  className={`group text-sm font-semibold transition-all flex items-center gap-2 py-2 relative select-none ${
+                  className={`group text-sm font-semibold transition-all flex items-center gap-2 py-2 relative select-none whitespace-nowrap ${
                     active
                       ? 'text-navy-900'
                       : 'text-steel-600 hover:text-navy-900'
@@ -79,7 +79,7 @@ export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
 
         {/* Mobile Navigation Menu Dropdown */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-3 space-y-1 border-t border-steel-200 animate-fade-in max-h-[70vh] overflow-y-auto">
+          <div className="lg:hidden py-3 space-y-1 border-t border-steel-200 animate-fade-in max-h-[70vh] overflow-y-auto">
             {navLinks.map((link) => {
               const active = isActiveLink(link);
               const Icon = link.icon;
@@ -89,7 +89,7 @@ export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
                   key={link.to}
                   to={link.to}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`px-4 py-2.5 rounded-btn text-sm font-semibold transition-all flex items-center justify-between ${
+                  className={`px-4 py-2.5 rounded-btn text-sm font-semibold transition-all flex items-center justify-between whitespace-nowrap ${
                     active
                       ? 'bg-orange-50 text-accent-700 font-bold border border-accent-500/30'
                       : 'text-steel-600 hover:text-navy-900 hover:bg-steel-100'

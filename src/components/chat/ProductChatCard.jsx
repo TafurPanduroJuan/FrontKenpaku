@@ -33,7 +33,7 @@ export function ProductChatCard({ product }) {
           <span className="num text-xs sm:text-sm font-extrabold text-brand-600">
             {formatPEN(product.precio_unitario)}
           </span>
-          <span className="text-micro text-steel-400 font-medium">IGV incl.</span>
+          <span className="text-micro text-steel-500 font-medium">IGV incl.</span>
         </div>
       </div>
 
@@ -45,7 +45,7 @@ export function ProductChatCard({ product }) {
           added
             ? 'border border-emerald-300 bg-emerald-50 text-emerald-800'
             : isOutOfStock
-            ? 'cursor-not-allowed border border-steel-200 bg-steel-100 text-steel-400 opacity-60'
+            ? 'cursor-not-allowed border border-steel-200 bg-steel-100 text-steel-500 opacity-60'
             : 'bg-accent-600 hover:bg-accent-700 text-white shadow-cta'
         }`}
       >

@@ -256,7 +256,7 @@ export function Home() {
               </span>
             </h1>
 
-            <p className="text-steel-600 text-sm sm:text-base leading-relaxed max-w-lg font-medium">
+            <p className="text-steel-600 text-sm sm:text-base leading-relaxed max-w-lg sm:max-w-none lg:max-w-lg font-medium">
               Tubos, perfiles y planchas con precios claros, stock actualizado y asesoría inteligente para elegir mejor.
             </p>
 
@@ -295,7 +295,7 @@ export function Home() {
           </div>
 
           {/* Right Hero Column: Steel Artwork Showcase */}
-          <div className="lg:col-span-5 relative mx-auto aspect-5/4 w-full max-w-md">
+          <div className="hidden lg:block lg:col-span-5 relative mx-auto aspect-5/4 w-full max-w-md">
             <div className="steel-texture absolute inset-0 overflow-hidden rounded-hero bg-gradient-to-br from-navy-700 via-navy-900 to-navy-950 shadow-lift border border-navy-800">
               <div className="grid-lines absolute inset-0 opacity-40 pointer-events-none" />
               <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-accent-500/20 to-transparent pointer-events-none" />

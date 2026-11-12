@@ -149,7 +149,7 @@ export function ChatWidget() {
       {/* Chat Window Popup */}
       {isOpen && (
         <div
-          className="slide-up fixed inset-x-3 top-3 bottom-3 z-50 flex flex-col sm:top-auto sm:h-160 sm:max-h-[92vh] overflow-hidden rounded-chat border border-steel-200 bg-white shadow-lift sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-97.5"
+          className="slide-up fixed inset-x-3 top-3 bottom-3 z-50 flex flex-col sm:inset-auto sm:right-6 sm:bottom-24 sm:w-[400px] sm:h-[min(640px,calc(100vh-8rem))] sm:max-h-[min(640px,calc(100vh-8rem))] overflow-hidden rounded-chat border border-steel-200 bg-white shadow-lift"
           role="dialog"
           aria-label="Ventana de chat con Asesor IA"
         >

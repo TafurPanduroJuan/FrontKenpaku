@@ -44,7 +44,7 @@ export function Header({ isMobileMenuOpen, setIsMobileMenuOpen }) {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 text-navy-900 hover:bg-steel-100 rounded-btn transition-colors"
+            className="lg:hidden p-2 text-navy-900 hover:bg-steel-100 rounded-btn transition-colors"
             aria-label="Abrir menú de navegación"
           >
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
