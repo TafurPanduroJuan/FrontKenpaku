@@ -129,42 +129,46 @@ export function ChatWidget() {
   return (
     <>
       {/* Floating Trigger Button - Bottom Right */}
-      <div className="fixed bottom-6 right-6 z-40">
+      {!isOpen && (
         <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="relative group flex items-center gap-2.5 px-4 py-3 bg-[#0A2540] hover:bg-[#0F3256] text-white font-extrabold text-xs sm:text-sm rounded-full shadow-2xl transition-all transform hover:scale-105 active:scale-95 min-h-[48px] border border-slate-700/50"
+          onClick={() => setIsOpen(true)}
+          className="pulse-ring fixed right-4 bottom-4 z-40 flex min-h-14 items-center gap-3 rounded-2xl bg-navy-900 py-2 pr-5 pl-3 text-white shadow-lift transition hover:-translate-y-0.5 sm:right-6 sm:bottom-6 cursor-pointer border border-navy-800"
           aria-label="Abrir Asesor Virtual de IA"
         >
-          <div className="relative flex items-center justify-center">
-            <Bot className="w-5 h-5 text-[#0284C7]" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#0A2540] rounded-full animate-pulse" />
-          </div>
-          <span>Asesor IA</span>
+          <span className="relative grid size-10 place-items-center rounded-xl bg-brand-600 text-white shadow-xs">
+            <Bot className="w-5 h-5" />
+            <span className="absolute -top-1 -right-1 size-3 rounded-full border-2 border-navy-900 bg-emerald-400" />
+          </span>
+          <span className="text-left leading-tight">
+            <span className="block text-sm font-bold font-display">Asesor IA</span>
+            <span className="block text-micro text-emerald-300 font-semibold">En línea</span>
+          </span>
         </button>
-      </div>
+      )}
 
       {/* Chat Window Popup */}
       {isOpen && (
         <div
-          className="fixed inset-x-0 bottom-0 sm:inset-auto sm:bottom-20 sm:right-6 z-50 w-full sm:w-[380px] h-[580px] max-h-[92vh] bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-slide-up"
+          className="slide-up fixed inset-x-3 top-3 bottom-3 z-50 flex flex-col sm:inset-auto sm:right-6 sm:bottom-24 sm:w-[400px] sm:h-[min(640px,calc(100vh-8rem))] sm:max-h-[min(640px,calc(100vh-8rem))] overflow-hidden rounded-chat border border-steel-200 bg-white shadow-lift"
           role="dialog"
           aria-label="Ventana de chat con Asesor IA"
         >
           {/* Header */}
-          <div className="bg-kenpaku-navy text-white p-4 flex items-center justify-between border-b border-slate-800 shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="relative w-9 h-9 rounded-full bg-kenpaku-blue flex items-center justify-center text-white shadow-xs">
-                <Bot className="w-5 h-5" />
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-kenpaku-navy rounded-full" />
-              </div>
-              <div>
-                <h3 className="text-xs font-bold leading-tight">Asesor IA Kenpaku</h3>
-                <p className="text-[10px] text-emerald-400 font-medium">● En línea · Responde al instante</p>
-              </div>
+          <div className="steel-texture flex items-center gap-3 bg-navy-900 p-4 text-white shrink-0">
+            <span className="grid size-11 place-items-center rounded-xl bg-brand-600 text-white shrink-0 shadow-xs">
+              <Bot className="w-5 h-5" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-display font-bold text-sm leading-tight text-white">Asesor IA Kenpaku</h3>
+              <p className="flex items-center gap-1.5 text-micro text-emerald-300 font-medium">
+                <span className="size-2 rounded-full bg-emerald-400" />
+                En línea · Responde al instante
+              </p>
             </div>
             <button
+              type="button"
               onClick={() => setIsOpen(false)}
-              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+              className="grid size-11 place-items-center rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               aria-label="Cerrar chat"
             >
               <X className="w-5 h-5" />
@@ -175,12 +179,12 @@ export function ChatWidget() {
           <AIBanner />
 
           {/* Messages Body */}
-          <div className="flex-1 p-4 overflow-y-auto bg-slate-50/50">
+          <div className="flex-1 space-y-3 overflow-y-auto bg-steel-50 p-4">
             {messages.map((msg) => (
               <React.Fragment key={msg.id}>
                 <MessageBubble message={msg} />
                 {msg.pendingQuoteText && (
-                  <div className="mb-4 ml-9 flex flex-wrap gap-1.5" aria-label="Respuestas rápidas para completar la cotización">
+                  <div className="mb-3 ml-9 flex flex-wrap gap-1.5" aria-label="Respuestas rápidas para completar la cotización">
                     {(msg.quoteMissingFields || []).flatMap((field) => ({
                       forma: ['Cuadrado', 'Rectangular', 'Redondo'],
                       tipo: ['Corrugado', 'Liso', 'LAC', 'LAF'],
@@ -188,7 +192,13 @@ export function ChatWidget() {
                       espesor: ['1.5 mm', '2 mm', '3 mm'],
                       acabado: ['Negro', 'Galvanizado'],
                     }[field] || [])).map((reply) => (
-                      <button key={`${msg.id}-${reply}`} type="button" disabled={isLoading} onClick={() => handleSendMessage(reply)} className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-[11px] font-bold text-kenpaku-blue hover:bg-blue-50 disabled:opacity-50">
+                      <button
+                        key={`${msg.id}-${reply}`}
+                        type="button"
+                        disabled={isLoading}
+                        onClick={() => handleSendMessage(reply)}
+                        className="rounded-full border border-brand-200 bg-white px-3 py-1.5 text-micro font-bold text-brand-700 hover:bg-brand-50 shadow-2xs transition-colors disabled:opacity-50"
+                      >
                         {reply}
                       </button>
                     ))}
@@ -207,12 +217,13 @@ export function ChatWidget() {
 
             {/* Network Error Box */}
             {networkError && (
-              <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-xs space-y-2 animate-fade-in my-2">
+              <div className="p-3.5 rounded-card bg-red-50 border border-red-200 text-red-900 text-xs space-y-2 animate-fade-in my-2 shadow-2xs">
                 <p className="font-bold">No pude conectar. Intenta de nuevo o escríbenos por WhatsApp.</p>
                 <div className="flex items-center gap-2 pt-1">
                   <button
+                    type="button"
                     onClick={handleRetry}
-                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold flex items-center gap-1 transition-colors"
+                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-btn font-bold flex items-center gap-1 transition-colors text-xs cursor-pointer shadow-xs"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>Reintentar</span>
@@ -222,7 +233,7 @@ export function ChatWidget() {
                     href={buildWhatsAppUrl('Hola Comercial Kenpaku, el chat presentó un inconveniente de red.')}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-1.5 bg-kenpaku-whatsapp hover:bg-kenpaku-whatsappHover text-white rounded-lg font-bold flex items-center gap-1 transition-colors"
+                    className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-btn font-bold flex items-center gap-1 transition-colors text-xs shadow-wa"
                   >
                     <MessageCircle className="w-3.5 h-3.5 fill-current" />
                     <span>WhatsApp</span>
@@ -235,19 +246,19 @@ export function ChatWidget() {
           </div>
 
           {/* Fixed Footer with character counter and legal disclaimer */}
-          <div className="p-3.5 bg-white border-t border-slate-200 space-y-2 shrink-0">
+          <div className="space-y-2 border-t border-steel-200 bg-white p-3 shrink-0">
             <a
               href={latestWhatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
               data-testid="chat-whatsapp-button"
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-kenpaku-whatsapp hover:bg-kenpaku-whatsappHover text-white text-xs font-bold rounded-xl shadow-xs transition-colors min-h-[40px]"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold rounded-btn shadow-wa transition-all min-h-11"
             >
               <MessageCircle className="w-4 h-4 fill-current" />
               <span>Hablar con un asesor por WhatsApp</span>
             </a>
 
-            <p className="text-[10px] text-slate-500 text-center leading-tight">
+            <p className="text-center text-micro text-steel-500 leading-tight">
               El asesor orienta tu compra, pero no reemplaza a un ingeniero en usos estructurales.
             </p>
 
@@ -263,8 +274,8 @@ export function ChatWidget() {
                 }}
                 rows={1}
                 disabled={isLoading}
-                placeholder="Escribe tu consulta o lista de materiales..."
-                className="max-h-36 min-h-11 w-full resize-none overflow-y-auto rounded-xl border border-slate-300 py-3 pl-3.5 pr-20 text-xs text-slate-900 placeholder-slate-400 focus:border-kenpaku-blue focus:outline-none focus:ring-2 focus:ring-kenpaku-blue/20 disabled:bg-slate-100"
+                placeholder="Escribe tu consulta o lista de materiales…"
+                className="max-h-36 min-h-11 w-full resize-none overflow-y-auto rounded-xl border border-steel-200 py-3 pl-3.5 pr-20 text-xs text-navy-900 placeholder-steel-500 focus:border-brand-500 focus:outline-hidden focus:ring-4 focus:ring-brand-500/15 disabled:bg-steel-100 shadow-inset"
                 onInput={(event) => {
                   event.currentTarget.style.height = 'auto';
                   event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 144)}px`;
@@ -272,14 +283,15 @@ export function ChatWidget() {
               />
 
               <div className="absolute right-2 flex items-center gap-1.5">
-                <span className={`text-[10px] font-mono ${inputMessage.length > 450 ? 'text-amber-600 font-bold' : 'text-slate-400'}`}>
+                <span className={`text-micro font-mono num ${inputMessage.length > 1400 ? 'text-amber-600 font-bold' : 'text-steel-500'}`}>
                   {inputMessage.length}/{MAX_CHARS}
                 </span>
 
                 <button
+                  type="button"
                   onClick={() => handleSendMessage()}
                   disabled={isLoading || !inputMessage.trim()}
-                  className="p-2 bg-kenpaku-orange hover:bg-kenpaku-orangeHover disabled:bg-slate-300 text-white rounded-lg transition-colors min-h-[36px] flex items-center justify-center"
+                  className="grid size-9 place-items-center rounded-lg bg-navy-900 hover:bg-navy-950 disabled:bg-steel-200 text-white disabled:text-steel-500 transition-colors cursor-pointer"
                   aria-label="Enviar mensaje"
                 >
                   <Send className="w-4 h-4" />

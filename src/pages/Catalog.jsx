@@ -99,39 +99,39 @@ export function Catalog() {
   const activeFiltersObj = { categoria, acabado, min, max, stock, q: qParam };
 
   return (
-    <div className="space-y-6 py-2">
+    <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Breadcrumb */}
       <Breadcrumb items={[{ label: 'Catálogo de Acero' }]} />
 
-      {/* Title & Mobile Filter Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+      {/* Title & Filter Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-steel-200 pb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-kenpaku-navy">
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
             Catálogo de Acero
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-steel-500 mt-1 font-medium">
             Tubos, planchas, perfiles y fierros con stock en tienda de Puente Piedra
           </p>
         </div>
 
         {/* Search input in catalog page header */}
         <div className="flex items-center gap-3">
-          <div className="relative flex-1 md:w-64">
+          <div className="relative flex-1 md:w-72">
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(sanitizeSearchQuery(e.target.value))}
               placeholder="Filtrar por nombre o medida..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-xs bg-white focus:outline-none focus:border-kenpaku-blue"
+              className="w-full pl-9 pr-3.5 py-2.5 rounded-btn border border-steel-200 text-xs bg-white text-navy-900 placeholder-steel-500 shadow-inset focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition-all"
             />
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-steel-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
           <button
             onClick={() => setIsFilterDrawerOpen(true)}
-            className="md:hidden flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-kenpaku-navy text-white text-xs font-bold shrink-0 min-h-[44px]"
+            className="md:hidden flex items-center gap-2 px-4 py-2.5 rounded-btn bg-navy-900 hover:bg-navy-800 text-white text-xs font-semibold shrink-0 min-h-[42px] shadow-sm transition-all active:scale-[0.98]"
           >
-            <Filter className="w-4 h-4" />
+            <Filter className="w-4 h-4 text-accent-400" />
             <span>Filtros</span>
           </button>
         </div>
@@ -164,8 +164,8 @@ export function Catalog() {
         {/* Product Grid Area */}
         <div className="lg:col-span-9 space-y-6">
           {/* Top Control Bar: Result count & Sort */}
-          <div className="flex items-center justify-between bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs">
-            <span className="text-xs font-semibold text-slate-700">
+          <div className="flex items-center justify-between bg-white rounded-card border border-steel-200 p-4 shadow-card">
+            <span className="num text-xs font-semibold text-steel-600">
               {isLoading || isFetching
                 ? 'Cargando productos...'
                 : `Mostrando ${totalResults} ${totalResults === 1 ? 'resultado' : 'resultados'}`}

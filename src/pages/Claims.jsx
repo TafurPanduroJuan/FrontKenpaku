@@ -154,75 +154,77 @@ export function Claims() {
 
   if (claimResult) {
     return (
-      <div className="max-w-3xl mx-auto py-8 space-y-6 animate-fade-in">
+      <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in font-sans">
         <Breadcrumb items={[{ label: 'Libro de Reclamaciones', url: '/libro-de-reclamaciones' }, { label: 'Constancia' }]} />
 
-        <div className="bg-white rounded-3xl border border-slate-200/90 p-8 shadow-soft space-y-6">
-          <div className="text-center space-y-3 border-b border-slate-100 pb-6">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+        <div className="max-w-3xl mx-auto bg-white rounded-panel border border-steel-200 p-6 sm:p-8 shadow-card space-y-6">
+          <div className="text-center space-y-3 border-b border-steel-100 pb-6">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto pop shadow-xs">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h1 className="text-2xl font-extrabold text-kenpaku-navy">Constancia de Registro de Reclamación</h1>
-            <p className="text-xs text-slate-500">
+            <h1 className="text-2xl font-display font-extrabold text-navy-900">Constancia de Registro de Reclamación</h1>
+            <p className="text-xs text-steel-500">
               Conforme al Código de Protección y Defensa del Consumidor (Ley N.º 29571)
             </p>
           </div>
 
           {/* Key Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-card bg-steel-50 border border-steel-200 text-xs">
             <div>
-              <span className="text-slate-500 block uppercase font-bold text-[10px]">Código de Seguimiento</span>
-              <span className="text-lg font-extrabold text-kenpaku-orange">{claimResult.codigo}</span>
+              <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">Código de Seguimiento</span>
+              <span className="cut num font-mono text-base font-extrabold text-white bg-navy-900 px-3 py-1 rounded-btn inline-block shadow-2xs mt-1">
+                {claimResult.codigo}
+              </span>
             </div>
             <div>
-              <span className="text-slate-500 block uppercase font-bold text-[10px]">Fecha y Hora de Recepción</span>
-              <span className="text-sm font-bold text-slate-800">{claimResult.fecha}</span>
+              <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">Fecha y Hora de Recepción</span>
+              <span className="text-sm font-mono num font-bold text-navy-900 block mt-1">{claimResult.fecha}</span>
             </div>
             <div>
-              <span className="text-slate-500 block uppercase font-bold text-[10px]">Razón Social del Proveedor</span>
-              <span className="font-semibold text-slate-800">{STORE_INFO.name}</span>
+              <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">Razón Social del Proveedor</span>
+              <span className="font-semibold text-navy-900 block mt-0.5">{STORE_INFO.name}</span>
             </div>
             <div>
-              <span className="text-slate-500 block uppercase font-bold text-[10px]">RUC del Proveedor</span>
-              <span className="font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-200 inline-block">
+              <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">RUC del Proveedor</span>
+              <span className="font-mono num font-semibold text-accent-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block mt-0.5">
                 {STORE_INFO.ruc}
               </span>
             </div>
           </div>
 
           {/* Details Summary */}
-          <div className="space-y-3 text-xs text-slate-700">
-            <h3 className="font-bold text-kenpaku-navy border-b border-slate-100 pb-2">Resumen de la Reclamación</h3>
+          <div className="space-y-3 text-xs text-steel-700">
+            <h3 className="font-display font-extrabold text-navy-900 border-b border-steel-100 pb-2">Resumen de la Reclamación</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <p><strong>Consumidor:</strong> {claimResult.data.nombre}</p>
-              <p><strong>Documento:</strong> {claimResult.data.tipo_documento} {claimResult.data.documento}</p>
-              <p><strong>Teléfono:</strong> {claimResult.data.telefono}</p>
+              <p><strong>Documento:</strong> <span className="font-mono num">{claimResult.data.tipo_documento} {claimResult.data.documento}</span></p>
+              <p><strong>Teléfono:</strong> <span className="font-mono num">{claimResult.data.telefono}</span></p>
               <p><strong>Correo:</strong> {claimResult.data.correo}</p>
-              <p><strong>Tipo de Hoja:</strong> <span className="uppercase font-bold text-kenpaku-blue">{claimResult.data.tipo}</span></p>
+              <p><strong>Tipo de Hoja:</strong> <span className="cut px-2 py-0.5 text-micro uppercase font-extrabold bg-brand-50 text-brand-700 border border-brand-200 inline-block">{claimResult.data.tipo}</span></p>
               <p><strong>Bien afectado:</strong> {claimResult.data.tipo_bien} - {claimResult.data.descripcion_bien}</p>
             </div>
-            <div className="p-3 bg-slate-50 rounded-xl space-y-1 mt-2">
-              <p className="font-bold text-slate-900">Detalle:</p>
-              <p className="text-slate-600 leading-relaxed">{claimResult.data.detalle}</p>
+            <div className="p-3 bg-steel-50 rounded-card space-y-1 mt-2 border border-steel-200/60">
+              <p className="font-bold text-navy-900">Detalle:</p>
+              <p className="text-steel-600 leading-relaxed">{claimResult.data.detalle}</p>
             </div>
-            <div className="p-3 bg-slate-50 rounded-xl space-y-1">
-              <p className="font-bold text-slate-900">Pedido del Consumidor:</p>
-              <p className="text-slate-600 leading-relaxed">{claimResult.data.pedido_consumidor}</p>
+            <div className="p-3 bg-steel-50 rounded-card space-y-1 border border-steel-200/60">
+              <p className="font-bold text-navy-900">Pedido del Consumidor:</p>
+              <p className="text-steel-600 leading-relaxed">{claimResult.data.pedido_consumidor}</p>
             </div>
           </div>
 
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-900 space-y-1">
+          <div className="p-4 bg-brand-50/70 border border-brand-200 rounded-card text-xs text-brand-950 space-y-1">
             <p className="font-bold flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-kenpaku-blue" />
+              <ShieldCheck className="w-4 h-4 text-brand-600" />
               <span>Plazo de Respuesta Legal</span>
             </p>
-            <p className="leading-relaxed">
+            <p className="leading-relaxed text-steel-700">
               La empresa dará respuesta a su reclamación o queja en un plazo no mayor a quince (15) días hábiles improrrogables, enviando la comunicación oficial a su correo electrónico registrado.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Button variant="navy" fullWidth icon={Printer} onClick={() => window.print()}>
+            <Button variant="primary" fullWidth icon={Printer} onClick={() => window.print()}>
               Imprimir constancia
             </Button>
             <Button variant="outline" fullWidth icon={ArrowLeft} onClick={() => setClaimResult(null)}>
@@ -235,60 +237,60 @@ export function Claims() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-4 space-y-6">
+    <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in font-sans">
       <Breadcrumb items={[{ label: 'Libro de Reclamaciones Virtual' }]} />
 
       {/* Header Banner */}
-      <div className="bg-kenpaku-navy text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-800 space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-400 text-kenpaku-navy flex items-center justify-center font-extrabold shadow-md">
+      <div className="steel-texture bg-navy-900 text-white rounded-panel p-6 sm:p-8 shadow-card border border-navy-800 space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-navy-800/80 pb-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-card bg-accent-600 text-white flex items-center justify-center font-extrabold shadow-cta">
               <BookOpen className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">Libro de Reclamaciones Virtual</h1>
-              <p className="text-xs text-amber-300 font-medium">Conforme a la Ley N.º 29571 - Código de Protección y Defensa del Consumidor</p>
+              <h1 className="text-xl sm:text-2xl font-display font-extrabold tracking-tight">Libro de Reclamaciones Virtual</h1>
+              <p className="text-xs text-accent-300 font-medium">Conforme a la Ley N.º 29571 - Código de Protección y Defensa del Consumidor</p>
             </div>
           </div>
 
-          <div className="text-right sm:text-right text-xs text-slate-300">
-            <span className="block font-bold text-white">Fecha: {currentDate}</span>
-            <span className="text-[11px] text-slate-400">Puente Piedra, Lima</span>
+          <div className="text-left sm:text-right text-xs text-steel-300">
+            <span className="block font-bold text-white">Fecha: <strong className="font-mono num">{currentDate}</strong></span>
+            <span className="text-micro text-steel-500 uppercase tracking-wider">Puente Piedra, Lima</span>
           </div>
         </div>
 
         {/* Real RUC Box */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-300 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-steel-300 pt-1">
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold">Razón Social del Proveedor</span>
+            <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">Razón Social del Proveedor</span>
             <span className="font-extrabold text-white text-sm">{STORE_INFO.name}</span>
           </div>
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold">RUC del Proveedor</span>
-            <span className="font-extrabold text-amber-400 text-sm tracking-wider bg-slate-800 px-2.5 py-0.5 rounded border border-slate-700 inline-block">
+            <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">RUC del Proveedor</span>
+            <span className="font-mono num font-extrabold text-accent-400 text-sm tracking-wider bg-navy-950 px-2.5 py-1 rounded-btn border border-navy-800 inline-block shadow-inset">
               RUC: {STORE_INFO.ruc}
             </span>
           </div>
           <div className="sm:col-span-2">
-            <span className="text-slate-400 block text-[10px] uppercase font-bold">Dirección del Almacén</span>
-            <span>{STORE_INFO.address}</span>
+            <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">Dirección del Almacén</span>
+            <span className="text-steel-200">{STORE_INFO.address}</span>
           </div>
         </div>
       </div>
 
       {submitError && (
-        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-xs flex items-center gap-2">
+        <div className="p-4 rounded-card bg-red-50 border border-red-200 text-red-900 text-xs flex items-center gap-2">
           <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
           <span>{submitError}</span>
         </div>
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-soft space-y-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-panel border border-steel-200 p-6 sm:p-10 shadow-card space-y-8">
         {/* SECCIÓN 1: DATOS DEL CONSUMIDOR */}
         <div className="space-y-4">
-          <h2 className="text-base font-bold text-kenpaku-navy uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-kenpaku-blue text-white text-xs font-bold flex items-center justify-center">1</span>
+          <h2 className="text-base font-display font-extrabold text-navy-900 uppercase tracking-wider border-b border-steel-100 pb-2.5 flex items-center gap-2.5">
+            <span className="w-6 h-6 rounded-full bg-navy-900 text-white text-xs font-bold font-mono num flex items-center justify-center">1</span>
             Identificación del Consumidor Reclamante
           </h2>
 
@@ -376,9 +378,9 @@ export function Claims() {
         </div>
 
         {/* SECCIÓN 2: IDENTIFICACIÓN DEL BIEN CONTRATADO */}
-        <div className="space-y-4 pt-4 border-t border-slate-100">
-          <h2 className="text-base font-bold text-kenpaku-navy uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-kenpaku-blue text-white text-xs font-bold flex items-center justify-center">2</span>
+        <div className="space-y-4 pt-4 border-t border-steel-100">
+          <h2 className="text-base font-display font-extrabold text-navy-900 uppercase tracking-wider border-b border-steel-100 pb-2.5 flex items-center gap-2.5">
+            <span className="w-6 h-6 rounded-full bg-navy-900 text-white text-xs font-bold font-mono num flex items-center justify-center">2</span>
             Identificación del Bien Contratado
           </h2>
 
@@ -416,38 +418,38 @@ export function Claims() {
         </div>
 
         {/* SECCIÓN 3: DETALLE DE LA SOLICITUD Y PEDIDO DEL CONSUMIDOR */}
-        <div className="space-y-4 pt-4 border-t border-slate-100">
-          <h2 className="text-base font-bold text-kenpaku-navy uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-kenpaku-blue text-white text-xs font-bold flex items-center justify-center">3</span>
+        <div className="space-y-4 pt-4 border-t border-steel-100">
+          <h2 className="text-base font-display font-extrabold text-navy-900 uppercase tracking-wider border-b border-steel-100 pb-2.5 flex items-center gap-2.5">
+            <span className="w-6 h-6 rounded-full bg-navy-900 text-white text-xs font-bold font-mono num flex items-center justify-center">3</span>
             Detalle de la Solicitud y Pedido del Consumidor
           </h2>
 
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Tipo de Hoja de Reclamación *</label>
+            <label className="text-micro font-extrabold text-steel-700 uppercase tracking-wider block">Tipo de Hoja de Reclamación *</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <label className="p-4 rounded-2xl border-2 flex items-start gap-3 cursor-pointer bg-slate-50/50 hover:bg-slate-50">
+              <label className="p-4 rounded-card border-2 border-steel-200 flex items-start gap-3 cursor-pointer bg-steel-50/40 hover:bg-steel-50/80 transition-all">
                 <input
                   type="radio"
                   value="reclamo"
-                  className="mt-1"
+                  className="mt-1 text-brand-600 focus:ring-brand-500"
                   {...register('tipo')}
                 />
                 <div>
-                  <span className="block text-xs font-bold text-slate-900">RECLAMO</span>
-                  <span className="text-[11px] text-slate-500">Disconformidad relacionada directamente a los productos o servicios contratados.</span>
+                  <span className="block text-xs font-bold text-navy-900 font-display">RECLAMO</span>
+                  <span className="text-[11px] text-steel-500">Disconformidad relacionada directamente a los productos o servicios contratados.</span>
                 </div>
               </label>
 
-              <label className="p-4 rounded-2xl border-2 flex items-start gap-3 cursor-pointer bg-slate-50/50 hover:bg-slate-50">
+              <label className="p-4 rounded-card border-2 border-steel-200 flex items-start gap-3 cursor-pointer bg-steel-50/40 hover:bg-steel-50/80 transition-all">
                 <input
                   type="radio"
                   value="queja"
-                  className="mt-1"
+                  className="mt-1 text-brand-600 focus:ring-brand-500"
                   {...register('tipo')}
                 />
                 <div>
-                  <span className="block text-xs font-bold text-slate-900">QUEJA</span>
-                  <span className="text-[11px] text-slate-500">Disconformidad no relacionada directamente a los productos, sino a la atención al cliente.</span>
+                  <span className="block text-xs font-bold text-navy-900 font-display">QUEJA</span>
+                  <span className="text-[11px] text-steel-500">Disconformidad no relacionada directamente a los productos, sino a la atención al cliente.</span>
                 </div>
               </label>
             </div>
@@ -479,14 +481,14 @@ export function Claims() {
         </div>
 
         {/* Checkbox de Conformidad */}
-        <div className="pt-4 border-t border-slate-100 space-y-4">
-          <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700 select-none">
+        <div className="pt-4 border-t border-steel-100 space-y-4">
+          <label className="flex items-start gap-2.5 cursor-pointer text-xs text-steel-700 select-none">
             <input
               type="checkbox"
-              className="w-4 h-4 mt-0.5 rounded text-kenpaku-blue border-slate-300 focus:ring-kenpaku-blue"
+              className="w-4 h-4 mt-0.5 rounded text-brand-600 border-steel-300 focus:ring-brand-500"
               {...register('acepto_terminos')}
             />
-            <span>
+            <span className="leading-relaxed">
               Declaro ser el titular del bien/servicio objeto de este reclamo y acepto el tratamiento de mis datos personales de acuerdo con la Ley N.º 29733 para la atención formal de la reclamación. *
             </span>
           </label>
@@ -494,8 +496,8 @@ export function Claims() {
             <p className="text-xs text-red-600 font-medium">{errors.acepto_terminos.message}</p>
           )}
 
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-[11px] text-slate-500 space-y-1">
-            <p className="font-bold text-slate-700">Nota de constancia legal:</p>
+          <div className="p-4 bg-steel-50 rounded-card border border-steel-200 text-[11px] text-steel-500 space-y-1">
+            <p className="font-bold text-navy-900">Nota de constancia legal:</p>
             <p>La formulación del reclamo no impide acudir a otras vías de solución de controversias ni es requisito previo para interponer una denuncia ante el INDECOPI.</p>
           </div>
 

@@ -72,7 +72,7 @@ export function Login() {
           <p className="text-sm text-slate-600 font-medium leading-relaxed">
             Ingresa tus credenciales si eres administrador o personal de ventas.
           </p>
-          <p className="text-[11px] text-slate-400 font-medium">Comercial Kenpaku S.A.C. - Puente Piedra</p>
+          <p className="text-[11px] text-slate-500 font-medium">Comercial Kenpaku S.A.C. - Puente Piedra</p>
         </div>
 
         {errorMsg && (

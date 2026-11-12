@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════════ */
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -9,52 +12,272 @@
   }
 
   body {
-    background-color: #F8FAFC;
-    color: #0F172A;
+    background-color: #f5f7fa; /* steel-50 */
+    color: #0b1a33;            /* navy-900 */
   }
 
   :focus-visible {
-    outline: 2px solid #2563EB;
+    outline: 2px solid #1f7ae0; /* brand-500 */
     outline-offset: 2px;
+  }
+
+  /* Deshabilitar transiciones y animaciones según preferencia del usuario */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-/* Custom scrollbar */
+/* ═══════════════════════════════════════════════════════════════════
+   CUSTOM SCROLLBAR
+   ═══════════════════════════════════════════════════════════════════ */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: #eaeef4; /* steel-100 */
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #bcc7d6; /* steel-300 */
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #5b6a80; /* steel-500 */
 }
 
-/* Animation utilities for AI Chat and Toast */
+/* ═══════════════════════════════════════════════════════════════════
+   COMPONENTES DE UTILIDAD
+   ═══════════════════════════════════════════════════════════════════ */
+@layer components {
+
+  /* ── Números tabulares con fuente display (precios, códigos, contadores) ── */
+  .num {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* ── Badge de corte diagonal (clip-path) ─────────────────────────────── */
+  .cut {
+    clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+  }
+
+  /* ── Textura de acero sobre fondos navy (patrón de líneas sutiles) ────── */
+  .steel-texture {
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 39px,
+        rgb(255 255 255 / 0.025) 39px,
+        rgb(255 255 255 / 0.025) 40px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 39px,
+        rgb(255 255 255 / 0.025) 39px,
+        rgb(255 255 255 / 0.025) 40px
+      );
+  }
+
+  /* ── Grid lines sutil sobre fondos claros (hero, trusted section) ─────── */
+  .grid-lines {
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 79px,
+        rgb(15 23 42 / 0.03) 79px,
+        rgb(15 23 42 / 0.03) 80px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 79px,
+        rgb(15 23 42 / 0.03) 79px,
+        rgb(15 23 42 / 0.03) 80px
+      );
+  }
+
+  /* ── Línea punteada horizontal (pasos "Cómo funciona") ───────────────── */
+  .dashed-line {
+    border-top: 2px dashed #bcc7d6; /* steel-300 */
+  }
+
+  /* ── Línea punteada vertical (mobile) ────────────────────────────────── */
+  .dashed-line-v {
+    border-left: 2px dashed #bcc7d6; /* steel-300 */
+  }
+
+  /* ── Skeleton shimmer ─────────────────────────────────────────────────── */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: #eaeef4; /* steel-100 */
+    border-radius: 0.75rem;
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(255 255 255 / 0.6) 50%,
+      transparent 100%
+    );
+    animation: shimmer 1.6s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton::after {
+      animation: none;
+    }
+  }
+
+  /* ── Scroll reveal — estado inicial (IntersectionObserver añade .in) ─── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ANIMACIONES KEYFRAMES
+   (Declaradas también en tailwind.config.js para clases animate-*)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Fade suave con translateY — heredado, alias compatibilidad */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
 .animate-fade-in {
   animation: fadeIn 0.25s ease-out forwards;
 }
 
+/* Slide up — heredado, alias compatibilidad */
 @keyframes slideUp {
   from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  to   { transform: translateY(0); }
 }
-
 .animate-slide-up {
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Reglas de impresión para comprobantes térmicos y facturación */
+/* Slide in desde la derecha — para CartDrawer */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Fade simple — para mega menu, overlay backdrop */
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.fade {
+  animation: fade 0.2s ease-out forwards;
+}
+
+/* Bump — badge del contador del carrito al añadir item */
+@keyframes bump {
+  0%, 100% { transform: scale(1); }
+  40%       { transform: scale(1.5); }
+}
+.bump {
+  animation: bump 0.4s ease-out;
+}
+
+/* Pop — ícono ✓ de confirmación (añadido al carrito, código pedido) */
+@keyframes pop {
+  0%   { transform: scale(0.4); }
+  70%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.pop {
+  animation: pop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Float — movimiento lento para cards flotantes del hero */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Toast in — entrada de las notificaciones toast */
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.toast-in {
+  animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Pulse ring — botón flotante del chat IA */
+@keyframes pulseRing {
+  0%   { box-shadow: 0 0 0 0 rgb(31 122 224 / 0.5); }
+  70%  { box-shadow: 0 0 0 12px rgb(31 122 224 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(31 122 224 / 0); }
+}
+.pulse-ring {
+  animation: pulseRing 2.4s ease-out infinite;
+}
+
+/* Shimmer — efecto cargando en skeletons */
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+/* Respeta prefers-reduced-motion para todas las animaciones custom */
+@media (prefers-reduced-motion: reduce) {
+  .slide-in-right,
+  .fade,
+  .bump,
+  .pop,
+  .float,
+  .toast-in,
+  .pulse-ring,
+  .animate-fade-in,
+  .animate-slide-up {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ESTILOS DE IMPRESIÓN
+   Para comprobantes térmicos (POS) y facturación
+   ═══════════════════════════════════════════════════════════════════ */
 @media print {
   body {
     background: white !important;

@@ -19,30 +19,49 @@ export function QuoteComparisonPanel({ comparison }) {
   const unchanged = comparison.comparacion.every((line) => comparisonStatus(line) === 'igual');
 
   return (
-    <section className="space-y-4 rounded-2xl border border-kenpaku-border bg-kenpaku-card p-4 shadow-soft sm:p-6" aria-label="Comparación de precios">
+    <section className="space-y-4 rounded-card border border-steel-200 bg-white p-5 shadow-card sm:p-6" aria-label="Comparación de precios">
       <header>
-        <h2 className="text-lg font-extrabold text-kenpaku-navy">Comparación con {comparison.proforma.parent_codigo}</h2>
-        {unchanged && <p className="mt-1 text-sm text-kenpaku-muted">Los precios no han cambiado desde {new Date(comparison.proforma.fecha_emision).toLocaleDateString('es-PE')}.</p>}
+        <h2 className="font-display text-lg font-bold text-navy-900">
+          Comparación con proforma {comparison.proforma.parent_codigo}
+        </h2>
+        {unchanged && (
+          <p className="mt-1 text-xs text-steel-500 font-medium">
+            Los precios no han variado desde el {new Date(comparison.proforma.fecha_emision).toLocaleDateString('es-PE')}.
+          </p>
+        )}
       </header>
+
       <div className="grid gap-3 sm:grid-cols-3">
-        <SummaryCard label="Anterior" value={formatPEN(comparison.total_anterior)} />
-        <SummaryCard label="Nuevo" value={formatPEN(comparison.total_nuevo)} />
-        <div className={`rounded-xl border p-4 ${differenceStatus === 'igual' ? 'border-slate-200 bg-slate-50' : differenceStatus === 'bajo' ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'}`}>
-          <p className="text-xs font-semibold text-slate-600">Diferencia</p>
-          <p className="mt-1 flex items-center gap-1 text-lg font-extrabold text-kenpaku-navy"><DifferenceIcon className="h-4 w-4" />{formatPEN(Math.abs(difference))}</p>
-          <p className="text-xs text-slate-600">{comparison.diferencia_pct == null ? '—' : `${Number(comparison.diferencia_pct).toFixed(2)}%`}</p>
+        <SummaryCard label="Monto Anterior" value={formatPEN(comparison.total_anterior)} />
+        <SummaryCard label="Monto Actualizado" value={formatPEN(comparison.total_nuevo)} />
+        <div className={`rounded-btn border p-4 shadow-xs ${
+          differenceStatus === 'igual'
+            ? 'border-steel-200 bg-steel-50'
+            : differenceStatus === 'bajo'
+            ? 'border-emerald-200 bg-emerald-50/70'
+            : 'border-red-200 bg-red-50/70'
+        }`}>
+          <p className="text-micro font-bold text-steel-500 uppercase tracking-wide">Diferencia</p>
+          <p className="mt-1 flex items-center gap-1.5 num text-lg font-black text-navy-900">
+            <DifferenceIcon className="h-4 w-4" />
+            <span>{formatPEN(Math.abs(difference))}</span>
+          </p>
+          <p className="num text-micro text-steel-600 font-semibold mt-0.5">
+            {comparison.diferencia_pct == null ? '—' : `${Number(comparison.diferencia_pct).toFixed(2)}%`}
+          </p>
         </div>
       </div>
-      <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+
+      <div className="divide-y divide-steel-100 rounded-btn border border-steel-200 overflow-hidden bg-white">
         {comparison.comparacion.map((line, index) => {
           const status = comparisonStatus(line);
           return (
-            <div key={`${line.texto_original}-${index}`} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
-              <span className="text-sm font-semibold text-slate-800">{line.nombre_snapshot}</span>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
-                <span>{line.precio_anterior == null ? '—' : formatPEN(line.precio_anterior)}</span>
-                <span aria-hidden="true">→</span>
-                <span>{line.precio_nuevo == null ? 'Ya no disponible' : formatPEN(line.precio_nuevo)}</span>
+            <div key={`${line.texto_original}-${index}`} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between hover:bg-steel-50/50 transition-colors">
+              <span className="text-xs font-semibold text-navy-900">{line.nombre_snapshot}</span>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-steel-600">
+                <span className="num">{line.precio_anterior == null ? '—' : formatPEN(line.precio_anterior)}</span>
+                <span aria-hidden="true" className="text-steel-400">→</span>
+                <span className="num font-bold text-navy-900">{line.precio_nuevo == null ? 'Ya no disponible' : formatPEN(line.precio_nuevo)}</span>
                 <StatusBadge status={status} />
               </div>
             </div>
@@ -55,9 +74,9 @@ export function QuoteComparisonPanel({ comparison }) {
 
 function SummaryCard({ label, value }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <p className="text-xs font-semibold text-slate-600">{label}</p>
-      <p className="mt-1 text-lg font-extrabold text-kenpaku-navy">{value}</p>
+    <div className="rounded-btn border border-steel-200 bg-white p-4 shadow-xs">
+      <p className="text-micro font-bold text-steel-500 uppercase tracking-wide">{label}</p>
+      <p className="num mt-1 text-lg font-extrabold text-navy-900">{value}</p>
     </div>
   );
 }

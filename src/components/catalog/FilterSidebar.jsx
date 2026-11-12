@@ -1,5 +1,5 @@
 import React from 'react';
-import { Filter, RotateCcw, Check } from 'lucide-react';
+import { Filter, RotateCcw } from 'lucide-react';
 import { FINISH_TYPES } from '../../utils/constants';
 
 export function FilterSidebar({
@@ -25,15 +25,21 @@ export function FilterSidebar({
     filters.stock === 'true'
   ].filter(Boolean).length;
 
+  // Rango de precio para el slider dual (0 a 1000 Soles)
+  const minVal = Number(filters.min) || 0;
+  const maxVal = Number(filters.max) || 1000;
+  const minPercent = Math.min(100, Math.max(0, (minVal / 1000) * 100));
+  const maxPercent = Math.min(100, Math.max(0, (maxVal / 1000) * 100));
+
   return (
-    <aside className="w-full bg-white rounded-2xl border border-slate-200/90 p-5 shadow-soft space-y-6">
+    <aside className="w-full bg-white rounded-card border border-steel-200 p-5 shadow-card space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+      <div className="flex items-center justify-between border-b border-steel-200 pb-4">
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-kenpaku-blue" />
-          <h3 className="text-base font-bold text-kenpaku-navy">Filtros</h3>
+          <Filter className="w-4 h-4 text-brand-600" />
+          <h3 className="font-display text-base font-bold text-navy-900">Filtros</h3>
           {activeCount > 0 && (
-            <span className="px-2 py-0.5 text-xs font-bold bg-kenpaku-orange text-white rounded-full">
+            <span className="num px-2 py-0.5 text-micro font-bold bg-accent-600 text-white rounded-full">
               {activeCount}
             </span>
           )}
@@ -42,7 +48,7 @@ export function FilterSidebar({
         {activeCount > 0 && (
           <button
             onClick={onResetFilters}
-            className="flex items-center gap-1 text-xs text-slate-500 hover:text-kenpaku-blue font-medium transition-colors"
+            className="flex items-center gap-1.5 text-xs text-steel-500 hover:text-accent-600 font-semibold transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Limpiar</span>
@@ -51,13 +57,15 @@ export function FilterSidebar({
       </div>
 
       {/* 1. Categorías */}
-      <div className="space-y-2.5">
-        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Categorías</h4>
+      <div className="space-y-2">
+        <h4 className="text-micro font-bold text-steel-600 uppercase tracking-wide">Categorías</h4>
         <div className="space-y-1">
           <button
             onClick={() => onFilterChange('categoria', '')}
-            className={`w-full flex items-center justify-between text-xs px-3 py-2 rounded-lg font-medium transition-colors ${
-              !filters.categoria ? 'bg-kenpaku-blue/10 text-kenpaku-blue font-bold' : 'text-slate-600 hover:bg-slate-50'
+            className={`w-full flex items-center justify-between text-xs px-3.5 py-2.5 rounded-btn font-semibold transition-all ${
+              !filters.categoria
+                ? 'bg-navy-900 text-white shadow-sm'
+                : 'text-steel-600 hover:bg-steel-100 hover:text-navy-900'
             }`}
           >
             <span>Todas las categorías</span>
@@ -69,14 +77,18 @@ export function FilterSidebar({
               <button
                 key={cat.slug}
                 onClick={() => handleCategoryClick(cat.slug)}
-                className={`w-full flex items-center justify-between text-xs px-3 py-2 rounded-lg transition-colors ${
+                className={`w-full flex items-center justify-between text-xs px-3.5 py-2.5 rounded-btn transition-all ${
                   isActive
-                    ? 'bg-kenpaku-blue/10 text-kenpaku-blue font-bold'
-                    : 'text-slate-600 hover:bg-slate-50'
+                    ? 'bg-navy-900 text-white font-bold shadow-sm'
+                    : 'text-steel-600 hover:bg-steel-100 hover:text-navy-900 font-medium'
                 }`}
               >
                 <span>{cat.nombre}</span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-normal">
+                <span
+                  className={`num text-micro px-2 py-0.5 rounded-full transition-colors ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-steel-100 text-steel-600'
+                  }`}
+                >
                   {cat.total || 0}
                 </span>
               </button>
@@ -85,67 +97,94 @@ export function FilterSidebar({
         </div>
       </div>
 
-      {/* 2. Acabado de Acero */}
-      <div className="space-y-2.5 pt-4 border-t border-slate-100">
-        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Tipo de Acabado</h4>
-        <div className="space-y-1">
+      {/* 2. Acabado de Acero (Pills estilo Figma) */}
+      <div className="space-y-2.5 pt-4 border-t border-steel-200">
+        <h4 className="text-micro font-bold text-steel-600 uppercase tracking-wide">Tipo de Acabado</h4>
+        <div className="flex flex-wrap gap-1.5">
           {FINISH_TYPES.map((finish) => {
             const isActive = filters.acabado === finish.slug;
             return (
               <button
                 key={finish.slug}
                 onClick={() => handleFinishClick(finish.slug)}
-                className={`w-full flex items-center justify-between text-xs px-3 py-2 rounded-lg transition-colors ${
+                className={`text-xs px-3 py-1.5 rounded-full border transition-all select-none ${
                   isActive
-                    ? 'bg-kenpaku-navy text-white font-bold'
-                    : 'text-slate-600 hover:bg-slate-50'
+                    ? 'border-accent-600 bg-orange-50 text-accent-700 font-bold shadow-xs'
+                    : 'border-steel-200 bg-white text-steel-600 hover:border-navy-900 hover:text-navy-900 font-medium'
                 }`}
               >
-                <span>{finish.nombre}</span>
-                {isActive && <Check className="w-3.5 h-3.5 text-kenpaku-orange" />}
+                {finish.nombre}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* 3. Rango de Precio (Soles) */}
-      <div className="space-y-2.5 pt-4 border-t border-slate-100">
-        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Precio (S/ IGV incl.)</h4>
-        <div className="grid grid-cols-2 gap-2">
+      {/* 3. Rango de Precio con dual slider CSS puro y inputs */}
+      <div className="space-y-3 pt-4 border-t border-steel-200">
+        <h4 className="text-micro font-bold text-steel-600 uppercase tracking-wide">Precio (S/ IGV incl.)</h4>
+        
+        {/* Visual Dual Track Bar */}
+        <div className="relative h-2 w-full bg-steel-200 rounded-full my-3">
+          <div
+            className="absolute h-full bg-accent-500 rounded-full"
+            style={{
+              left: `${Math.min(minPercent, maxPercent)}%`,
+              right: `${100 - Math.max(minPercent, maxPercent)}%`
+            }}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2.5">
           <div>
-            <label className="text-[10px] text-slate-500 block mb-1">Mínimo</label>
-            <input
-              type="number"
-              value={filters.min || ''}
-              onChange={(e) => onFilterChange('min', e.target.value)}
-              placeholder="S/ 0"
-              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:outline-none focus:border-kenpaku-blue"
-            />
+            <label className="text-micro text-steel-500 font-medium block mb-1">Mínimo</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-steel-500">S/</span>
+              <input
+                type="number"
+                min="0"
+                max="1000"
+                value={filters.min || ''}
+                onChange={(e) => onFilterChange('min', e.target.value)}
+                placeholder="0"
+                className="w-full pl-8 pr-2.5 py-2 rounded-btn border border-steel-200 text-xs font-semibold text-navy-900 shadow-inset focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15"
+              />
+            </div>
           </div>
           <div>
-            <label className="text-[10px] text-slate-500 block mb-1">Máximo</label>
-            <input
-              type="number"
-              value={filters.max || ''}
-              onChange={(e) => onFilterChange('max', e.target.value)}
-              placeholder="S/ 1000"
-              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:outline-none focus:border-kenpaku-blue"
-            />
+            <label className="text-micro text-steel-500 font-medium block mb-1">Máximo</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-steel-500">S/</span>
+              <input
+                type="number"
+                min="0"
+                max="1000"
+                value={filters.max || ''}
+                onChange={(e) => onFilterChange('max', e.target.value)}
+                placeholder="1000"
+                className="w-full pl-8 pr-2.5 py-2 rounded-btn border border-steel-200 text-xs font-semibold text-navy-900 shadow-inset focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15"
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 4. Solo con Stock Disponible */}
-      <div className="pt-4 border-t border-slate-100">
-        <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 select-none">
-          <input
-            type="checkbox"
-            checked={filters.stock === 'true'}
-            onChange={(e) => onFilterChange('stock', e.target.checked ? 'true' : '')}
-            className="w-4 h-4 rounded text-kenpaku-blue border-slate-300 focus:ring-kenpaku-blue"
-          />
-          <span>Solo productos con stock disponible</span>
+      {/* 4. Switch Stock Disponible */}
+      <div className="pt-4 border-t border-steel-200">
+        <label className="flex items-center justify-between cursor-pointer text-xs font-semibold text-navy-900 select-none group">
+          <span>Solo con stock disponible</span>
+          <div
+            onClick={() => onFilterChange('stock', filters.stock === 'true' ? '' : 'true')}
+            className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out cursor-pointer ${
+              filters.stock === 'true' ? 'bg-emerald-600' : 'bg-steel-300'
+            }`}
+          >
+            <div
+              className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                filters.stock === 'true' ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </div>
         </label>
       </div>
     </aside>

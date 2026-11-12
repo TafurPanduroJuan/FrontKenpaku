@@ -20,42 +20,43 @@ export function ProductChatCard({ product }) {
   };
 
   return (
-    <div className="flex w-full flex-col items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 transition-colors hover:bg-white sm:flex-row sm:items-center">
-      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <div className="flex w-full items-center gap-3 rounded-2xl border border-steel-200 bg-white p-3 shadow-card transition-colors hover:border-steel-300">
+      <div className="size-14 shrink-0 overflow-hidden rounded-xl border border-steel-200 bg-steel-100">
         <ProductImage src={product.imagen_url} alt={product.nombre} padding="p-1" />
       </div>
       <div className="flex-1 min-w-0">
-        <StockBadge status={product.stock_estado} className="mb-1 text-[10px] py-0 px-2" />
-        <h4 className="text-xs font-bold text-kenpaku-navy line-clamp-1 leading-snug">
+        <StockBadge status={product.stock_estado} className="mb-1 text-micro py-0.5 px-2" />
+        <h4 className="text-xs font-bold text-navy-900 line-clamp-1 leading-snug">
           {product.nombre}
         </h4>
         <div className="flex items-center gap-1.5 mt-0.5">
-          <span className="text-xs font-extrabold text-kenpaku-blue">
+          <span className="num text-xs sm:text-sm font-extrabold text-brand-600">
             {formatPEN(product.precio_unitario)}
           </span>
-          <span className="text-[10px] text-slate-400">IGV incl.</span>
+          <span className="text-micro text-steel-500 font-medium">IGV incl.</span>
         </div>
       </div>
 
       <button
+        type="button"
         onClick={handleAdd}
         disabled={isOutOfStock}
-        className={`inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-1 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kenpaku-blue sm:w-auto ${
+        className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-btn px-3.5 py-2 text-xs font-bold transition-all active:scale-95 sm:w-auto ${
           added
-            ? 'border-slate-300 bg-slate-100 text-slate-700'
+            ? 'border border-emerald-300 bg-emerald-50 text-emerald-800'
             : isOutOfStock
-            ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
-            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+            ? 'cursor-not-allowed border border-steel-200 bg-steel-100 text-steel-500 opacity-60'
+            : 'bg-accent-600 hover:bg-accent-700 text-white shadow-cta'
         }`}
       >
         {added ? (
           <>
-            <Check className="w-3.5 h-3.5" />
+            <Check className="w-4 h-4 text-emerald-600" />
             <span>¡Listo!</span>
           </>
         ) : (
           <>
-            <ShoppingCart className="w-3.5 h-3.5" />
+            <ShoppingCart className="w-4 h-4" />
             <span>{isOutOfStock ? 'Agotado' : 'Agregar'}</span>
           </>
         )}

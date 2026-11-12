@@ -9,6 +9,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { SuggestionCard } from '../components/quotes/SuggestionCard';
+import { Breadcrumb } from '../components/ui/Breadcrumb';
 
 function normalizedHeader(value) {
   return String(value || '')
@@ -169,99 +170,179 @@ export function QuoteComposer() {
   }[category] || category);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-2 animate-fade-in sm:px-6 lg:px-8">
-      <header className="border-b border-slate-200 pb-4">
-        <p className="text-[11px] font-bold uppercase text-kenpaku-blue">Comercial Kenpaku</p>
-        <h1 className="mt-1 text-2xl font-extrabold text-kenpaku-navy">Cotizador de materiales</h1>
-        <p className="mt-2 max-w-2xl text-sm text-slate-600">Escribe o pega tu lista. Revisaremos las especificaciones antes de generar la proforma.</p>
+    <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in">
+      <Breadcrumb items={[{ label: 'Inicio', url: '/' }, { label: 'Cotizador de Materiales' }]} />
+
+      <header className="border-b border-steel-200 pb-4">
+        <p className="text-micro font-bold uppercase tracking-eyebrow text-brand-600">Comercial Kenpaku S.A.C.</p>
+        <h1 className="font-display mt-1 text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
+          Cotizador de materiales
+        </h1>
+        <p className="mt-1 text-xs text-steel-500 font-medium max-w-2xl">
+          Escribe o pega tu lista de obra. Revisaremos las especificaciones antes de generar la proforma oficial.
+        </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="space-y-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-panel border border-steel-200 bg-white p-6 shadow-card sm:p-8">
+        {/* Selector de modo estilo Figma tabs */}
         <div className="flex flex-wrap gap-2" role="tablist" aria-label="Modo de cotización">
-          <button type="button" role="tab" aria-selected={mode === 'texto'} onClick={() => setMode('texto')} className={`rounded-lg px-4 py-2 text-sm font-bold ${mode === 'texto' ? 'bg-kenpaku-navy text-white' : 'border border-slate-200 text-slate-700'}`}>Escribir mi lista</button>
-          <button type="button" role="tab" aria-selected={mode === 'lista'} onClick={() => { setFile(null); setMode('lista'); }} className={`rounded-lg px-4 py-2 text-sm font-bold ${mode === 'lista' ? 'bg-kenpaku-navy text-white' : 'border border-slate-200 text-slate-700'}`}>Armar mi lista</button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'texto'}
+            onClick={() => setMode('texto')}
+            className={`rounded-btn px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+              mode === 'texto'
+                ? 'bg-navy-900 text-white shadow-xs'
+                : 'border border-steel-200 bg-white text-steel-600 hover:bg-steel-50'
+            }`}
+          >
+            Escribir mi lista
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'lista'}
+            onClick={() => { setFile(null); setMode('lista'); }}
+            className={`rounded-btn px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+              mode === 'lista'
+                ? 'bg-navy-900 text-white shadow-xs'
+                : 'border border-steel-200 bg-white text-steel-600 hover:bg-steel-50'
+            }`}
+          >
+            Armar mi lista del catálogo
+          </button>
         </div>
+
         {mode === 'texto' ? (
-        <>
-        <section className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
-          <h2 className="text-sm font-extrabold text-kenpaku-navy">¿Qué indicar por producto?</h2>
-          <p className="mt-1 text-xs text-slate-600">Para tubos: forma, medida, acabado (negro o galvanizado) y espesor.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {[
-              '10 tubos cuadrados 40x40 de 1.5mm negro',
-              '5 planchas LAC 1.20x2.40m de 2mm',
-              '8 fierros corrugados de 1/2 pulgada',
-            ].map((example) => (
-              <button key={example} type="button" onClick={() => { setText((current) => `${current}${current.trim() ? '\n' : ''}${example}`); setFile(null); }} className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-left text-xs font-semibold text-kenpaku-blue hover:bg-blue-50">
-                {example}
-              </button>
-            ))}
-          </div>
-        </section>
-        <label htmlFor="quote-list" className="block text-sm font-bold text-slate-800">Lista de materiales</label>
-        <textarea
-          id="quote-list"
-          value={text}
-          onChange={(event) => { setText(event.target.value); setFile(null); }}
-          rows={9}
-          maxLength={5000}
-          placeholder={'10 tubos cuadrados 2x2 de 1.5mm\n5 ángulos de 1 1/2\n3 planchas LAC 1/8'}
-          className="w-full rounded-lg border border-slate-300 p-4 text-sm leading-6 text-slate-800 focus:border-kenpaku-blue focus:outline-none focus:ring-2 focus:ring-kenpaku-blue/15"
-        />
-        <div className="flex items-center justify-between text-[11px] text-slate-500">
-          <span>Máximo 50 ítems</span><span>{text.length}/5000</span>
-        </div>
-        {text.trim() && (
-          <section aria-live="polite" className="space-y-2 rounded-xl border border-slate-200 p-4">
-            <h2 className="text-sm font-bold text-kenpaku-navy">Revisión de la lista</h2>
-            {analysisQuery.isFetching && <p className="text-xs text-slate-500">Revisando especificaciones...</p>}
-            {analysisQuery.isError && <p role="alert" className="text-xs text-red-700">No se pudo analizar la lista. Puedes volver a intentarlo o continuar con los datos ingresados.</p>}
-            {analysisItems.map((item, index) => (
-              <div key={`${item.texto_original}-${index}`} className="space-y-1.5 border-t border-slate-100 pt-2">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-slate-700">{item.texto_original}</p>
-                  {item.faltantes?.length ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700"><CircleAlert className="h-4 w-4" /> Falta: {item.faltantes.join(', ')}</span>
-                  ) : ['no_se_vende', 'sin_stock'].includes(item.estado_linea) ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-500">
-                      <CircleAlert className="h-4 w-4" />
-                      {item.estado_linea === 'sin_stock' || item.sugerencia || item.sugerencias?.length ? 'Sin stock' : 'No disponible'}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Completa</span>
-                  )}
-                </div>
-                {(item.sugerencias?.length || item.sugerencia) && (
-                  <SuggestionCard products={item.sugerencias?.length ? item.sugerencias : [item.sugerencia]} />
-                )}
-              </div>
-            ))}
-            {missingItems.length > 0 && (
-              <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-                <span className="w-full text-xs font-semibold text-slate-600">Completa rápidamente:</span>
-                {['cuadrado', 'redondo', 'negro', 'galvanizado', '1.5 mm', '2 mm'].map((value) => (
-                  <button key={value} type="button" onClick={() => setText((current) => `${current.trim()} ${value}`)} className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-kenpaku-blue hover:text-kenpaku-blue">{value}</button>
+          <>
+            <section className="rounded-card border border-brand-500/20 bg-brand-50/50 p-4">
+              <h2 className="font-display text-xs font-extrabold text-navy-900 uppercase tracking-wide">
+                ¿Qué indicar por producto?
+              </h2>
+              <p className="mt-1 text-xs text-steel-600">
+                Para tubos: forma, medida, acabado (negro o galvanizado) y espesor. Haz clic en un ejemplo para probar:
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[
+                  '10 tubos cuadrados 40x40 de 1.5mm negro',
+                  '5 planchas LAC 1.20x2.40m de 2mm',
+                  '8 fierros corrugados de 1/2 pulgada',
+                ].map((example) => (
+                  <button
+                    key={example}
+                    type="button"
+                    onClick={() => { setText((current) => `${current}${current.trim() ? '\n' : ''}${example}`); setFile(null); }}
+                    className="rounded-btn border border-brand-500/30 bg-white px-3 py-1.5 text-left text-xs font-semibold text-brand-700 hover:bg-brand-50 shadow-2xs transition-colors cursor-pointer"
+                  >
+                    {example}
+                  </button>
                 ))}
               </div>
+            </section>
+
+            <div>
+              <label htmlFor="quote-list" className="block text-xs font-bold text-steel-600 uppercase tracking-wide mb-1.5">
+                Lista de materiales
+              </label>
+              <textarea
+                id="quote-list"
+                value={text}
+                onChange={(event) => { setText(event.target.value); setFile(null); }}
+                rows={9}
+                maxLength={5000}
+                placeholder={'10 tubos cuadrados 2x2 de 1.5mm\n5 ángulos de 1 1/2\n3 planchas LAC 1/8'}
+                className="w-full rounded-btn border border-steel-200 bg-white p-4 text-xs font-mono leading-relaxed text-navy-900 shadow-inset focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 transition-all"
+              />
+              <div className="flex items-center justify-between text-micro text-steel-500 mt-1">
+                <span>Máximo 50 ítems admitidos por proforma</span>
+                <span className="num">{text.length}/5000</span>
+              </div>
+            </div>
+
+            {text.trim() && (
+              <section aria-live="polite" className="space-y-3 rounded-card border border-steel-200 p-4 bg-steel-50/50">
+                <h2 className="font-display text-xs font-bold text-navy-900 uppercase tracking-wide">
+                  Revisión en tiempo real de la lista
+                </h2>
+                {analysisQuery.isFetching && <p className="text-micro text-steel-500">Revisando especificaciones con el catálogo...</p>}
+                {analysisQuery.isError && (
+                  <p role="alert" className="text-xs text-red-700">
+                    No se pudo analizar la lista. Puedes volver a intentarlo o continuar con los datos ingresados.
+                  </p>
+                )}
+                <div className="divide-y divide-steel-200/80">
+                  {analysisItems.map((item, index) => (
+                    <div key={`${item.texto_original}-${index}`} className="space-y-1.5 py-2.5">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-xs font-semibold text-navy-900">{item.texto_original}</p>
+                        {item.faltantes?.length ? (
+                          <span className="inline-flex items-center gap-1 text-micro font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                            <CircleAlert className="h-3.5 w-3.5 text-amber-600" /> Falta: {item.faltantes.join(', ')}
+                          </span>
+                        ) : ['no_se_vende', 'sin_stock'].includes(item.estado_linea) ? (
+                          <span className="inline-flex items-center gap-1 text-micro font-bold text-steel-500 bg-steel-100 px-2 py-0.5 rounded border border-steel-200">
+                            <CircleAlert className="h-3.5 w-3.5" />
+                            {item.estado_linea === 'sin_stock' || item.sugerencia || item.sugerencias?.length ? 'Sin stock' : 'No disponible'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-micro font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Especificación completa
+                          </span>
+                        )}
+                      </div>
+                      {(item.sugerencias?.length || item.sugerencia) && (
+                        <SuggestionCard products={item.sugerencias?.length ? item.sugerencias : [item.sugerencia]} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {missingItems.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 border-t border-steel-200 pt-3">
+                    <span className="text-micro font-bold text-steel-500 uppercase tracking-wide">Completa con un clic:</span>
+                    {['cuadrado', 'redondo', 'negro', 'galvanizado', '1.5 mm', '2 mm'].map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setText((current) => `${current.trim()} ${value}`)}
+                        className="rounded-full border border-steel-300 bg-white px-2.5 py-1 text-micro font-semibold text-navy-900 hover:border-brand-500 hover:text-brand-600 transition-colors cursor-pointer"
+                      >
+                        +{value}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
             )}
-          </section>
-        )}
-        </>
+          </>
         ) : (
           <section className="space-y-4">
-            <p className="text-xs text-slate-600">Elige especificaciones disponibles en el catálogo; las opciones se actualizan en cascada.</p>
-            {productsQuery.isLoading && <p className="text-sm text-slate-500">Cargando productos del catálogo...</p>}
-            {productsQuery.isError && <p role="alert" className="text-sm text-red-700">No se pudo cargar el catálogo. Vuelve a intentar o escribe tu lista.</p>}
-            {fieldRulesQuery.isError && <p role="alert" className="text-sm text-red-700">No se pudieron cargar las reglas por categoría. Intenta de nuevo antes de cotizar.</p>}
+            <p className="text-xs text-steel-500 font-medium">
+              Elige especificaciones disponibles en el catálogo; las opciones se actualizan en cascada según stock real.
+            </p>
+            {productsQuery.isLoading && <p className="text-xs text-steel-500">Cargando productos del catálogo...</p>}
+            {productsQuery.isError && <p role="alert" className="text-xs text-red-700">No se pudo cargar el catálogo. Vuelve a intentar o escribe tu lista.</p>}
+            {fieldRulesQuery.isError && <p role="alert" className="text-xs text-red-700">No se pudieron cargar las reglas por categoría. Intenta de nuevo antes de cotizar.</p>}
+            
             {builderLinesWithMatches.map((line, index) => {
               const categoryProducts = catalogProducts.filter((product) => !line.categoria || product.categoria === line.categoria);
               const filteredProducts = line.matches;
               const uniqueValues = (source, field) => optionsFor(source, field);
               return (
-                <div key={index} className="space-y-3 rounded-xl border border-slate-200 p-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold text-kenpaku-navy">Producto {index + 1}</h2>
-                    {builderLines.length > 1 && <button type="button" onClick={() => setBuilderLines((current) => current.filter((_, i) => i !== index))} className="text-xs font-semibold text-red-700">Quitar</button>}
+                <div key={index} className="space-y-3 rounded-card border border-steel-200 bg-steel-50/40 p-4 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-steel-200 pb-2">
+                    <h2 className="font-display text-xs font-bold text-navy-900 uppercase tracking-wide">
+                      Producto {index + 1}
+                    </h2>
+                    {builderLines.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setBuilderLines((current) => current.filter((_, i) => i !== index))}
+                        className="text-micro font-bold text-red-600 hover:underline cursor-pointer"
+                      >
+                        Quitar
+                      </button>
+                    )}
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     <Select id={`quote-category-${index}`} label="Producto" placeholder="Selecciona categoría" options={[...new Set(catalogProducts.map((product) => product.categoria))].map((value) => ({ value, label: categoryLabel(value) }))} value={line.categoria} onChange={(event) => updateBuilderLine(index, 'categoria', event.target.value)} />
@@ -273,30 +354,61 @@ export function QuoteComposer() {
                     {line.categoria === 'accesorios' && <Select id={`quote-accessory-${index}`} label="Artículo" placeholder="Selecciona artículo" options={categoryProducts.map((product) => ({ value: product.id, label: product.nombre }))} value={line.productId} onChange={(event) => updateBuilderLine(index, 'productId', event.target.value)} />}
                     <Input label="Cantidad" type="number" min="0.001" step="0.001" value={line.cantidad} onChange={(event) => updateBuilderLine(index, 'cantidad', event.target.value)} />
                   </div>
-                  {filteredProducts.length > 0 && line.categoria && <p className="text-xs text-emerald-700">Coincidencia del catálogo: {filteredProducts[0].nombre} · {filteredProducts[0].stock_disponible > 0 ? `${filteredProducts[0].stock_disponible} disponibles` : 'Sin stock'} · S/ {filteredProducts[0].precio_unitario}</p>}
-                  {line.categoria && !filteredProducts.length && <p className="text-xs text-amber-700">No hay una coincidencia con esos filtros.</p>}
+                  {filteredProducts.length > 0 && line.categoria && (
+                    <p className="text-micro font-semibold text-emerald-700 bg-emerald-50 p-2 rounded-btn border border-emerald-200">
+                      ✓ Coincidencia: {filteredProducts[0].nombre} · {filteredProducts[0].stock_disponible > 0 ? `${filteredProducts[0].stock_disponible} disponibles` : 'Sin stock'} · S/ {filteredProducts[0].precio_unitario}
+                    </p>
+                  )}
+                  {line.categoria && !filteredProducts.length && (
+                    <p className="text-micro font-semibold text-amber-700 bg-amber-50 p-2 rounded-btn border border-amber-200">
+                      No hay coincidencia exacta con esos filtros en inventario.
+                    </p>
+                  )}
                 </div>
               );
             })}
-            <button type="button" onClick={() => setBuilderLines((current) => [...current, { categoria: '', forma: '', tipo: '', medida: '', acabado: '', espesor: '', productId: '', cantidad: '1' }])} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-kenpaku-blue hover:bg-blue-50">Agregar otro producto</button>
+            <button
+              type="button"
+              onClick={() => setBuilderLines((current) => [...current, { categoria: '', forma: '', tipo: '', medida: '', acabado: '', espesor: '', productId: '', cantidad: '1' }])}
+              className="rounded-btn border border-steel-300 bg-white px-4 py-2 text-xs font-bold text-navy-900 hover:border-navy-900 hover:bg-steel-50 transition-colors cursor-pointer"
+            >
+              + Agregar otro producto
+            </button>
           </section>
         )}
 
-        <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          {mode === 'texto' && <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50">
-            <FileSpreadsheet className="h-4 w-4 text-emerald-700" />
-            {file ? file.name : 'Importar XLSX o CSV'}
-            <input type="file" accept=".xlsx,.csv" className="sr-only" onChange={(event) => {
-              setFile(event.target.files?.[0] || null);
-              if (event.target.files?.[0]) setText('');
-            }} />
-          </label>}
-          <button type="submit" disabled={mutation.isPending || (mode === 'texto' && !text.trim() && !file) || (mode === 'lista' && !builderItems.length)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-kenpaku-orange px-5 py-2.5 text-sm font-bold text-white hover:bg-kenpaku-orangeHover disabled:cursor-not-allowed disabled:opacity-50">
+        <div className="flex flex-col gap-3 border-t border-steel-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          {mode === 'texto' && (
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-btn border border-steel-300 bg-white px-4 py-2.5 text-xs font-bold text-navy-900 hover:border-navy-900 hover:bg-steel-50 shadow-xs transition-colors">
+              <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+              <span>{file ? file.name : 'Importar archivo XLSX o CSV'}</span>
+              <input
+                type="file"
+                accept=".xlsx,.csv"
+                className="sr-only"
+                onChange={(event) => {
+                  setFile(event.target.files?.[0] || null);
+                  if (event.target.files?.[0]) setText('');
+                }}
+              />
+            </label>
+          )}
+
+          <button
+            type="submit"
+            disabled={mutation.isPending || (mode === 'texto' && !text.trim() && !file) || (mode === 'lista' && !builderItems.length)}
+            className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-btn bg-accent-600 px-6 py-2.5 text-xs font-semibold text-white shadow-cta hover:bg-accent-700 hover:shadow-cta-hover transition-all disabled:cursor-not-allowed disabled:opacity-50 active:scale-98"
+          >
             {mutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-            {mode === 'texto' && (missingItems.length > 0 || (analysisQuery.isError && !allComplete)) ? 'Cotizar igual' : 'Cotizar'} <ArrowRight className="h-4 w-4" />
+            <span>{mode === 'texto' && (missingItems.length > 0 || (analysisQuery.isError && !allComplete)) ? 'Cotizar igual' : 'Generar proforma'}</span>
+            <ArrowRight className="h-4 w-4" />
           </button>
         </div>
-        {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">{Array.isArray(error) ? error.map((item) => item.msg).join('. ') : error}</p>}
+        {error && (
+          <p role="alert" className="rounded-btn border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+            {Array.isArray(error) ? error.map((item) => item.msg).join('. ') : error}
+          </p>
+        )}
       </form>
     </div>
   );

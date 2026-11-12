@@ -15,23 +15,23 @@ export const Button = React.forwardRef(({
   ...props
 }, ref) => {
 
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none min-h-[44px] active:scale-[0.98]';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-btn transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none min-h-[44px] active:scale-[0.98]';
 
   const variants = {
-    primary: 'bg-kenpaku-orange hover:bg-kenpaku-orangeHover text-white focus-visible:outline-kenpaku-orange shadow-sm',
-    navy: 'bg-kenpaku-navy hover:bg-kenpaku-navyLight text-white focus-visible:outline-kenpaku-navy shadow-sm',
-    whatsapp: 'bg-kenpaku-whatsapp hover:bg-kenpaku-whatsappHover text-white focus-visible:outline-kenpaku-whatsapp shadow-sm',
-    blue: 'bg-kenpaku-blue hover:bg-kenpaku-blueHover text-white focus-visible:outline-kenpaku-blue shadow-sm',
-    secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 shadow-2xs',
-    outline: 'border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 focus-visible:outline-kenpaku-blue',
-    ghost: 'bg-transparent hover:bg-slate-100 text-slate-700 focus-visible:outline-kenpaku-blue',
-    danger: 'bg-red-600 hover:bg-red-700 text-white focus-visible:outline-red-600 shadow-sm'
+    primary: 'bg-accent-600 hover:bg-accent-700 text-white shadow-cta hover:shadow-cta-hover focus-visible:outline-accent-600 hover:-translate-y-px',
+    navy: 'bg-navy-900 hover:bg-navy-800 text-white focus-visible:outline-navy-900 shadow-sm hover:-translate-y-px',
+    whatsapp: 'bg-wa-600 hover:bg-wa-700 text-white shadow-wa focus-visible:outline-wa-600 hover:-translate-y-px',
+    blue: 'bg-brand-600 hover:bg-brand-700 text-white shadow-sm focus-visible:outline-brand-600 hover:-translate-y-px',
+    secondary: 'bg-steel-100 hover:bg-steel-200 text-navy-900 border border-steel-200 shadow-sm',
+    outline: 'border border-steel-300 bg-white hover:bg-steel-50 text-navy-900 hover:border-navy-900 focus-visible:outline-brand-500 shadow-sm',
+    ghost: 'bg-transparent hover:bg-steel-100 text-navy-900 focus-visible:outline-brand-500',
+    danger: 'bg-red-600 hover:bg-red-700 text-white focus-visible:outline-red-600 shadow-sm hover:-translate-y-px'
   };
 
   const sizes = {
-    sm: 'text-xs px-3 py-1.5 min-h-[36px] gap-1.5',
+    sm: 'text-xs px-3 py-1.5 min-h-[38px] gap-1.5',
     md: 'text-sm px-4 py-2.5 min-h-[44px] gap-2',
-    lg: 'text-base px-6 py-3 min-h-[48px] gap-2.5 font-semibold'
+    lg: 'text-base px-6 py-3 min-h-[50px] gap-2.5 font-bold'
   };
 
   const widthStyle = fullWidth ? 'w-full' : '';

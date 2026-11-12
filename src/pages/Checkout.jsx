@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ShieldCheck, Truck, Store, AlertTriangle, ArrowRight, ShoppingBag, MapPin, User, Building2, FileText } from 'lucide-react';
+import { ShieldCheck, Truck, Store, AlertTriangle, ArrowRight, ShoppingBag, User, Building2 } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { createOrder } from '../api/orders';
 import { Input } from '../components/ui/Input';
@@ -341,9 +341,11 @@ export function Checkout() {
   if (items.length === 0) {
     return (
       <div className="py-16 text-center space-y-4 max-w-md mx-auto">
-        <ShoppingBag className="w-16 h-16 text-slate-300 mx-auto" />
-        <h2 className="text-2xl font-bold text-kenpaku-navy">Tu carrito está vacío</h2>
-        <p className="text-xs text-slate-500">Agrega productos al carrito antes de proceder con el registro del pedido.</p>
+        <div className="w-16 h-16 rounded-full bg-steel-100 text-steel-500 flex items-center justify-center mx-auto">
+          <ShoppingBag className="w-8 h-8" />
+        </div>
+        <h2 className="font-display text-2xl font-bold text-navy-900">Tu carrito está vacío</h2>
+        <p className="text-xs text-steel-500">Agrega productos al carrito antes de proceder con el registro del pedido.</p>
         <Link to="/catalogo">
           <Button variant="primary">Ir al catálogo de acero</Button>
         </Link>
@@ -387,10 +389,8 @@ export function Checkout() {
 
     try {
       const response = await createOrder(payload);
-      // Clear local cart
       clearCart();
 
-      // Guardar en pedidos recientes del dispositivo para consulta rápida
       try {
         const recent = {
           codigo: response.codigo,
@@ -405,7 +405,6 @@ export function Checkout() {
         // ignore localStorage errors
       }
 
-      // Redirigir pasando token secreto en query y orderData garantizando recojo_en_tienda
       const tokenQuery = response.tracking_token ? `?token=${encodeURIComponent(response.tracking_token)}` : '';
       navigate(`/pedido/${response.codigo}${tokenQuery}`, {
         state: {
@@ -441,19 +440,21 @@ export function Checkout() {
   };
 
   return (
-    <div className="space-y-6 py-2">
+    <div className="max-w-site mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       <Breadcrumb items={[{ label: 'Catálogo', url: '/catalogo' }, { label: 'Registro de Pedido' }]} />
 
-      <div className="border-b border-slate-200 pb-4">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-kenpaku-navy">Registro de Pedido</h1>
-        <p className="text-xs text-slate-500 mt-1">
+      <div className="border-b border-steel-200 pb-4">
+        <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
+          Registro de Pedido
+        </h1>
+        <p className="text-xs text-steel-500 mt-1 font-medium">
           Completa tus datos de contacto para coordinar la entrega o recojo en Puente Piedra.
         </p>
       </div>
 
       {/* 409 Server Error Alert */}
       {serverError && (
-        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 flex items-start gap-3 animate-fade-in">
+        <div className="p-4 rounded-card bg-red-50 border border-red-200 text-red-900 flex items-start gap-3 animate-fade-in shadow-xs">
           <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
           <div className="space-y-1 text-xs">
             <h4 className="font-bold text-red-900">{serverError.title}</h4>
@@ -463,32 +464,32 @@ export function Checkout() {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Client Details */}
-        <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-soft space-y-6">
-          {/* Header con Selector de Comprobante / Tipo de Documento */}
-          <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Left Column: Form Panel (rounded-panel) */}
+        <div className="lg:col-span-7 bg-white rounded-panel border border-steel-200 p-6 sm:p-8 shadow-card space-y-6">
+          {/* Header con Selector de Comprobante */}
+          <div className="border-b border-steel-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-kenpaku-navy">
+              <h2 className="font-display text-base sm:text-lg font-bold text-navy-900">
                 1. Datos del Cliente y Comprobante
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-steel-500 mt-0.5">
                 Selecciona si requieres Boleta de Venta personal o Factura con RUC.
               </p>
             </div>
-            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl self-start sm:self-auto border border-slate-200">
+            <div className="flex items-center gap-1.5 p-1 bg-steel-100 rounded-btn self-start sm:self-auto border border-steel-200">
               <button
                 type="button"
                 onClick={() => {
                   setValue('tipo_documento', 'dni');
                   clearErrors(['ruc', 'razon_social', 'contacto_nombre']);
                 }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-btn text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                   tipoDocumento === 'dni'
-                    ? 'bg-white text-kenpaku-navy shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-navy-900 text-white shadow-xs'
+                    : 'text-steel-600 hover:text-navy-900'
                 }`}
               >
-                <User className="w-3.5 h-3.5 text-kenpaku-blue" />
+                <User className="w-3.5 h-3.5 text-accent-400" />
                 <span>Boleta (DNI)</span>
               </button>
               <button
@@ -497,13 +498,13 @@ export function Checkout() {
                   setValue('tipo_documento', 'ruc');
                   clearErrors(['dni', 'nombres', 'apellidos']);
                 }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-btn text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                   tipoDocumento === 'ruc'
-                    ? 'bg-white text-kenpaku-blue shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-navy-900 text-white shadow-xs'
+                    : 'text-steel-600 hover:text-navy-900'
                 }`}
               >
-                <Building2 className="w-3.5 h-3.5 text-kenpaku-blue" />
+                <Building2 className="w-3.5 h-3.5 text-accent-400" />
                 <span>Factura (RUC)</span>
               </button>
             </div>
@@ -543,7 +544,7 @@ export function Checkout() {
                     label="DNI *"
                     type="text"
                     maxLength={8}
-                    placeholder="8 dígitos (Ej. 12345678)"
+                    placeholder="8 dígitos"
                     error={errors.dni?.message}
                     {...register('dni', {
                       onChange: (e) => {
@@ -651,16 +652,16 @@ export function Checkout() {
             )}
           </div>
 
-          <h2 className="text-lg font-bold text-kenpaku-navy border-b border-slate-100 pb-3 pt-4">
+          <h2 className="font-display text-base sm:text-lg font-bold text-navy-900 border-b border-steel-200 pb-3 pt-4">
             2. Modalidad de Entrega
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label
-              className={`p-4 rounded-2xl border-2 flex items-center gap-3 cursor-pointer transition-all ${
+              className={`p-4 rounded-card border-2 flex items-center gap-3 cursor-pointer transition-all ${
                 deliveryType === 'despacho'
-                  ? 'border-kenpaku-blue bg-blue-50/50 text-kenpaku-navy'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                  ? 'border-brand-500 bg-brand-50/50 text-navy-900 shadow-sm'
+                  : 'border-steel-200 bg-white text-steel-600 hover:bg-steel-50'
               }`}
             >
               <input
@@ -669,18 +670,20 @@ export function Checkout() {
                 className="sr-only"
                 {...register('delivery_type')}
               />
-              <Truck className="w-6 h-6 text-kenpaku-blue shrink-0" />
+              <div className="w-10 h-10 rounded-btn bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+                <Truck className="w-5 h-5" />
+              </div>
               <div>
-                <span className="block text-xs font-bold">Despacho a Obra</span>
-                <span className="text-[11px] text-slate-500">Envío con camión (Flete post-orden)</span>
+                <span className="block text-xs font-bold text-navy-900">Despacho a Obra</span>
+                <span className="text-micro text-steel-500">Envío en camión plataforma (flete post-orden)</span>
               </div>
             </label>
 
             <label
-              className={`p-4 rounded-2xl border-2 flex items-center gap-3 cursor-pointer transition-all ${
+              className={`p-4 rounded-card border-2 flex items-center gap-3 cursor-pointer transition-all ${
                 deliveryType === 'recojo'
-                  ? 'border-kenpaku-blue bg-blue-50/50 text-kenpaku-navy'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                  ? 'border-brand-500 bg-brand-50/50 text-navy-900 shadow-sm'
+                  : 'border-steel-200 bg-white text-steel-600 hover:bg-steel-50'
               }`}
             >
               <input
@@ -689,10 +692,12 @@ export function Checkout() {
                 className="sr-only"
                 {...register('delivery_type')}
               />
-              <Store className="w-6 h-6 text-kenpaku-blue shrink-0" />
+              <div className="w-10 h-10 rounded-btn bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+                <Store className="w-5 h-5" />
+              </div>
               <div>
-                <span className="block text-xs font-bold">Recojo en Tienda</span>
-                <span className="text-[11px] text-slate-500">Almacén en Puente Piedra</span>
+                <span className="block text-xs font-bold text-navy-900">Recojo en Tienda</span>
+                <span className="text-micro text-steel-500">Almacén en Puente Piedra (Sin costo adicional)</span>
               </div>
             </label>
           </div>
@@ -712,15 +717,15 @@ export function Checkout() {
           )}
 
           {deliveryType === 'recojo' && (
-            <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 text-kenpaku-navy space-y-1.5 text-xs animate-fade-in">
-              <div className="flex items-center gap-2 font-bold text-kenpaku-blue">
+            <div className="p-4 rounded-card bg-brand-50/60 border border-brand-500/20 text-navy-900 space-y-1 text-xs animate-fade-in">
+              <div className="flex items-center gap-2 font-bold text-brand-700">
                 <Store className="w-4 h-4 shrink-0" />
                 <span>Punto de Retiro: Almacén Central Puente Piedra</span>
               </div>
-              <p className="text-slate-600 pl-6 leading-relaxed">
+              <p className="text-steel-600 pl-6 text-xs leading-relaxed">
                 {STORE_INFO.address}
               </p>
-              <p className="text-slate-500 pl-6 text-[11px]">
+              <p className="text-steel-500 pl-6 text-micro">
                 Horario: {STORE_INFO.schedule}. En recojo en tienda no es necesario ingresar dirección de entrega.
               </p>
             </div>
@@ -740,67 +745,67 @@ export function Checkout() {
           />
 
           {/* Mandatory Checkbox */}
-          <div className="pt-4 border-t border-slate-100">
-            <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-700 select-none">
+          <div className="pt-4 border-t border-steel-200">
+            <label className="flex items-start gap-2.5 cursor-pointer text-xs text-navy-900 select-none">
               <input
                 type="checkbox"
                 id="acepto_privacidad_checkbox"
-                className="w-4 h-4 mt-0.5 rounded text-kenpaku-blue border-slate-300 focus:ring-kenpaku-blue"
+                className="w-4 h-4 mt-0.5 rounded text-brand-600 border-steel-300 focus:ring-brand-500 cursor-pointer"
                 {...register('acepto_privacidad')}
               />
-              <span>
+              <span className="text-steel-600">
                 He leído y acepto la{' '}
-                <Link to="/politica-de-privacidad" target="_blank" className="text-kenpaku-blue font-bold hover:underline">
+                <Link to="/politica-de-privacidad" target="_blank" className="text-brand-600 font-bold hover:underline">
                   Política de Privacidad
                 </Link>{' '}
                 de Comercial Kenpaku S.A.C. *
               </span>
             </label>
             {errors.acepto_privacidad && (
-              <p className="mt-1 text-xs text-red-600 font-medium pl-7">
+              <p className="mt-1 text-xs text-red-600 font-medium pl-6">
                 {errors.acepto_privacidad.message}
               </p>
             )}
           </div>
         </div>
 
-        {/* Right Column: Order Summary */}
-        <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-soft space-y-6 sticky top-24">
-          <h2 className="text-lg font-bold text-kenpaku-navy border-b border-slate-100 pb-3">
+        {/* Right Column: Order Summary (rounded-card) */}
+        <div className="lg:col-span-5 bg-white rounded-card border border-steel-200 p-6 sm:p-8 shadow-card space-y-6 sticky top-24">
+          <h2 className="font-display text-base sm:text-lg font-bold text-navy-900 border-b border-steel-200 pb-3">
             Resumen del Pedido
           </h2>
 
-          <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto pr-1">
+          <div className="divide-y divide-steel-100 max-h-60 overflow-y-auto pr-1">
             {items.map(({ product, cantidad }) => (
               <div key={product.id} className="py-2.5 flex items-center justify-between text-xs">
                 <div>
-                  <span className="font-bold text-slate-900 block">{product.nombre}</span>
-                  <span className="text-slate-500">Cantidad: {cantidad}</span>
+                  <span className="font-bold text-navy-900 block line-clamp-1">{product.nombre}</span>
+                  <span className="text-micro text-steel-500">Cantidad: {cantidad}</span>
                 </div>
-                <span className="font-bold text-kenpaku-navy">
+                <span className="num font-bold text-navy-900 ml-2 shrink-0">
                   {formatPEN(product.precio_unitario * cantidad)}
                 </span>
               </div>
             ))}
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
-            <div className="flex justify-between text-slate-600">
+          <div className="p-4 rounded-btn bg-steel-50 border border-steel-200 space-y-2 text-xs">
+            <div className="flex justify-between text-steel-600">
               <span>Subtotal (sin IGV):</span>
-              <span>{formatPEN(subtotal)}</span>
+              <span className="num font-semibold text-navy-900">{formatPEN(subtotal)}</span>
             </div>
-            <div className="flex justify-between text-slate-600">
+            <div className="flex justify-between text-steel-600">
               <span>IGV (18 %):</span>
-              <span>{formatPEN(igv)}</span>
+              <span className="num font-semibold text-navy-900">{formatPEN(igv)}</span>
             </div>
-            <div className="flex justify-between text-base font-extrabold text-kenpaku-navy pt-2 border-t border-slate-200">
+            <div className="flex justify-between text-base font-extrabold text-navy-900 pt-2 border-t border-steel-200">
               <span>Total a Confirmar:</span>
-              <span className="text-kenpaku-orange">{formatPEN(total)}</span>
+              <span className="num text-accent-600 font-black">{formatPEN(total)}</span>
             </div>
           </div>
 
           {deliveryType === 'despacho' && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 leading-snug">
+            <div className="p-3 bg-orange-50 border border-accent-500/30 rounded-btn text-micro text-accent-700 leading-snug">
               ⚠️ Flete a coordinar con administración post-orden. Los montos son referenciales hasta la validación de un asesor.
             </div>
           )}
@@ -812,12 +817,12 @@ export function Checkout() {
             fullWidth
             isLoading={isSubmitting}
             disabled={!aceptoPrivacidad || isSubmitting}
-            icon={ArrowRight}
+            iconRight={ArrowRight}
           >
             Registrar pedido
           </Button>
 
-          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 pt-1">
+          <div className="flex items-center justify-center gap-1.5 text-micro text-steel-500 font-medium pt-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>Tus datos están seguros y protegidos</span>
           </div>
