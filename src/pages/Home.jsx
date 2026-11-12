@@ -308,7 +308,7 @@ export function Home() {
             </div>
 
             {/* Floating Badge 1: Stock */}
-            <div className="animate-float absolute top-4 -left-3 flex items-center gap-3 rounded-2xl bg-white p-3 pr-4 shadow-lift border border-steel-100 sm:-left-6">
+            <div className="animate-float absolute top-4 left-2 flex items-center gap-3 rounded-2xl bg-white p-3 pr-4 shadow-lift border border-steel-100 sm:-left-6">
               <span className="grid size-10 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
                 <Boxes className="w-5 h-5" />
               </span>

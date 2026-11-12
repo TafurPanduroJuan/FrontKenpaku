@@ -58,7 +58,7 @@ export function Dashboard() {
               {metrics?.pedidos_pendientes || 0}
             </span>
           )}
-          <span className="text-[11px] text-slate-400">Por confirmar flete y precio</span>
+          <span className="text-[11px] text-slate-500">Por confirmar flete y precio</span>
         </div>
 
         {/* Card 2 */}
@@ -76,7 +76,7 @@ export function Dashboard() {
               {metrics?.pedidos_hoy || 0}
             </span>
           )}
-          <span className="text-[11px] text-slate-400">Registrados en la plataforma</span>
+          <span className="text-[11px] text-slate-500">Registrados en la plataforma</span>
         </div>
 
         {/* Card 3 */}
@@ -94,7 +94,7 @@ export function Dashboard() {
               {metrics?.consultas_chat_hoy || 0}
             </span>
           )}
-          <span className="text-[11px] text-slate-400">Atendidas por Asesor Virtual</span>
+          <span className="text-[11px] text-slate-500">Atendidas por Asesor Virtual</span>
         </div>
 
         {/* Card 4 */}
@@ -112,7 +112,7 @@ export function Dashboard() {
               {metrics?.porcentaje_derivadas || 0} %
             </span>
           )}
-          <span className="text-[11px] text-slate-400">Handoff directo a WhatsApp</span>
+          <span className="text-[11px] text-slate-500">Handoff directo a WhatsApp</span>
         </div>
       </div>
 
@@ -120,7 +120,7 @@ export function Dashboard() {
       <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-soft space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 className="text-base font-bold text-kenpaku-navy">Últimos Pedidos Registrados</h3>
-          <span className="text-xs font-semibold text-slate-400">
+          <span className="text-xs font-semibold text-slate-500">
             Gestión y Despacho en Caja
           </span>
         </div>

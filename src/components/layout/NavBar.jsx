@@ -79,7 +79,7 @@ export function NavBar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
 
         {/* Mobile Navigation Menu Dropdown */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-3 space-y-1 border-t border-steel-200 animate-fade-in">
+          <div className="md:hidden py-3 space-y-1 border-t border-steel-200 animate-fade-in max-h-[70vh] overflow-y-auto">
             {navLinks.map((link) => {
               const active = isActiveLink(link);
               const Icon = link.icon;

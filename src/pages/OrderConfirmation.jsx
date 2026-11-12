@@ -456,11 +456,11 @@ export function OrderConfirmation() {
                       ? 'bg-orange-50 border-accent-500 ring-2 ring-accent-500/20 text-accent-900 shadow-xs'
                       : isNext
                       ? 'bg-amber-50/80 border-amber-300 border-dashed text-amber-950'
-                      : 'bg-steel-50 border-steel-200 text-steel-400 opacity-60'
+                      : 'bg-steel-50 border-steel-200 text-steel-500 opacity-60'
                   }`}
                 >
                   <span className={`text-micro font-bold block uppercase tracking-wider ${
-                    isPassed ? 'text-emerald-700' : isCurrent ? 'text-accent-700' : isNext ? 'text-amber-700' : 'text-steel-400'
+                    isPassed ? 'text-emerald-700' : isCurrent ? 'text-accent-700' : isNext ? 'text-amber-700' : 'text-steel-500'
                   }`}>
                     {step.fase}
                   </span>
@@ -477,7 +477,7 @@ export function OrderConfirmation() {
                     <span className="truncate">{step.label}</span>
                   </span>
                   <span className={`text-micro block truncate mt-0.5 ${
-                    isPassed ? 'text-emerald-700' : isCurrent ? 'text-accent-800 font-bold' : isNext ? 'text-amber-800' : 'text-steel-400'
+                    isPassed ? 'text-emerald-700' : isCurrent ? 'text-accent-800 font-bold' : isNext ? 'text-amber-800' : 'text-steel-500'
                   }`}>
                     {step.sub}
                   </span>
@@ -643,7 +643,7 @@ export function OrderConfirmation() {
                           : 'border-steel-200 bg-white hover:bg-steel-50'
                       }`}
                     >
-                      <Icon className={`w-5 h-5 mx-auto mb-1 ${isSelected ? 'text-brand-600' : 'text-steel-400'}`} />
+                      <Icon className={`w-5 h-5 mx-auto mb-1 ${isSelected ? 'text-brand-600' : 'text-steel-500'}`} />
                       <span className={`text-xs font-bold block ${isSelected ? 'text-brand-700' : 'text-steel-600'}`}>
                         {bank.name}
                       </span>

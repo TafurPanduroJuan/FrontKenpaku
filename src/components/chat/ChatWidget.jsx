@@ -275,7 +275,7 @@ export function ChatWidget() {
                 rows={1}
                 disabled={isLoading}
                 placeholder="Escribe tu consulta o lista de materiales…"
-                className="max-h-36 min-h-11 w-full resize-none overflow-y-auto rounded-xl border border-steel-200 py-3 pl-3.5 pr-20 text-xs text-navy-900 placeholder-steel-400 focus:border-brand-500 focus:outline-hidden focus:ring-4 focus:ring-brand-500/15 disabled:bg-steel-100 shadow-inset"
+                className="max-h-36 min-h-11 w-full resize-none overflow-y-auto rounded-xl border border-steel-200 py-3 pl-3.5 pr-20 text-xs text-navy-900 placeholder-steel-500 focus:border-brand-500 focus:outline-hidden focus:ring-4 focus:ring-brand-500/15 disabled:bg-steel-100 shadow-inset"
                 onInput={(event) => {
                   event.currentTarget.style.height = 'auto';
                   event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 144)}px`;
@@ -283,7 +283,7 @@ export function ChatWidget() {
               />
 
               <div className="absolute right-2 flex items-center gap-1.5">
-                <span className={`text-micro font-mono num ${inputMessage.length > 1400 ? 'text-amber-600 font-bold' : 'text-steel-400'}`}>
+                <span className={`text-micro font-mono num ${inputMessage.length > 1400 ? 'text-amber-600 font-bold' : 'text-steel-500'}`}>
                   {inputMessage.length}/{MAX_CHARS}
                 </span>
 
@@ -291,7 +291,7 @@ export function ChatWidget() {
                   type="button"
                   onClick={() => handleSendMessage()}
                   disabled={isLoading || !inputMessage.trim()}
-                  className="grid size-9 place-items-center rounded-lg bg-navy-900 hover:bg-navy-950 disabled:bg-steel-200 text-white disabled:text-steel-400 transition-colors cursor-pointer"
+                  className="grid size-9 place-items-center rounded-lg bg-navy-900 hover:bg-navy-950 disabled:bg-steel-200 text-white disabled:text-steel-500 transition-colors cursor-pointer"
                   aria-label="Enviar mensaje"
                 >
                   <Send className="w-4 h-4" />

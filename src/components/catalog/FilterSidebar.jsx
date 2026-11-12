@@ -139,7 +139,7 @@ export function FilterSidebar({
           <div>
             <label className="text-micro text-steel-500 font-medium block mb-1">Mínimo</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-steel-400">S/</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-steel-500">S/</span>
               <input
                 type="number"
                 min="0"
@@ -154,7 +154,7 @@ export function FilterSidebar({
           <div>
             <label className="text-micro text-steel-500 font-medium block mb-1">Máximo</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-steel-400">S/</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-steel-500">S/</span>
               <input
                 type="number"
                 min="0"

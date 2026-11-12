@@ -437,7 +437,7 @@ export function TrackingPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-            <span className="text-micro text-steel-400">
+            <span className="text-micro text-steel-500">
               * Si compraste con enlace directo, tu código y token se cargan automáticamente.
             </span>
             <Button
@@ -531,7 +531,7 @@ export function TrackingPage() {
               </div>
 
               <div className="text-left sm:text-right shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-navy-800">
-                <span className="text-micro uppercase font-bold text-steel-400 block tracking-wider">Modalidad</span>
+                <span className="text-micro uppercase font-bold text-steel-500 block tracking-wider">Modalidad</span>
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white mt-0.5">
                   {order.recojo_en_tienda ? (
                     <>
@@ -591,7 +591,7 @@ export function TrackingPage() {
                           ? 'bg-brand-50 border-brand-500 ring-2 ring-brand-500/20 text-brand-950 shadow-xs'
                           : isNext
                           ? 'bg-amber-50/80 border-amber-300 border-dashed text-amber-950'
-                          : 'bg-steel-50 border-steel-200 text-steel-400 opacity-60'
+                          : 'bg-steel-50 border-steel-200 text-steel-500 opacity-60'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -624,7 +624,7 @@ export function TrackingPage() {
                               ? 'text-brand-700'
                               : isNext
                               ? 'text-amber-700'
-                              : 'text-steel-400'
+                              : 'text-steel-500'
                           }`}
                         >
                           {st.fase}
@@ -667,7 +667,7 @@ export function TrackingPage() {
                   <span className="text-micro font-extrabold uppercase tracking-wider text-steel-500 block">
                     Línea de Tiempo del Pedido
                   </span>
-                  <span className="text-[10px] text-steel-400 font-medium">
+                  <span className="text-[10px] text-steel-500 font-medium">
                     (Más reciente primero)
                   </span>
                 </div>
@@ -699,7 +699,7 @@ export function TrackingPage() {
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] text-steel-400 font-mono num shrink-0">
+                        <span className="text-[10px] text-steel-500 font-mono num shrink-0">
                           {new Date(ev.created_at).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}
                         </span>
                       </div>
@@ -746,7 +746,7 @@ export function TrackingPage() {
               {/* Freight Figures Breakdown */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-card bg-white border border-brand-200/80 shadow-2xs">
                 <div>
-                  <span className="text-micro text-steel-400 block font-bold uppercase">Materiales (con IGV)</span>
+                  <span className="text-micro text-steel-500 block font-bold uppercase">Materiales (con IGV)</span>
                   <span className="text-sm font-mono num font-bold text-navy-900">{formatPEN(Number(order.subtotal) + Number(order.igv))}</span>
                 </div>
                 <div>
@@ -754,7 +754,7 @@ export function TrackingPage() {
                   <span className="text-base font-mono num font-extrabold text-brand-700">{formatPEN(order.costo_flete)}</span>
                 </div>
                 <div>
-                  <span className="text-micro text-steel-400 block font-bold uppercase">Total Final a Pagar</span>
+                  <span className="text-micro text-steel-500 block font-bold uppercase">Total Final a Pagar</span>
                   <span className="text-base font-display font-extrabold text-accent-600 num">{formatPEN(order.total)}</span>
                 </div>
               </div>
@@ -955,7 +955,7 @@ export function TrackingPage() {
                 </div>
 
                 <div className="text-left sm:text-right">
-                  <span className="text-micro uppercase font-bold text-steel-400 block tracking-wider">Total a Transferir</span>
+                  <span className="text-micro uppercase font-bold text-steel-500 block tracking-wider">Total a Transferir</span>
                   <span className="text-xl font-display font-extrabold text-emerald-600 num">{formatPEN(order.total)}</span>
                 </div>
               </div>
@@ -982,11 +982,11 @@ export function TrackingPage() {
                             : 'bg-steel-50 hover:bg-steel-100 border-steel-200'
                         }`}
                       >
-                        <IconComp className={`w-4 h-4 mx-auto mb-1 ${isActive ? 'text-emerald-600' : 'text-steel-400'}`} />
+                        <IconComp className={`w-4 h-4 mx-auto mb-1 ${isActive ? 'text-emerald-600' : 'text-steel-500'}`} />
                         <span className={`text-xs font-bold block ${isActive ? 'text-emerald-900' : 'text-steel-700'}`}>
                           {bank.name}
                         </span>
-                        <span className="text-micro text-steel-400 block">{bank.badge}</span>
+                        <span className="text-micro text-steel-500 block">{bank.badge}</span>
                       </button>
                     );
                   })}

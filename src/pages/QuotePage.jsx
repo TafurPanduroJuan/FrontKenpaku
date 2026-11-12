@@ -189,11 +189,11 @@ export function QuotePage() {
             <tbody className="divide-y divide-steel-100">
               {viewModel.pricedItems.map((item, index) => (
                 <tr key={item.id} className={index % 2 ? 'bg-steel-50/50' : 'hover:bg-steel-50/30'}>
-                  <td className="py-3 pr-2 text-right text-xs font-mono num text-steel-400">{item.number}</td>
+                  <td className="py-3 pr-2 text-right text-xs font-mono num text-steel-500">{item.number}</td>
                   <td className="py-3 px-3">
                     <p className="font-semibold text-navy-900">{item.description}</p>
                     {item.attributeLine && <p className="mt-0.5 text-xs text-steel-500">{item.attributeLine}</p>}
-                    {item.equivalenceNote && <p className="mt-0.5 text-[11px] text-steel-400">{item.equivalenceNote}</p>}
+                    {item.equivalenceNote && <p className="mt-0.5 text-[11px] text-steel-500">{item.equivalenceNote}</p>}
                     {acceptedAlternativeIds.has(item.id) && (
                       <p className="mt-0.5 text-micro font-bold text-brand-600">Alternativa agregada</p>
                     )}
@@ -217,11 +217,11 @@ export function QuotePage() {
           {viewModel.pricedItems.map((item) => (
             <article key={item.id} className="space-y-2 rounded-card border border-steel-200 bg-white p-4 shadow-2xs">
               <div className="flex items-start gap-2.5">
-                <span className="text-xs font-mono num font-bold text-steel-400">{item.number}.</span>
+                <span className="text-xs font-mono num font-bold text-steel-500">{item.number}.</span>
                 <div className="min-w-0 flex-1">
                   <h2 className="text-sm font-bold text-navy-900">{item.description}</h2>
                   {item.attributeLine && <p className="mt-1 text-xs text-steel-600">{item.attributeLine}</p>}
-                  {item.equivalenceNote && <p className="mt-1 text-[11px] text-steel-400">{item.equivalenceNote}</p>}
+                  {item.equivalenceNote && <p className="mt-1 text-[11px] text-steel-500">{item.equivalenceNote}</p>}
                   {acceptedAlternativeIds.has(item.id) && (
                     <p className="mt-1 text-micro font-bold text-brand-600">Alternativa agregada</p>
                   )}
@@ -270,11 +270,11 @@ export function QuotePage() {
                 return (
                   <article key={item.id} className="py-3 text-steel-700 first:pt-0 last:pb-0">
                     <div className="flex items-start gap-2.5">
-                      <span className="text-xs font-mono num font-bold text-steel-400">{item.number}.</span>
+                      <span className="text-xs font-mono num font-bold text-steel-500">{item.number}.</span>
                       <div className="min-w-0 flex-1 space-y-1.5">
                         <p className="text-sm font-semibold text-navy-900">{item.description}</p>
                         {item.attributeLine && <p className="text-xs text-steel-500">{item.attributeLine}</p>}
-                        {item.equivalenceNote && <p className="text-[11px] text-steel-400">{item.equivalenceNote}</p>}
+                        {item.equivalenceNote && <p className="text-[11px] text-steel-500">{item.equivalenceNote}</p>}
                         <div>
                           <StatusBadge status={item.status} />
                         </div>

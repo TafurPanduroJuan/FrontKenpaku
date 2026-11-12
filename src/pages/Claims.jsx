@@ -171,21 +171,21 @@ export function Claims() {
           {/* Key Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-card bg-steel-50 border border-steel-200 text-xs">
             <div>
-              <span className="text-micro text-steel-400 block uppercase font-extrabold tracking-wider">Código de Seguimiento</span>
+              <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">Código de Seguimiento</span>
               <span className="cut num font-mono text-base font-extrabold text-white bg-navy-900 px-3 py-1 rounded-btn inline-block shadow-2xs mt-1">
                 {claimResult.codigo}
               </span>
             </div>
             <div>
-              <span className="text-micro text-steel-400 block uppercase font-extrabold tracking-wider">Fecha y Hora de Recepción</span>
+              <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">Fecha y Hora de Recepción</span>
               <span className="text-sm font-mono num font-bold text-navy-900 block mt-1">{claimResult.fecha}</span>
             </div>
             <div>
-              <span className="text-micro text-steel-400 block uppercase font-extrabold tracking-wider">Razón Social del Proveedor</span>
+              <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">Razón Social del Proveedor</span>
               <span className="font-semibold text-navy-900 block mt-0.5">{STORE_INFO.name}</span>
             </div>
             <div>
-              <span className="text-micro text-steel-400 block uppercase font-extrabold tracking-wider">RUC del Proveedor</span>
+              <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">RUC del Proveedor</span>
               <span className="font-mono num font-semibold text-accent-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block mt-0.5">
                 {STORE_INFO.ruc}
               </span>
@@ -244,7 +244,7 @@ export function Claims() {
       <div className="steel-texture bg-navy-900 text-white rounded-panel p-6 sm:p-8 shadow-card border border-navy-800 space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-navy-800/80 pb-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-card bg-accent-500 text-white flex items-center justify-center font-extrabold shadow-cta">
+            <div className="w-12 h-12 rounded-card bg-accent-600 text-white flex items-center justify-center font-extrabold shadow-cta">
               <BookOpen className="w-7 h-7" />
             </div>
             <div>
@@ -255,24 +255,24 @@ export function Claims() {
 
           <div className="text-left sm:text-right text-xs text-steel-300">
             <span className="block font-bold text-white">Fecha: <strong className="font-mono num">{currentDate}</strong></span>
-            <span className="text-micro text-steel-400 uppercase tracking-wider">Puente Piedra, Lima</span>
+            <span className="text-micro text-steel-500 uppercase tracking-wider">Puente Piedra, Lima</span>
           </div>
         </div>
 
         {/* Real RUC Box */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-steel-300 pt-1">
           <div>
-            <span className="text-micro text-steel-400 block uppercase font-extrabold tracking-wider">Razón Social del Proveedor</span>
+            <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">Razón Social del Proveedor</span>
             <span className="font-extrabold text-white text-sm">{STORE_INFO.name}</span>
           </div>
           <div>
-            <span className="text-micro text-steel-400 block uppercase font-extrabold tracking-wider">RUC del Proveedor</span>
+            <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">RUC del Proveedor</span>
             <span className="font-mono num font-extrabold text-accent-400 text-sm tracking-wider bg-navy-950 px-2.5 py-1 rounded-btn border border-navy-800 inline-block shadow-inset">
               RUC: {STORE_INFO.ruc}
             </span>
           </div>
           <div className="sm:col-span-2">
-            <span className="text-micro text-steel-400 block uppercase font-extrabold tracking-wider">Dirección del Almacén</span>
+            <span className="text-micro text-steel-500 block uppercase font-extrabold tracking-wider">Dirección del Almacén</span>
             <span className="text-steel-200">{STORE_INFO.address}</span>
           </div>
         </div>
