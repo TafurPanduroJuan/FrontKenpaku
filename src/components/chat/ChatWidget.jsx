@@ -186,11 +186,11 @@ export function ChatWidget() {
                 {msg.pendingQuoteText && (
                   <div className="mb-3 ml-9 flex flex-wrap gap-1.5" aria-label="Respuestas rápidas para completar la cotización">
                     {(msg.quoteMissingFields || []).flatMap((field) => ({
-                      forma: ['Cuadrado', 'Rectangular', 'Redondo'],
+                      forma: ['Cuadrado', 'Redondo'],
                       tipo: ['Corrugado', 'Liso', 'LAC', 'LAF'],
                       medida: ['1/2 pulgada', '1 pulgada', '2 pulgadas'],
                       espesor: ['1.5 mm', '2 mm', '3 mm'],
-                      acabado: ['Negro', 'Galvanizado'],
+                      acabado: ['Negro (LAC)', 'LAF', 'Galvanizado'],
                     }[field] || [])).map((reply) => (
                       <button
                         key={`${msg.id}-${reply}`}
