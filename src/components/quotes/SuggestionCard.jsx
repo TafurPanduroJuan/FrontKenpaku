@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React,{ useState } from 'react';
 import { Plus } from 'lucide-react';
 import { formatPEN } from '../../utils/formatPEN';
 import { StatusBadge } from '../ui/StatusBadge';
