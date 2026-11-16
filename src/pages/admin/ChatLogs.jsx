@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { MessageSquare, ExternalLink, Bot, CheckCircle, ShieldOff, Filter } from 'lucide-react';
 import { getAdminChatLogs } from '../../api/admin';
 import { Skeleton } from '../../components/ui/Skeleton';
+import { INTENT_INFO, resumirIntencion } from '../../utils/intent';
 
 export function ChatLogs() {
   const [offtopicFilter, setOfftopicFilter] = useState('all'); // 'all' | 'offtopic' | 'inscope'
@@ -57,6 +58,7 @@ export function ChatLogs() {
           resumen: firstUser?.mensaje_texto || '',
           handoff: null, // el backend no persiste este dato
           fuera_de_alcance: hasOfftopic,
+          intencion: resumirIntencion(ordered),
         };
       })
       .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
@@ -134,6 +136,7 @@ export function ChatLogs() {
                   <th className="py-3.5 px-4">Mensajes</th>
                   <th className="py-3.5 px-4">Resumen de Consulta</th>
                   <th className="py-3.5 px-4">Alcance</th>
+                  <th className="py-3.5 px-4">Intención (IA)</th>
                   <th className="py-3.5 px-4">Estado Handoff</th>
                 </tr>
               </thead>
@@ -157,6 +160,18 @@ export function ChatLogs() {
                           <CheckCircle className="w-3 h-3" />
                           <span>En alcance</span>
                         </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4" data-testid="intencion-ia">
+                      {log.intencion ? (
+                        <span
+                          title={`Confianza del modelo: ${Math.round(log.intencion.prob * 100)}%`}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${INTENT_INFO[log.intencion.id].className}`}
+                        >
+                          {INTENT_INFO[log.intencion.id].label} · {Math.round(log.intencion.prob * 100)}%
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
                       )}
                     </td>
                     <td className="py-3.5 px-4">
