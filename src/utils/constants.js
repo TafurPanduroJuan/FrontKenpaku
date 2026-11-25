@@ -48,3 +48,5 @@ export const SORT_OPTIONS = [
   { value: 'precio_desc', label: 'Precio: Mayor a Menor' },
   { value: 'nombre_asc', label: 'Nombre: A - Z' }
 ];
+
+export const CHAT_RETENTION_DAYS = 90;
