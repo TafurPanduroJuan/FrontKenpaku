@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { BookOpen, CheckCircle2, ShieldCheck, AlertCircle, Send, ArrowLeft, Printer } from 'lucide-react';
+import { BookOpen, CheckCircle2, ShieldCheck, AlertCircle, Send, ArrowLeft, Printer, Search } from 'lucide-react';
 import { createClaim } from '../api/claims';
 import { STORE_INFO } from '../utils/constants';
 import { Input } from '../components/ui/Input';
@@ -224,6 +225,13 @@ export function Claims() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Link
+              to={`/seguimiento-reclamo?codigo=${encodeURIComponent(claimResult.codigo)}`}
+              className="inline-flex items-center justify-center font-bold transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-1 text-sm rounded-btn px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white shadow-cta w-full"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              Consultar el estado de mi reclamo
+            </Link>
             <Button variant="primary" fullWidth icon={Printer} onClick={() => window.print()}>
               Imprimir constancia
             </Button>

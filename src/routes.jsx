@@ -10,6 +10,7 @@ import { ProductDetail } from './pages/ProductDetail';
 import { Checkout } from './pages/Checkout';
 import { OrderConfirmation } from './pages/OrderConfirmation';
 import { TrackingPage } from './pages/TrackingPage';
+import { ClaimTracking } from './pages/ClaimTracking';
 import { Claims } from './pages/Claims';
 import { Privacy } from './pages/Privacy';
 import { Terms } from './pages/Terms';
@@ -46,6 +47,7 @@ const router = createBrowserRouter([
       { path: 'checkout', element: <Checkout /> },
       { path: 'pedido/:codigo', element: <OrderConfirmation /> },
       { path: 'seguimiento', element: <TrackingPage /> },
+      { path: 'seguimiento-reclamo', element: <ClaimTracking /> },
       { path: 'cotizador', element: <QuoteComposer /> },
       { path: 'proforma/:codigo', element: <QuotePage /> },
       { path: 'libro-de-reclamaciones', element: <Claims /> },

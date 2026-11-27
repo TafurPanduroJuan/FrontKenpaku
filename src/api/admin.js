@@ -390,6 +390,82 @@ export async function getAdminClaims(params = {}) {
   return data;
 }
 
+export async function getAdminClaimDetail(id) {
+  if (USE_MOCKS) {
+    checkAuth();
+    await new Promise((res) => setTimeout(res, 150));
+    const claim = MOCK_CLAIMS.find((c) => c.id === id || c.codigo_seguimiento === id);
+    if (!claim) {
+      const error = new Error('Reclamo no encontrado');
+      error.response = { status: 404, data: { detail: 'Reclamo no encontrado' } };
+      throw error;
+    }
+    return {
+      ...claim,
+      mensajes: claim.mensajes || [],
+    };
+  }
+  const { data } = await apiClient.get(`/admin/claims/${id}`);
+  return data;
+}
+
+export async function replyAdminClaim(id, payload) {
+  if (USE_MOCKS) {
+    checkAuth();
+    await new Promise((res) => setTimeout(res, 200));
+    const claim = MOCK_CLAIMS.find((c) => c.id === id || c.codigo_seguimiento === id);
+    if (!claim) {
+      const error = new Error('Reclamo no encontrado');
+      error.response = { status: 404, data: { detail: 'Reclamo no encontrado' } };
+      throw error;
+    }
+    if (claim.estado === 'atendido') {
+      const error = new Error('El reclamo ya fue atendido');
+      error.response = { status: 409, data: { detail: 'El reclamo ya fue atendido' } };
+      throw error;
+    }
+    if (!claim.mensajes) claim.mensajes = [];
+    const newMsg = {
+      id: 'msg-' + Date.now(),
+      autor: 'admin',
+      canal: 'panel',
+      texto: payload.texto,
+      created_at: new Date().toISOString(),
+    };
+    claim.mensajes.push(newMsg);
+    claim.mensajes_count = claim.mensajes.length;
+    if (payload.estado) {
+      claim.estado = payload.estado;
+      if (payload.estado === 'atendido') {
+        claim.fecha_atencion = new Date().toISOString();
+      }
+    }
+    return { ...claim };
+  }
+  const { data } = await apiClient.post(`/admin/claims/${id}/respuesta`, payload);
+  return data;
+}
+
+export async function updateAdminClaimStatus(id, estado) {
+  if (USE_MOCKS) {
+    checkAuth();
+    await new Promise((res) => setTimeout(res, 150));
+    const claim = MOCK_CLAIMS.find((c) => c.id === id || c.codigo_seguimiento === id);
+    if (!claim) {
+      const error = new Error('Reclamo no encontrado');
+      error.response = { status: 404, data: { detail: 'Reclamo no encontrado' } };
+      throw error;
+    }
+    claim.estado = estado;
+    if (estado === 'atendido') {
+      claim.fecha_atencion = new Date().toISOString();
+    }
+    return { ...claim };
+  }
+  const { data } = await apiClient.patch(`/admin/claims/${id}/estado`, { estado });
+  return data;
+}
+
 export async function triggerScheduledTasks(params = {}) {
   if (USE_MOCKS) {
     checkAuth();

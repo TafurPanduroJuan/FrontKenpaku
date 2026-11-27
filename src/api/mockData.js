@@ -222,6 +222,7 @@ export const MOCK_ORDERS = [
 
 export const MOCK_CLAIMS = [
   {
+    id: 'claim-001',
     codigo_seguimiento: 'REC-2026-0089',
     fecha: '2026-10-05T14:20:00',
     nombre: 'Carlos Mendoza',
@@ -234,7 +235,21 @@ export const MOCK_CLAIMS = [
     descripcion_bien: 'Tubo Negro Estructural 2"',
     tipo: 'reclamo',
     detalle: 'El producto presentó un raspón profundo en el galvanizado de la punta.',
-    pedido_consumidor: 'Cambio de la barra de tubo por una en perfecto estado.'
+    pedido_consumidor: 'Cambio de la barra de tubo por una en perfecto estado.',
+    estado: 'pendiente',
+    fecha_limite: '2026-10-26T23:59:59',
+    dias_habiles_restantes: 10,
+    mensajes_count: 1,
+    fecha_atencion: null,
+    mensajes: [
+      {
+        id: 'msg-001',
+        autor: 'cliente',
+        canal: 'web',
+        texto: 'Por favor atender a la brevedad, necesitamos el material para obra.',
+        created_at: '2026-10-05T14:25:00Z',
+      }
+    ]
   }
 ];
 
